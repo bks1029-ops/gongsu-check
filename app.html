@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="공수 채크" />
+<title>공수 채크</title>
+<style>
+  :root {
+    --primary: #5B5FE8;
+    --primary-dark: #484CC9;
+    --primary-soft: #EEF0FF;
+    --bg: #F4F5F8;
+    --card: #FFFFFF;
+    --text: #191C24;
+    --sub: #6B7280;
+    --line: #EBEDF2;
+    --green: #16A34A;
+    --orange: #F97316;
+    --red: #EF4444;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .hidden { display: none !important; }
+
+  /* TOP BAR (가치업 스타일) */
+  .topbar {
+    background: var(--bg);
+    padding: 14px 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+  .brand {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .mode-switch {
+    background: #E4E6EE;
+    border-radius: 999px;
+    padding: 3px;
+    display: flex;
+    align-items: center;
+  }
+  .mode-btn {
+    border: none;
+    background: transparent;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sub);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .mode-btn.active {
+    background: #fff;
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 50%; border: none;
+    background: transparent; font-size: 19px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; color: #4B5563;
+  }
+
+  /* MAIN CONTAINER */
+  .container {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 4px 16px 92px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04);
+  }
+  .card-title { font-size: 16px; font-weight: 800; margin: 0 0 12px; }
+
+  /* QUICK ICON GRID (관리자 홈 상단) */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    text-align: center;
+  }
+  .quick-item {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 6px 2px; border-radius: 12px; cursor: pointer;
+  }
+  .quick-item:active { background: #F3F4F6; }
+  .quick-ico {
+    width: 42px; height: 42px; border-radius: 14px;
+    background: #F3F4F8; display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .quick-lbl { font-size: 12px; font-weight: 600; color: #374151; }
+
+  /* BUTTONS & INPUTS */
+  .btn {
+    width: 100%; border: none; border-radius: 13px; padding: 14px 16px;
+    font-size: 15px; font-weight: 700; cursor: pointer; transition: transform .08s;
+  }
+  .btn:active { transform: scale(0.985); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-soft { background: var(--primary-soft); color: var(--primary); }
+  .btn-dark { background: #1E2433; color: #fff; }
+  .btn-outline { background: #fff; color: var(--text); border: 1.5px solid var(--line); }
+  .btn-sm { width: auto; padding: 7px 13px; font-size: 13px; border-radius: 10px; }
+  .row { display: flex; gap: 10px; align-items: center; }
+  .row > * { flex: 1; }
+
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--sub); margin: 12px 0 5px; }
+  input, select {
+    width: 100%; padding: 12px 13px; border: 1.5px solid var(--line); border-radius: 12px;
+    font-size: 15px; background: #FAFBFC; color: var(--text);
+  }
+  input:focus, select:focus { outline: none; border-color: var(--primary); background: #fff; }
+
+  /* PILLS & CHIPS */
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    background: #F1F3F7; color: #374151;
+  }
+  .pill-indigo { background: var(--primary-soft); color: var(--primary); }
+  .pill-green { background: #DCFCE7; color: #15803D; }
+  .pill-orange { background: #FFEDD5; color: #C2410C; }
+
+  .chip-group { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .chip {
+    padding: 8px 13px; border-radius: 999px; border: 1.5px solid var(--line);
+    background: #fff; font-size: 13px; font-weight: 700; color: var(--sub); cursor: pointer;
+  }
+  .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* STATS */
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat-box { background: #F7F8FC; border-radius: 14px; padding: 12px 6px; text-align: center; }
+  .stat-box .val { font-size: 17px; font-weight: 800; color: var(--primary); }
+  .stat-box .lbl { font-size: 11px; color: var(--sub); margin-top: 2px; font-weight: 600; }
+
+  /* LIST ITEMS */
+  .list-item { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .list-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .list-top { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 15px; }
+  .list-sub { font-size: 13px; color: var(--sub); margin-top: 3px; }
+
+  /* CALENDAR (가치업 4번째 사진 스타일) */
+  .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .cal-month { font-size: 19px; font-weight: 800; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+  .cal-dow { font-size: 12px; font-weight: 700; color: var(--sub); padding-bottom: 6px; }
+  .cal-dow.sun { color: #EF4444; }
+  .cal-dow.sat { color: #3B82F6; }
+  .cal-cell {
+    height: 44px; border-radius: 12px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; font-size: 14px; font-weight: 600;
+    cursor: pointer; position: relative;
+  }
+  .cal-cell.selected { background: var(--primary); color: #fff; font-weight: 800; }
+  .cal-cell.today:not(.selected) { background: #EEF0FF; color: var(--primary); font-weight: 800; }
+  .cal-dot {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--primary);
+    position: absolute; bottom: 5px;
+  }
+  .cal-cell.selected .cal-dot { background: #fff; }
+
+  /* CHAT (가치업 2번째 사진 스타일) */
+  .avatar-row { display: flex; gap: 14px; overflow-x: auto; padding: 4px 0 8px; }
+  .avatar-chip { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 56px; cursor: pointer; }
+  .avatar-circle {
+    width: 48px; height: 48px; border-radius: 50%; background: var(--primary-soft);
+    color: var(--primary); font-weight: 800; font-size: 17px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chat-room-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid var(--line); cursor: pointer;
+  }
+  .chat-room-row:last-child { border-bottom: none; }
+  .chat-room-title { font-weight: 700; font-size: 15px; }
+  .chat-room-preview { font-size: 13px; color: var(--sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+
+  .chat-thread {
+    position: fixed; inset: 0; background: var(--bg); z-index: 60;
+    display: flex; flex-direction: column; max-width: 540px; margin: 0 auto;
+  }
+  .chat-header {
+    background: #fff; padding: 13px 14px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--line); font-weight: 800; font-size: 16px;
+  }
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
+  .msg-wrap.mine { align-self: flex-end; align-items: flex-end; }
+  .msg-wrap.other { align-self: flex-start; align-items: flex-start; }
+  .msg-sender { font-size: 11px; color: var(--sub); margin-bottom: 3px; font-weight: 700; }
+  .msg-bubble {
+    padding: 10px 13px; border-radius: 16px; font-size: 14px; word-break: break-word;
+  }
+  .mine .msg-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+  .other .msg-bubble { background: #fff; color: var(--text); border-bottom-left-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .msg-time { font-size: 10px; color: var(--sub); margin-top: 3px; }
+  .chat-inputbar {
+    background: #fff; padding: 10px 12px; border-top: 1px solid var(--line);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .chat-inputbar input { flex: 1; margin: 0; border-radius: 999px; padding: 10px 15px; }
+  .chat-send-btn {
+    background: var(--primary); color: #fff; border: none; border-radius: 999px;
+    padding: 10px 16px; font-weight: 700; font-size: 14px; cursor: pointer;
+  }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #fff; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-around; padding: 7px 4px 10px;
+    z-index: 40; max-width: 540px; margin: 0 auto;
+    border-radius: 18px 18px 0 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+  }
+  .nav-btn {
+    border: none; background: transparent; display: flex; flex-direction: column;
+    align-items: center; gap: 2px; font-size: 11px; font-weight: 700;
+    color: #9CA3AF; cursor: pointer; padding: 2px 10px;
+  }
+  .nav-btn .ico { font-size: 20px; }
+  .nav-btn.active { color: var(--text); }
+
+  /* SUB TABS */
+  .sub-tabs { display: flex; border-bottom: 1.5px solid var(--line); margin-bottom: 12px; }
+  .sub-tab {
+    flex: 1; text-align: center; padding: 10px 4px; font-size: 14px; font-weight: 700;
+    color: var(--sub); border-bottom: 2.5px solid transparent; cursor: pointer;
+  }
+  .sub-tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+  /* MODAL & TOAST */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(15,23,42,0.45);
+    display: flex; align-items: flex-end; justify-content: center; z-index: 70;
+  }
+  .modal-card {
+    background: #fff; width: 100%; max-width: 540px; border-radius: 22px 22px 0 0;
+    padding: 20px 18px 28px; max-height: 90vh; overflow-y: auto;
+  }
+  .toast {
+    position: fixed; bottom: 78px; left: 50%; transform: translateX(-50%);
+    background: #1E293B; color: #fff; padding: 10px 18px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; z-index: 99; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .invite-box {
+    background: var(--primary-soft); border: 1.5px dashed var(--primary);
+    border-radius: 14px; padding: 16px; text-align: center; margin: 10px 0;
+  }
+  .invite-code { font-size: 28px; font-weight: 900; letter-spacing: 3px; color: var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- TOP HEADER -->
+<div class="topbar">
+  <div class="brand">스마일산업</div>
+  <div id="topbarRight" class="topbar-right hidden">
+    <div id="modeSwitch" class="mode-switch hidden">
+      <button id="btnModeWork" class="mode-btn" onclick="setViewMode('worker')">워크</button>
+      <button id="btnModeAdmin" class="mode-btn active" onclick="setViewMode('admin')">관리자</button>
+    </div>
+    <button class="icon-btn" onclick="openSettingsModal()">⚙️</button>
+  </div>
+</div>
+
+<!-- AUTH VIEW -->
+<div id="authView" class="container">
+  <div class="card" style="margin-top:16px;">
+    <div class="sub-tabs">
+      <div id="tabLogin" class="sub-tab active" onclick="switchAuthTab('login')">로그인</div>
+      <div id="tabJoin" class="sub-tab" onclick="switchAuthTab('join')">초대코드 직원가입</div>
+    </div>
+
+    <div id="loginForm">
+      <label>전화번호 (숫자만)</label>
+      <input id="loginPhone" type="tel" placeholder="01012345678" />
+      <label>비밀번호 PIN</label>
+      <input id="loginPin" type="password" inputmode="numeric" maxlength="6" placeholder="0000" />
+      <button class="btn btn-primary" style="margin-top:16px;" onclick="doLogin()">로그인</button>
+      <p style="font-size:12px;color:var(--sub);margin:12px 0 0;text-align:center;">
+        사장님(관리자) 초기 PIN은 <b>0000</b>입니다.
+      </p>
+    </div>
+
+    <div id="joinForm" class="hidden">
+      <label>초대코드</label>
+      <input id="joinCode" type="text" placeholder="예: SM4K9P" style="text-transform:uppercase;" />
+      <label>이름</label>
+      <input id="joinName" type="text" placeholder="홍길동" />
+      <label>전화번호 (숫자만)</label>
+      <input id="joinPhone" type="tel" placeholder="01012345678" />
+      <label>사용할 PIN 번호 (4자리)</label>
+      <input id="joinPin" type="password" inputmode="numeric" maxlength="6" placeholder="1234" />
+      <button class="btn btn-primary" style="margin-top:16px;" onclick="doRegister()">가입하고 시작하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appMain" class="container hidden">
+
+  <!-- TAB 1: HOME (WORKER MODE) -->
+  <div id="homeWorkerPanel" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px;">
+        <span class="pill" onclick="switchNav('calendar')">📅 내 기록</span>
+        <span id="workerTodayBadge" class="pill pill-indigo"></span>
+      </div>
+
+      <div id="workerCheckInArea">
+        <label style="margin-top:4px;">오늘 현장</label>
+        <select id="workerSiteSelect" onchange="onWorkerSiteSelect()">
+          <option value="">-- 직접 입력 --</option>
+        </select>
+        <input id="workerSiteInput" type="text" placeholder="현장명을 입력하세요" style="margin-top:6px;" />
+        <div class="row" style="margin-top:14px;">
+          <button class="btn btn-primary" style="margin:0;" onclick="workerCheckIn()">출근</button>
+          <button class="btn btn-soft" style="margin:0;" onclick="toast('먼저 출근 체크를 눌러주세요.')">퇴근</button>
+        </div>
+      </div>
+
+      <div id="workerCheckOutArea" class="hidden">
+        <div style="background:#F7F8FC;border-radius:14px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:13px;color:var(--sub);">현재 근무 중</div>
+          <div style="font-size:16px;font-weight:800;margin-top:2px;">
+            <span id="activeSiteName"></span> · <span id="activeCheckInTime" style="color:var(--primary);"></span> 출근
+          </div>
+        </div>
+        <label>공수 선택</label>
+        <div class="chip-group" id="workerGongsuChips">
+          <button class="chip" onclick="pickGongsu(0.5, this)">0.5공수</button>
+          <button class="chip active" onclick="pickGongsu(1.0, this)">1.0공수</button>
+          <button class="chip" onclick="pickGongsu(1.5, this)">1.5공수</button>
+          <button class="chip" onclick="pickGongsu(2.0, this)">2.0공수</button>
+        </div>
+        <label>메모</label>
+        <input id="workerMemo" type="text" placeholder="야간·특근 등 메모 (선택)" />
+        <div class="row" style="margin-top:14px;">
+          <button class="btn btn-soft" style="margin:0;" onclick="toast('이미 출근 체크되었습니다.')">출근 완료</button>
+          <button class="btn btn-primary" style="margin:0;" onclick="workerCheckOut()">퇴근 · 저장</button>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;" onclick="openRecordModal()">근무 기록 수정 ▾</span>
+        <span id="workerWagePill" class="pill"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">이번 달 내 공수 요약</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="val" id="wDays">0일</div><div class="lbl">출근일</div></div>
+        <div class="stat-box"><div class="val" id="wGongsu">0</div><div class="lbl">총 공수</div></div>
+        <div class="stat-box"><div class="val" id="wPay">0원</div><div class="lbl">예상 일당</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1: HOME (ADMIN MODE - 가치업 1번 사진 스타일) -->
+  <div id="homeAdminPanel" class="hidden">
+    <div class="card" style="padding:12px 10px;">
+      <div class="quick-grid">
+        <div class="quick-item" onclick="switchNav('calendar')"><div class="quick-ico">📅</div><div class="quick-lbl">이번 달</div></div>
+        <div class="quick-item" onclick="switchNav('team')"><div class="quick-ico">👷</div><div class="quick-lbl">직원</div></div>
+        <div class="quick-item" onclick="switchNav('team'); switchTeamTab('pay')"><div class="quick-ico">💰</div><div class="quick-lbl">정산</div></div>
+        <div class="quick-item" onclick="switchNav('team'); switchTeamTab('sites')"><div class="quick-ico">🏗️</div><div class="quick-lbl">현장</div></div>
+        <div class="quick-item" onclick="openSettingsModal()"><div class="quick-ico">⚙️</div><div class="quick-lbl">설정</div></div>
+      </div>
+    </div>
+
+    <div id="adminEmptyInviteCard" class="card hidden" style="text-align:center;padding:24px 18px;">
+      <div style="font-size:16px;font-weight:800;">아직 등록된 직원이 없습니다.</div>
+      <div style="font-size:13px;color:var(--sub);margin:6px 0 16px;">초대코드로 직원을 초대해 서로 출근부를 확인해 보세요!</div>
+      <button class="btn btn-primary" onclick="switchNav('team'); issueInvite()">직원 초대하기</button>
+    </div>
+
+    <div id="adminSummaryCard" class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+        <h2 class="card-title" style="margin:0;">오늘 현장 현황</h2>
+        <span id="adminTodayBadge" class="pill pill-indigo"></span>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="val" id="aTodayCnt">0명</div><div class="lbl">오늘 출근</div></div>
+        <div class="stat-box"><div class="val" id="aTotalGongsu">0</div><div class="lbl">월 총 공수</div></div>
+        <div class="stat-box"><div class="val" id="aTotalPay">0만</div><div class="lbl">월 총 정산</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px;">
+        <h2 class="card-title" style="margin:0;">오늘 출근한 직원</h2>
+        <button class="btn btn-soft btn-sm" onclick="openRecordModal()">+ 기록 추가</button>
+      </div>
+      <div id="adminTodayList"></div>
+    </div>
+  </div>
+
+  <!-- TAB 2: CHAT (가치업 2번 사진 스타일) -->
+  <div id="chatPanel" class="hidden">
+    <div class="card" style="padding:14px 16px;">
+      <div id="chatAvatars" class="avatar-row"></div>
+      <div id="chatRoomsList"></div>
+    </div>
+  </div>
+
+  <!-- TAB 3: CALENDAR (가치업 4번 사진 스타일) -->
+  <div id="calendarPanel" class="hidden">
+    <div class="card">
+      <div class="cal-head">
+        <div class="row" style="flex:0;gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="shiftCalMonth(-1)">‹</button>
+          <span id="calMonthLabel" class="cal-month">2026.11</span>
+          <button class="btn btn-outline btn-sm" onclick="shiftCalMonth(1)">›</button>
+        </div>
+        <button class="btn btn-soft btn-sm" onclick="openRecordModal()">+ 기록 추가</button>
+      </div>
+      <div id="calGrid" class="cal-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px;">
+        <h2 id="calSelectedTitle" class="card-title" style="margin:0;">선택한 날짜</h2>
+        <select id="calWorkerFilter" class="hidden" style="width:auto;padding:5px 8px;font-size:12px;" onchange="renderCalDayRecords()">
+          <option value="ALL">전체 직원</option>
+        </select>
+      </div>
+      <div id="calDayList"></div>
+    </div>
+  </div>
+
+  <!-- TAB 4: TEAM / PAYROLL / SITES (가치업 3번 사진 스타일) -->
+  <div id="teamPanel" class="hidden">
+    <div class="card">
+      <div class="sub-tabs">
+        <div id="tTabWorkers" class="sub-tab active" onclick="switchTeamTab('workers')">직원·초대</div>
+        <div id="tTabPay" class="sub-tab" onclick="switchTeamTab('pay')">월별 정산</div>
+        <div id="tTabSites" class="sub-tab" onclick="switchTeamTab('sites')">현장</div>
+      </div>
+
+      <!-- SUB 1: WORKERS & INVITE -->
+      <div id="teamWorkersBox">
+        <div id="adminInviteBlock">
+          <button class="btn btn-primary" onclick="issueInvite()">직원 초대하기 (코드 발급)</button>
+          <div id="issuedInviteArea" class="hidden invite-box">
+            <div style="font-size:12px;color:var(--sub);">발급된 초대코드</div>
+            <div id="issuedCodeText" class="invite-code"></div>
+            <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="shareInvite()">카톡·문자로 공유하기</button>
+          </div>
+          <div id="unusedInvitesList" style="font-size:12px;color:var(--sub);margin:8px 0 12px;"></div>
+        </div>
+        <div id="teamWorkersList"></div>
+      </div>
+
+      <!-- SUB 2: PAYROLL -->
+      <div id="teamPayBox" class="hidden">
+        <div id="teamPayList"></div>
+      </div>
+
+      <!-- SUB 3: SITES -->
+      <div id="teamSitesBox" class="hidden">
+        <div class="row" style="margin-bottom:10px;">
+          <input id="newSiteName" type="text" placeholder="새 현장명 입력" />
+          <button class="btn btn-primary btn-sm" style="margin:0;" onclick="addSite()">추가</button>
+        </div>
+        <div id="teamSitesList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<div id="bottomNav" class="bottom-nav hidden">
+  <button id="navHome" class="nav-btn active" onclick="switchNav('home')"><span class="ico">🏠</span><span>홈</span></button>
+  <button id="navChat" class="nav-btn" onclick="switchNav('chat')"><span class="ico">💬</span><span>채팅</span></button>
+  <button id="navCal" class="nav-btn" onclick="switchNav('calendar')"><span class="ico">📅</span><span>출근달력</span></button>
+  <button id="navTeam" class="nav-btn" onclick="switchNav('team')"><span class="ico">👥</span><span id="navTeamLabel">인력관리</span></button>
+</div>
+
+<!-- CHAT THREAD OVERLAY -->
+<div id="chatThread" class="chat-thread hidden">
+  <div class="chat-header">
+    <button class="icon-btn" onclick="closeChatRoom()">‹</button>
+    <span id="chatRoomTitle">스마일산업 전체 채널</span>
+  </div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div class="chat-inputbar">
+    <input id="chatInput" type="text" placeholder="메시지를 입력하세요..." onkeypress="if(event.key==='Enter') sendChatMsg()" />
+    <button class="chat-send-btn" onclick="sendChatMsg()">전송</button>
+  </div>
+</div>
+
+<!-- RECORD MODAL -->
+<div id="recordModal" class="modal-bg hidden">
+  <div class="modal-card">
+    <div class="row" style="justify-content:space-between;margin-bottom:8px;">
+      <h2 style="margin:0;font-size:17px;">출근 기록 입력·수정</h2>
+      <button class="btn btn-outline btn-sm" style="margin:0;" onclick="closeRecordModal()">닫기</button>
+    </div>
+    <input type="hidden" id="mRecId" />
+    <div id="mWorkerWrap" class="hidden">
+      <label>직원</label>
+      <select id="mWorkerId"></select>
+    </div>
+    <label>날짜</label>
+    <input id="mDate" type="date" />
+    <label>현장명</label>
+    <input id="mSite" type="text" placeholder="현장명" />
+    <div class="row">
+      <div><label>출근 시각</label><input id="mIn" type="time" value="08:00" /></div>
+      <div><label>퇴근 시각</label><input id="mOut" type="time" value="17:00" /></div>
+    </div>
+    <div class="row">
+      <div><label>공수</label><input id="mGongsu" type="number" step="0.5" value="1.0" /></div>
+      <div><label>일당 (원)</label><input id="mWage" type="number" step="10000" value="180000" /></div>
+    </div>
+    <label>메모</label>
+    <input id="mMemo" type="text" placeholder="선택 입력" />
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="submitRecordModal()">저장하기</button>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL (가치업 7번 사진 스타일) -->
+<div id="settingsModal" class="modal-bg hidden">
+  <div class="modal-card">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px;">
+      <h2 style="margin:0;font-size:17px;">내 정보 · 설정</h2>
+      <button class="btn btn-outline btn-sm" style="margin:0;" onclick="closeSettingsModal()">닫기</button>
+    </div>
+    <div style="background:#F7F8FC;border-radius:14px;padding:14px;margin-bottom:12px;">
+      <div id="setUserName" style="font-size:17px;font-weight:800;"></div>
+      <div id="setUserPhone" style="font-size:13px;color:var(--sub);margin-top:2px;"></div>
+    </div>
+    <label>새 PIN 번호로 변경 (4자리 이상)</label>
+    <div class="row">
+      <input id="newPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 PIN 입력" />
+      <button class="btn btn-primary btn-sm" style="margin:0;" onclick="changePin()">변경</button>
+    </div>
+    <button class="btn btn-outline" style="margin-top:18px;color:var(--red);border-color:#FECACA;" onclick="logout()">로그아웃</button>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbw5pNE_IScwzjGooxHS06K5QhKG5RkR61jissrf4jyGyYmNIOxpua4fqDEbP1iN6LUw/exec";
+
+let currentUser = null;
+let viewMode = "admin";
+let curNav = "home";
+let curMonth = "";
+let selectedDate = "";
+let dashData = null;
+let selectedGongsu = 1.0;
+let activeRecordId = null;
+let activeChatRoomId = null;
+let chatTimer = null;
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.remove("hidden");
+  setTimeout(() => el.classList.add("hidden"), 2500);
+}
+
+async function api(action, payload = {}) {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action, ...payload })
+  });
+  return await res.json();
+}
+
+function fmtMoney(n) {
+  return Number(n || 0).toLocaleString("ko-KR") + "원";
+}
+
+function getCurMonth() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+
+function init() {
+  curMonth = getCurMonth();
+  const saved = localStorage.getItem("smile_user_v2");
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    enterApp();
+  }
+}
+
+function switchAuthTab(tab) {
+  document.getElementById("tabLogin").classList.toggle("active", tab === "login");
+  document.getElementById("tabJoin").classList.toggle("active", tab === "join");
+  document.getElementById("loginForm").classList.toggle("hidden", tab !== "login");
+  document.getElementById("joinForm").classList.toggle("hidden", tab !== "join");
+}
+
+async function doLogin() {
+  const phone = document.getElementById("loginPhone").value.trim();
+  const pin = document.getElementById("loginPin").value.trim();
+  if (!phone || !pin) return toast("전화번호와 PIN을 입력해 주세요.");
+  toast("로그인 중...");
+  try {
+    const r = await api("login", { phone, pin });
+    if (!r.ok) return toast(r.error || "로그인 실패");
+    currentUser = r.user;
+    localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+    enterApp();
+  } catch (e) { toast("네트워크 오류"); }
+}
+
+async function doRegister() {
+  const invite_code = document.getElementById("joinCode").value.trim();
+  const name = document.getElementById("joinName").value.trim();
+  const phone = document.getElementById("joinPhone").value.trim();
+  const pin = document.getElementById("joinPin").value.trim();
+  if (!invite_code || !name || !phone || !pin) return toast("모든 항목을 입력해 주세요.");
+  toast("가입 처리 중...");
+  try {
+    const r = await api("register_worker", { invite_code, name, phone, pin });
+    if (!r.ok) return toast(r.error || "가입 실패");
+    currentUser = r.user;
+    localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+    toast("환영합니다, " + currentUser.name + "님!");
+    enterApp();
+  } catch (e) { toast("네트워크 오류"); }
+}
+
+function logout() {
+  closeSettingsModal();
+  localStorage.removeItem("smile_user_v2");
+  currentUser = null;
+  document.getElementById("topbarRight").classList.add("hidden");
+  document.getElementById("appMain").classList.add("hidden");
+  document.getElementById("bottomNav").classList.add("hidden");
+  document.getElementById("authView").classList.remove("hidden");
+}
+
+function enterApp() {
+  document.getElementById("authView").classList.add("hidden");
+  document.getElementById("topbarRight").classList.remove("hidden");
+  document.getElementById("appMain").classList.remove("hidden");
+  document.getElementById("bottomNav").classList.remove("hidden");
+
+  const isAdmin = currentUser.role === "admin";
+  document.getElementById("modeSwitch").classList.toggle("hidden", !isAdmin);
+  viewMode = isAdmin ? "admin" : "worker";
+  document.getElementById("navTeamLabel").textContent = isAdmin ? "인력관리" : "내 정산";
+  updateModeSwitchUI();
+  switchNav("home");
+  loadDashboard();
+}
+
+function setViewMode(mode) {
+  if (currentUser.role !== "admin") return;
+  viewMode = mode;
+  updateModeSwitchUI();
+  switchNav(curNav);
+  renderAll();
+}
+
+function updateModeSwitchUI() {
+  document.getElementById("btnModeWork").classList.toggle("active", viewMode === "worker");
+  document.getElementById("btnModeAdmin").classList.toggle("active", viewMode === "admin");
+}
+
+function switchNav(nav) {
+  curNav = nav;
+  document.getElementById("navHome").classList.toggle("active", nav === "home");
+  document.getElementById("navChat").classList.toggle("active", nav === "chat");
+  document.getElementById("navCal").classList.toggle("active", nav === "calendar");
+  document.getElementById("navTeam").classList.toggle("active", nav === "team");
+
+  document.getElementById("homeWorkerPanel").classList.toggle("hidden", !(nav === "home" && viewMode === "worker"));
+  document.getElementById("homeAdminPanel").classList.toggle("hidden", !(nav === "home" && viewMode === "admin"));
+  document.getElementById("chatPanel").classList.toggle("hidden", nav !== "chat");
+  document.getElementById("calendarPanel").classList.toggle("hidden", nav !== "calendar");
+  document.getElementById("teamPanel").classList.toggle("hidden", nav !== "team");
+
+  if (nav === "chat") loadChatOverview();
+}
+
+async function loadDashboard() {
+  try {
+    const r = await api("get_dashboard", { user_id: currentUser.user_id, month: curMonth });
+    if (!r.ok) return toast(r.error || "불러오기 실패");
+    dashData = r;
+    if (!selectedDate || selectedDate.indexOf(curMonth) !== 0) {
+      selectedDate = dashData.today.indexOf(curMonth) === 0 ? dashData.today : curMonth + "-01";
+    }
+    renderAll();
+  } catch (e) { toast("불러오기 오류"); }
+}
+
+function renderAll() {
+  if (!dashData) return;
+  renderWorkerHome();
+  renderAdminHome();
+  renderCalendar();
+  renderTeamTab();
+}
+
+function getMyRecords() {
+  return (dashData.records || []).filter(r => r.worker_id === currentUser.user_id);
+}
+
+function renderWorkerHome() {
+  document.getElementById("workerTodayBadge").textContent = dashData.today;
+  document.getElementById("workerWagePill").textContent = "기본일당 " + fmtMoney(currentUser.default_wage || 180000);
+
+  const sel = document.getElementById("workerSiteSelect");
+  sel.innerHTML = '<option value="">-- 직접 입력 --</option>';
+  (dashData.sites || []).forEach(s => {
+    const o = document.createElement("option");
+    o.value = s.name; o.textContent = s.name;
+    sel.appendChild(o);
+  });
+
+  const myRecs = getMyRecords();
+  const todayOpen = myRecs.find(r => r.date === dashData.today && !r.check_out);
+  if (todayOpen) {
+    activeRecordId = todayOpen.record_id;
+    document.getElementById("workerCheckInArea").classList.add("hidden");
+    document.getElementById("workerCheckOutArea").classList.remove("hidden");
+    document.getElementById("activeSiteName").textContent = todayOpen.site;
+    document.getElementById("activeCheckInTime").textContent = todayOpen.check_in;
+  } else {
+    activeRecordId = null;
+    document.getElementById("workerCheckInArea").classList.remove("hidden");
+    document.getElementById("workerCheckOutArea").classList.add("hidden");
+  }
+
+  let days = new Set(), sumG = 0, sumPay = 0;
+  myRecs.forEach(r => {
+    days.add(r.date); sumG += Number(r.gongsu || 0); sumPay += Number(r.amount || 0);
+  });
+  document.getElementById("wDays").textContent = days.size + "일";
+  document.getElementById("wGongsu").textContent = sumG.toFixed(1);
+  document.getElementById("wPay").textContent = fmtMoney(sumPay);
+}
+
+function onWorkerSiteSelect() {
+  const v = document.getElementById("workerSiteSelect").value;
+  if (v) document.getElementById("workerSiteInput").value = v;
+}
+
+function pickGongsu(val, btn) {
+  selectedGongsu = val;
+  document.querySelectorAll("#workerGongsuChips .chip").forEach(c => c.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+async function workerCheckIn() {
+  const site = document.getElementById("workerSiteInput").value.trim() || document.getElementById("workerSiteSelect").value;
+  if (!site) return toast("현장명을 입력해 주세요.");
+  toast("출근 체크 중...");
+  const r = await api("check_in", { user_id: currentUser.user_id, site });
+  if (!r.ok) return toast(r.error);
+  toast("출근 체크 완료!");
+  loadDashboard();
+}
+
+async function workerCheckOut() {
+  const memo = document.getElementById("workerMemo").value.trim();
+  toast("퇴근 저장 중...");
+  const r = await api("check_out", { user_id: currentUser.user_id, record_id: activeRecordId, gongsu: selectedGongsu, memo });
+  if (!r.ok) return toast(r.error);
+  toast("퇴근 · 공수 저장 완료!");
+  loadDashboard();
+}
+
+function renderAdminHome() {
+  document.getElementById("adminTodayBadge").textContent = dashData.today;
+  const hasWorkers = (dashData.workers || []).length > 0;
+  document.getElementById("adminEmptyInviteCard").classList.toggle("hidden", hasWorkers);
+
+  const recs = dashData.records || [];
+  const todayRecs = recs.filter(r => r.date === dashData.today);
+  const todaySet = new Set(todayRecs.map(r => r.worker_id));
+  let sumG = 0, sumPay = 0;
+  recs.forEach(r => { sumG += Number(r.gongsu || 0); sumPay += Number(r.amount || 0); });
+
+  document.getElementById("aTodayCnt").textContent = todaySet.size + "명";
+  document.getElementById("aTotalGongsu").textContent = sumG.toFixed(1);
+  document.getElementById("aTotalPay").textContent = Math.round(sumPay / 10000).toLocaleString() + "만";
+
+  const listEl = document.getElementById("adminTodayList");
+  listEl.innerHTML = "";
+  todayRecs.forEach(r => {
+    const d = document.createElement("div");
+    d.className = "list-item";
+    d.innerHTML = `
+      <div class="list-top">
+        <span>${r.worker_name} · ${r.site}</span>
+        <span class="pill pill-indigo">${r.gongsu}공수 · ${fmtMoney(r.amount)}</span>
+      </div>
+      <div class="list-sub">출근 ${r.check_in || "-"} / 퇴근 ${r.check_out || "근무 중"} ${r.memo ? "· " + r.memo : ""}</div>`;
+    d.onclick = () => openRecordModal(r);
+    listEl.appendChild(d);
+  });
+  if (!todayRecs.length) listEl.innerHTML = '<div style="color:var(--sub);font-size:13px;">오늘 등록된 출근 기록이 없습니다.</div>';
+}
+
+/* CALENDAR */
+function shiftCalMonth(delta) {
+  const [y, m] = curMonth.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  curMonth = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  loadDashboard();
+}
+
+function renderCalendar() {
+  const [y, m] = curMonth.split("-").map(Number);
+  document.getElementById("calMonthLabel").textContent = y + "." + String(m).padStart(2, "0");
+
+  const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  const wf = document.getElementById("calWorkerFilter");
+  wf.classList.toggle("hidden", !isAdm);
+  if (isAdm) {
+    const prev = wf.value;
+    wf.innerHTML = '<option value="ALL">전체 직원</option>';
+    (dashData.workers || []).forEach(w => {
+      const o = document.createElement("option");
+      o.value = w.user_id; o.textContent = w.name;
+      wf.appendChild(o);
+    });
+    if (prev) wf.value = prev;
+  }
+
+  const recs = isAdm ? (dashData.records || []) : getMyRecords();
+  const hasDot = new Set(recs.map(r => r.date));
+
+  const grid = document.getElementById("calGrid");
+  grid.innerHTML = "";
+  ["일","월","화","수","목","금","토"].forEach((d, idx) => {
+    const el = document.createElement("div");
+    el.className = "cal-dow" + (idx===0 ? " sun" : idx===6 ? " sat" : "");
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(y, m - 1, 1).getDay();
+  const lastDate = new Date(y, m, 0).getDate();
+  for (let i = 0; i < firstDay; i++) {
+    grid.appendChild(document.createElement("div"));
+  }
+  for (let day = 1; day <= lastDate; day++) {
+    const dateStr = curMonth + "-" + String(day).padStart(2, "0");
+    const cell = document.createElement("div");
+    cell.className = "cal-cell";
+    if (dateStr === dashData.today) cell.classList.add("today");
+    if (dateStr === selectedDate) cell.classList.add("selected");
+    cell.innerHTML = `<span>${day}</span>` + (hasDot.has(dateStr) ? '<span class="cal-dot"></span>' : '');
+    cell.onclick = () => { selectedDate = dateStr; renderCalendar(); };
+    grid.appendChild(cell);
+  }
+  renderCalDayRecords();
+}
+
+function renderCalDayRecords() {
+  const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  const filterId = isAdm ? document.getElementById("calWorkerFilter").value : currentUser.user_id;
+  document.getElementById("calSelectedTitle").textContent = selectedDate + " 근무 기록";
+
+  const listEl = document.getElementById("calDayList");
+  listEl.innerHTML = "";
+  const recs = (dashData.records || []).filter(r => r.date === selectedDate && (filterId === "ALL" || r.worker_id === filterId));
+  recs.forEach(r => {
+    const d = document.createElement("div");
+    d.className = "list-item";
+    d.innerHTML = `
+      <div class="list-top">
+        <span>${isAdm ? r.worker_name + " · " : ""}${r.site}</span>
+        <span class="pill pill-indigo">${r.gongsu}공수 · ${fmtMoney(r.amount)}</span>
+      </div>
+      <div class="list-sub">출근 ${r.check_in || "-"} / 퇴근 ${r.check_out || "미체크"} ${r.memo ? "· " + r.memo : ""}</div>`;
+    d.onclick = () => openRecordModal(r);
+    listEl.appendChild(d);
+  });
+  if (!recs.length) listEl.innerHTML = '<div style="color:var(--sub);font-size:13px;padding:12px 0;text-align:center;">근무 기록이 없습니다.</div>';
+}
+
+/* TEAM TAB */
+function switchTeamTab(tab) {
+  document.getElementById("tTabWorkers").classList.toggle("active", tab === "workers");
+  document.getElementById("tTabPay").classList.toggle("active", tab === "pay");
+  document.getElementById("tTabSites").classList.toggle("active", tab === "sites");
+  document.getElementById("teamWorkersBox").classList.toggle("hidden", tab !== "workers");
+  document.getElementById("teamPayBox").classList.toggle("hidden", tab !== "pay");
+  document.getElementById("teamSitesBox").classList.toggle("hidden", tab !== "sites");
+}
+
+function renderTeamTab() {
+  const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  document.getElementById("adminInviteBlock").classList.toggle("hidden", !isAdm);
+
+  const unused = dashData.unused_invites || [];
+  document.getElementById("unusedInvitesList").textContent = unused.length ? "미사용 초대코드: " + unused.join(", ") : "";
+
+  const wEl = document.getElementById("teamWorkersList");
+  wEl.innerHTML = "";
+  if (isAdm) {
+    (dashData.workers || []).forEach(w => {
+      const d = document.createElement("div");
+      d.className = "list-item";
+      d.innerHTML = `
+        <div class="list-top">
+          <span>${w.name} <span style="font-size:12px;color:var(--sub);font-weight:500;">${w.phone}</span></span>
+          <button class="btn btn-soft btn-sm" style="margin:0;" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)}</button>
+        </div>`;
+      wEl.appendChild(d);
+    });
+    if (!(dashData.workers || []).length) wEl.innerHTML = '<div style="color:var(--sub);font-size:13px;text-align:center;padding:12px 0;">아직 초대된 직원이 없습니다.</div>';
+  } else {
+    wEl.innerHTML = `<div class="list-item"><div class="list-top"><span>${currentUser.name}</span><span class="pill pill-indigo">기본일당 ${fmtMoney(currentUser.default_wage || 180000)}</span></div></div>`;
+  }
+
+  const map = {};
+  const srcRecs = isAdm ? (dashData.records || []) : getMyRecords();
+  srcRecs.forEach(r => {
+    if (!map[r.worker_id]) map[r.worker_id] = { name: r.worker_name, days: new Set(), g: 0, amt: 0 };
+    map[r.worker_id].days.add(r.date);
+    map[r.worker_id].g += Number(r.gongsu || 0);
+    map[r.worker_id].amt += Number(r.amount || 0);
+  });
+  const pEl = document.getElementById("teamPayList");
+  pEl.innerHTML = "";
+  Object.values(map).forEach(w => {
+    const d = document.createElement("div");
+    d.className = "list-item";
+    d.innerHTML = `
+      <div class="list-top">
+        <span>${w.name}</span>
+        <span class="pill pill-green">${fmtMoney(w.amt)}</span>
+      </div>
+      <div class="list-sub">${curMonth} · 출근 ${w.days.size}일 · 총 ${w.g.toFixed(1)}공수</div>`;
+    pEl.appendChild(d);
+  });
+  if (!Object.keys(map).length) pEl.innerHTML = '<div style="color:var(--sub);font-size:13px;text-align:center;padding:12px 0;">이번 달 정산 기록이 없습니다.</div>';
+
+  const sEl = document.getElementById("teamSitesList");
+  sEl.innerHTML = (dashData.sites || []).map(s => `<span class="pill pill-indigo" style="margin:3px;">${s.name}</span>`).join("") || '<div style="color:var(--sub);font-size:13px;">등록된 현장이 없습니다.</div>';
+}
+
+async function issueInvite() {
+  toast("초대코드 생성 중...");
+  const r = await api("create_invite", { user_id: currentUser.user_id });
+  if (!r.ok) return toast(r.error);
+  document.getElementById("issuedInviteArea").classList.remove("hidden");
+  document.getElementById("issuedCodeText").textContent = r.invite_code;
+  loadDashboard();
+}
+
+function shareInvite() {
+  const code = document.getElementById("issuedCodeText").textContent;
+  const appUrl = "https://drive.google.com/file/d/1uzrIq3_74aa8rOhRyEiZiL9k_mZPtzcV/view?usp=drivesdk";
+  const msg = `[공수 채크 초대]\n1. 아래 링크에서 '공수채크.apk'를 다운받아 설치해 주세요.\n${appUrl}\n\n2. 앱을 열고 '초대코드 직원가입'에서 아래 코드를 입력해 주세요.\n초대코드: ${code}`;
+  if (window.AndroidBridge && window.AndroidBridge.shareText) {
+    window.AndroidBridge.shareText(msg);
+  } else {
+    navigator.clipboard && navigator.clipboard.writeText(msg);
+    toast("초대 문구가 복사되었습니다.");
+  }
+}
+
+async function editWage(workerId, curWage, name) {
+  const val = prompt(name + " 님의 기본 일당(원)을 입력하세요:", curWage);
+  if (val === null) return;
+  const wage = Number(val);
+  if (isNaN(wage) || wage < 0) return toast("올바른 금액을 입력해 주세요.");
+  const r = await api("update_worker_wage", { user_id: currentUser.user_id, worker_id: workerId, default_wage: wage });
+  if (!r.ok) return toast(r.error);
+  toast("기본 일당이 수정되었습니다.");
+  loadDashboard();
+}
+
+async function addSite() {
+  const name = document.getElementById("newSiteName").value.trim();
+  if (!name) return toast("현장명을 입력해 주세요.");
+  const r = await api("add_site", { user_id: currentUser.user_id, name });
+  if (!r.ok) return toast(r.error);
+  document.getElementById("newSiteName").value = "";
+  toast("현장이 추가되었습니다.");
+  loadDashboard();
+}
+
+/* CHAT */
+async function loadChatOverview() {
+  try {
+    const r = await api("get_chat_overview", { user_id: currentUser.user_id });
+    if (!r.ok) return toast(r.error);
+    const avEl = document.getElementById("chatAvatars");
+    const listEl = document.getElementById("chatRoomsList");
+    avEl.innerHTML = "";
+    listEl.innerHTML = "";
+
+    (r.rooms || []).forEach(room => {
+      const initial = room.type === "channel" ? "#" : (room.peer_name || room.title).slice(0, 1);
+      const chip = document.createElement("div");
+      chip.className = "avatar-chip";
+      chip.innerHTML = `<div class="avatar-circle">${initial}</div><div style="font-size:12px;font-weight:600;">${room.type === "channel" ? "전체" : room.peer_name}</div>`;
+      chip.onclick = () => openChatRoom(room.room_id, room.title);
+      avEl.appendChild(chip);
+
+      const row = document.createElement("div");
+      row.className = "chat-room-row";
+      row.innerHTML = `
+        <div class="avatar-circle" style="width:44px;height:44px;flex-shrink:0;">${initial}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="chat-room-title">${room.title}</div>
+          <div class="chat-room-preview">${room.last_text}</div>
+        </div>`;
+      row.onclick = () => openChatRoom(room.room_id, room.title);
+      listEl.appendChild(row);
+    });
+  } catch (e) { toast("채팅 목록 오류"); }
+}
+
+function openChatRoom(roomId, title) {
+  activeChatRoomId = roomId;
+  document.getElementById("chatRoomTitle").textContent = title;
+  document.getElementById("chatThread").classList.remove("hidden");
+  loadMessages();
+  if (chatTimer) clearInterval(chatTimer);
+  chatTimer = setInterval(loadMessages, 5000);
+}
+
+function closeChatRoom() {
+  document.getElementById("chatThread").classList.add("hidden");
+  activeChatRoomId = null;
+  if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
+  loadChatOverview();
+}
+
+async function loadMessages() {
+  if (!activeChatRoomId) return;
+  try {
+    const r = await api("get_messages", { user_id: currentUser.user_id, room_id: activeChatRoomId });
+    if (!r.ok) return;
+    const box = document.getElementById("chatMessages");
+    const wasBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    box.innerHTML = "";
+    (r.messages || []).forEach(m => {
+      const mine = String(m.sender_id) === String(currentUser.user_id);
+      const wrap = document.createElement("div");
+      wrap.className = "msg-wrap " + (mine ? "mine" : "other");
+      const timeStr = (m.created_at || "").slice(11, 16);
+      wrap.innerHTML = `
+        ${mine ? "" : `<div class="msg-sender">${m.sender_name}</div>`}
+        <div class="msg-bubble">${m.text.replace(/</g, "&lt;")}</div>
+        <div class="msg-time">${timeStr}</div>`;
+      box.appendChild(wrap);
+    });
+    if (!(r.messages || []).length) {
+      box.innerHTML = '<div style="text-align:center;color:var(--sub);margin-top:40px;font-size:13px;">첫 메시지를 보내보세요!</div>';
+    }
+    if (wasBottom || true) box.scrollTop = box.scrollHeight;
+  } catch (e) {}
+}
+
+async function sendChatMsg() {
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if (!text || !activeChatRoomId) return;
+  input.value = "";
+  const r = await api("send_message", { user_id: currentUser.user_id, room_id: activeChatRoomId, text });
+  if (!r.ok) return toast(r.error);
+  loadMessages();
+}
+
+/* MODALS */
+function openRecordModal(rec = null) {
+  document.getElementById("recordModal").classList.remove("hidden");
+  const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  document.getElementById("mWorkerWrap").classList.toggle("hidden", !isAdm);
+  if (isAdm) {
+    const sel = document.getElementById("mWorkerId");
+    sel.innerHTML = "";
+    const allList = [{ user_id: currentUser.user_id, name: currentUser.name + " (나)" }, ...(dashData.workers || [])];
+    allList.forEach(w => {
+      const o = document.createElement("option");
+      o.value = w.user_id; o.textContent = w.name;
+      sel.appendChild(o);
+    });
+    if (rec) sel.value = rec.worker_id;
+  }
+  document.getElementById("mRecId").value = rec ? rec.record_id : "";
+  document.getElementById("mDate").value = rec ? rec.date : (selectedDate || dashData.today);
+  document.getElementById("mSite").value = rec ? rec.site : "";
+  document.getElementById("mIn").value = rec && rec.check_in ? rec.check_in : "08:00";
+  document.getElementById("mOut").value = rec && rec.check_out ? rec.check_out : "17:00";
+  document.getElementById("mGongsu").value = rec ? rec.gongsu : 1.0;
+  document.getElementById("mWage").value = rec ? rec.wage : (currentUser.default_wage || 180000);
+  document.getElementById("mMemo").value = rec ? rec.memo : "";
+}
+
+function closeRecordModal() { document.getElementById("recordModal").classList.add("hidden"); }
+
+async function submitRecordModal() {
+  const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  const payload = {
+    user_id: currentUser.user_id,
+    record_id: document.getElementById("mRecId").value,
+    worker_id: isAdm ? document.getElementById("mWorkerId").value : currentUser.user_id,
+    date: document.getElementById("mDate").value,
+    site: document.getElementById("mSite").value.trim(),
+    check_in: document.getElementById("mIn").value,
+    check_out: document.getElementById("mOut").value,
+    gongsu: Number(document.getElementById("mGongsu").value),
+    wage: Number(document.getElementById("mWage").value),
+    memo: document.getElementById("mMemo").value.trim()
+  };
+  if (!payload.site) return toast("현장명을 입력해 주세요.");
+  toast("저장 중...");
+  const r = await api("save_record", payload);
+  if (!r.ok) return toast(r.error);
+  closeRecordModal();
+  toast("저장되었습니다!");
+  loadDashboard();
+}
+
+function openSettingsModal() {
+  document.getElementById("setUserName").textContent = currentUser.name + (currentUser.role === "admin" ? " (관리자)" : " (직원)");
+  document.getElementById("setUserPhone").textContent = currentUser.phone || "";
+  document.getElementById("settingsModal").classList.remove("hidden");
+}
+function closeSettingsModal() { document.getElementById("settingsModal").classList.add("hidden"); }
+
+async function changePin() {
+  const np = document.getElementById("newPinInput").value.trim();
+  if (np.length < 4) return toast("PIN은 4자리 이상 입력하세요.");
+  const r = await api("change_pin", { user_id: currentUser.user_id, new_pin: np });
+  if (!r.ok) return toast(r.error);
+  document.getElementById("newPinInput").value = "";
+  toast("PIN 번호가 변경되었습니다.");
+}
+
+init();
+</script>
+</body>
+</html>
