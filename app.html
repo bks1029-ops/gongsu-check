@@ -824,7 +824,7 @@ function renderAdminHome() {
         <span>${r.worker_name} · ${r.site}</span>
         <span class="pill pill-indigo">${r.gongsu}공수 · ${fmtMoney(r.amount)}</span>
       </div>
-      <div class="list-sub">출근 ${r.check_in || "-"} / 퇴근 ${r.check_out || "근무 중"} ${r.memo ? "· " + r.memo : ""}</div>`;
+      ${r.memo ? `<div class="list-sub">${r.memo}</div>` : ""}`;
     d.onclick = () => openRecordModal(r);
     listEl.appendChild(d);
   });
@@ -903,7 +903,7 @@ function renderCalDayRecords() {
         <span>${isAdm ? r.worker_name + " · " : ""}${r.site}</span>
         <span class="pill pill-indigo">${r.gongsu}공수 · ${fmtMoney(r.amount)}</span>
       </div>
-      <div class="list-sub">출근 ${r.check_in || "-"} / 퇴근 ${r.check_out || "미체크"} ${r.memo ? "· " + r.memo : ""}</div>`;
+      ${r.memo ? `<div class="list-sub">${r.memo}</div>` : ""}`;
     d.onclick = () => openRecordModal(r);
     listEl.appendChild(d);
   });
@@ -983,8 +983,8 @@ async function issueInvite() {
 
 function shareInvite() {
   const code = document.getElementById("issuedCodeText").textContent;
-  const appUrl = "https://drive.google.com/file/d/1uzrIq3_74aa8rOhRyEiZiL9k_mZPtzcV/view?usp=drivesdk";
-  const msg = `[공수 채크 초대]\n1. 아래 링크에서 '공수채크.apk'를 다운받아 설치해 주세요.\n${appUrl}\n\n2. 앱을 열고 '초대코드 직원가입'에서 아래 코드를 입력해 주세요.\n초대코드: ${code}`;
+  const appUrl = "https://bks1029-ops.github.io/gongsu-check/";
+  const msg = `[공수 채크 초대]\n1. 아래 링크에서 앱 설치(또는 아이폰 바로 열기)를 해 주세요.\n${appUrl}\n\n2. 앱을 열고 '초대코드 직원가입'에서 아래 코드를 입력해 주세요.\n초대코드: ${code}`;
   if (window.AndroidBridge && window.AndroidBridge.shareText) {
     window.AndroidBridge.shareText(msg);
   } else {
