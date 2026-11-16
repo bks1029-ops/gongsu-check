@@ -156,7 +156,7 @@
   /* STATS */
   .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .stat-box { background: #F7F8FC; border-radius: 14px; padding: 12px 6px; text-align: center; }
-  .stat-box .val { font-size: 17px; font-weight: 800; color: var(--primary); }
+  .stat-box .val { font-size: 15px; font-weight: 800; color: var(--primary); white-space: nowrap; }
   .stat-box .lbl { font-size: 11px; color: var(--sub); margin-top: 2px; font-weight: 600; }
 
   /* LIST ITEMS */
@@ -332,7 +332,10 @@
     <div class="card">
       <div class="row" style="justify-content:space-between;margin-bottom:12px;">
         <span class="pill" onclick="switchNav('calendar')">📅 내 기록</span>
-        <span id="workerTodayBadge" class="pill pill-indigo"></span>
+        <div style="position:relative;flex:0;">
+          <span id="workerTodayBadge" class="pill pill-indigo" style="cursor:pointer;" onclick="openWorkerDatePicker()"></span>
+          <input id="workerDatePicker" type="date" style="position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer;" onchange="onWorkerDateChange()" />
+        </div>
       </div>
 
       <div id="workerCheckInArea">
@@ -371,7 +374,7 @@
 
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;" onclick="openRecordModal()">근무 기록 수정 ▾</span>
-        <span id="workerWagePill" class="pill"></span>
+        <span id="workerWagePill" class="pill pill-indigo" style="cursor:pointer;" onclick="editMyWage()"></span>
       </div>
     </div>
 
@@ -559,6 +562,11 @@
       <div id="setUserName" style="font-size:17px;font-weight:800;"></div>
       <div id="setUserPhone" style="font-size:13px;color:var(--sub);margin-top:2px;"></div>
     </div>
+    <label>내 기본 일당 (원)</label>
+    <div class="row">
+      <input id="setWageInput" type="number" step="10000" placeholder="180000" />
+      <button class="btn btn-primary btn-sm" style="margin:0;" onclick="saveMyWageFromSettings()">저장</button>
+    </div>
     <label>새 PIN 번호로 변경 (4자리 이상)</label>
     <div class="row">
       <input id="newPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 PIN 입력" />
@@ -583,6 +591,7 @@ let selectedGongsu = 1.0;
 let activeRecordId = null;
 let activeChatRoomId = null;
 let chatTimer = null;
+let workerActiveDate = "";
 
 function toast(msg) {
   const el = document.getElementById("toast");
@@ -715,6 +724,10 @@ async function loadDashboard() {
     const r = await api("get_dashboard", { user_id: currentUser.user_id, month: curMonth });
     if (!r.ok) return toast(r.error || "불러오기 실패");
     dashData = r;
+    if (r.user) {
+      currentUser.default_wage = Number(r.user.default_wage || 180000);
+      localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+    }
     if (!selectedDate || selectedDate.indexOf(curMonth) !== 0) {
       selectedDate = dashData.today.indexOf(curMonth) === 0 ? dashData.today : curMonth + "-01";
     }
@@ -735,8 +748,10 @@ function getMyRecords() {
 }
 
 function renderWorkerHome() {
-  document.getElementById("workerTodayBadge").textContent = dashData.today;
-  document.getElementById("workerWagePill").textContent = "기본일당 " + fmtMoney(currentUser.default_wage || 180000);
+  if (!workerActiveDate) workerActiveDate = dashData.today;
+  document.getElementById("workerTodayBadge").textContent = "📅 " + workerActiveDate + " ▾";
+  document.getElementById("workerDatePicker").value = workerActiveDate;
+  document.getElementById("workerWagePill").textContent = "기본일당 " + fmtMoney(currentUser.default_wage || 180000) + " ✎";
 
   const sel = document.getElementById("workerSiteSelect");
   sel.innerHTML = '<option value="">-- 직접 입력 --</option>';
@@ -747,7 +762,8 @@ function renderWorkerHome() {
   });
 
   const myRecs = getMyRecords();
-  const todayOpen = myRecs.find(r => r.date === dashData.today && !r.check_out);
+  const targetDate = workerActiveDate || dashData.today;
+  const todayOpen = myRecs.find(r => r.date === targetDate && !r.check_out);
   if (todayOpen) {
     activeRecordId = todayOpen.record_id;
     document.getElementById("workerCheckInArea").classList.add("hidden");
@@ -780,11 +796,25 @@ function pickGongsu(val, btn) {
   btn.classList.add("active");
 }
 
+function openWorkerDatePicker() {
+  const dp = document.getElementById("workerDatePicker");
+  if (dp.showPicker) dp.showPicker();
+  else dp.click();
+}
+
+function onWorkerDateChange() {
+  const v = document.getElementById("workerDatePicker").value;
+  if (v) {
+    workerActiveDate = v;
+    renderWorkerHome();
+  }
+}
+
 async function workerCheckIn() {
   const site = document.getElementById("workerSiteInput").value.trim() || document.getElementById("workerSiteSelect").value;
   if (!site) return toast("현장명을 입력해 주세요.");
   toast("출근 체크 중...");
-  const r = await api("check_in", { user_id: currentUser.user_id, site });
+  const r = await api("check_in", { user_id: currentUser.user_id, site, date: workerActiveDate || dashData.today });
   if (!r.ok) return toast(r.error);
   toast("출근 체크 완료!");
   loadDashboard();
@@ -930,19 +960,28 @@ function renderTeamTab() {
   const wEl = document.getElementById("teamWorkersList");
   wEl.innerHTML = "";
   if (isAdm) {
-    (dashData.workers || []).forEach(w => {
+    const allPeople = [
+      { user_id: currentUser.user_id, name: currentUser.name + " (나)", phone: currentUser.phone || "", default_wage: currentUser.default_wage || 180000 },
+      ...(dashData.workers || [])
+    ];
+    allPeople.forEach(w => {
       const d = document.createElement("div");
       d.className = "list-item";
       d.innerHTML = `
         <div class="list-top">
           <span>${w.name} <span style="font-size:12px;color:var(--sub);font-weight:500;">${w.phone}</span></span>
-          <button class="btn btn-soft btn-sm" style="margin:0;" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)}</button>
+          <button class="btn btn-soft btn-sm" style="margin:0;" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
         </div>`;
       wEl.appendChild(d);
     });
-    if (!(dashData.workers || []).length) wEl.innerHTML = '<div style="color:var(--sub);font-size:13px;text-align:center;padding:12px 0;">아직 초대된 직원이 없습니다.</div>';
+    if (!(dashData.workers || []).length) {
+      const tip = document.createElement("div");
+      tip.style.cssText = "color:var(--sub);font-size:12px;text-align:center;padding:10px 0 0;";
+      tip.textContent = "초대된 직원이 아직 없습니다. 위 버튼으로 직원을 초대해 보세요!";
+      wEl.appendChild(tip);
+    }
   } else {
-    wEl.innerHTML = `<div class="list-item"><div class="list-top"><span>${currentUser.name}</span><span class="pill pill-indigo">기본일당 ${fmtMoney(currentUser.default_wage || 180000)}</span></div></div>`;
+    wEl.innerHTML = `<div class="list-item"><div class="list-top"><span>${currentUser.name}</span><button class="btn btn-soft btn-sm" style="margin:0;" onclick="editMyWage()">기본일당 ${fmtMoney(currentUser.default_wage || 180000)} ✎</button></div></div>`;
   }
 
   const map = {};
@@ -993,14 +1032,23 @@ function shareInvite() {
   }
 }
 
+async function editMyWage() {
+  await editWage(currentUser.user_id, currentUser.default_wage || 180000, currentUser.name);
+}
+
 async function editWage(workerId, curWage, name) {
   const val = prompt(name + " 님의 기본 일당(원)을 입력하세요:", curWage);
   if (val === null) return;
-  const wage = Number(val);
+  const wage = Number(String(val).replace(/,/g, "").trim());
   if (isNaN(wage) || wage < 0) return toast("올바른 금액을 입력해 주세요.");
+  toast("일당 저장 중...");
   const r = await api("update_worker_wage", { user_id: currentUser.user_id, worker_id: workerId, default_wage: wage });
   if (!r.ok) return toast(r.error);
-  toast("기본 일당이 수정되었습니다.");
+  if (String(workerId) === String(currentUser.user_id)) {
+    currentUser.default_wage = wage;
+    localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+  }
+  toast("기본 일당이 수정되었습니다!");
   loadDashboard();
 }
 
@@ -1152,9 +1200,22 @@ async function submitRecordModal() {
 function openSettingsModal() {
   document.getElementById("setUserName").textContent = currentUser.name + (currentUser.role === "admin" ? " (관리자)" : " (직원)");
   document.getElementById("setUserPhone").textContent = currentUser.phone || "";
+  document.getElementById("setWageInput").value = currentUser.default_wage || 180000;
   document.getElementById("settingsModal").classList.remove("hidden");
 }
 function closeSettingsModal() { document.getElementById("settingsModal").classList.add("hidden"); }
+
+async function saveMyWageFromSettings() {
+  const wage = Number(document.getElementById("setWageInput").value);
+  if (isNaN(wage) || wage < 0) return toast("올바른 금액을 입력해 주세요.");
+  toast("저장 중...");
+  const r = await api("update_worker_wage", { user_id: currentUser.user_id, worker_id: currentUser.user_id, default_wage: wage });
+  if (!r.ok) return toast(r.error);
+  currentUser.default_wage = wage;
+  localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+  toast("내 기본 일당이 저장되었습니다!");
+  loadDashboard();
+}
 
 async function changePin() {
   const np = document.getElementById("newPinInput").value.trim();
