@@ -34,6 +34,67 @@
   }
   .hidden { display: none !important; }
 
+  /* AUTH HERO (딥 네이비 + 안전모) */
+  .auth-wrap { min-height: 100vh; display: flex; flex-direction: column; background: #FFFFFF; max-width: 540px; margin: 0 auto; }
+  .auth-hero {
+    background: linear-gradient(160deg, #07122F 0%, #0F2357 58%, #1D3E8A 100%);
+    padding: 44px 20px 54px; text-align: center; color: #fff; position: relative; overflow: hidden;
+  }
+  .auth-hero::after {
+    content: ""; position: absolute; width: 220px; height: 220px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(250,204,21,0.18) 0%, rgba(250,204,21,0) 70%);
+    top: -10px; left: 50%; transform: translateX(-50%); pointer-events: none;
+  }
+  .auth-logo-badge {
+    width: 68px; height: 68px; margin: 0 auto 12px; border-radius: 22px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25), 0 0 24px rgba(250,204,21,0.22);
+    position: relative; z-index: 1;
+  }
+  .auth-hero-title { font-size: 26px; font-weight: 900; letter-spacing: -0.6px; margin: 0; position: relative; z-index: 1; }
+  .auth-hero-sub { font-size: 13px; color: rgba(255,255,255,0.78); margin-top: 5px; font-weight: 500; position: relative; z-index: 1; }
+  .auth-sheet {
+    flex: 1; background: #FFFFFF; border-radius: 28px 28px 0 0; margin-top: -24px;
+    padding: 24px 20px 36px; position: relative; z-index: 2;
+    box-shadow: 0 -6px 24px rgba(7,18,47,0.12);
+  }
+  .auth-pills {
+    display: flex; background: #F1F5F9; border-radius: 999px; padding: 4px; margin-bottom: 20px; gap: 4px;
+  }
+  .auth-pill {
+    flex: 1; text-align: center; padding: 10px 6px; font-size: 13px; font-weight: 700;
+    border-radius: 999px; color: #64748B; white-space: nowrap; cursor: pointer; transition: all 0.18s;
+  }
+  .auth-pill.active {
+    background: linear-gradient(135deg, #2563EB, #4F46E5); color: #FFFFFF;
+    box-shadow: 0 3px 10px rgba(37,99,235,0.28);
+  }
+  .input-icon-wrap {
+    position: relative; display: flex; align-items: center; margin-top: 6px;
+  }
+  .input-icon-wrap .in-ico {
+    position: absolute; left: 13px; font-size: 15px; opacity: 0.72; pointer-events: none;
+  }
+  .input-icon-wrap input {
+    margin: 0; padding: 12px 14px 12px 38px; background: #F8FAFC;
+    border: 1.5px solid #E2E8F0; border-radius: 14px; font-size: 15px;
+  }
+  .input-icon-wrap input:focus {
+    outline: none; border-color: #3B82F6; background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+  }
+  .pin-eye-btn {
+    position: absolute; right: 10px; background: none; border: none;
+    font-size: 16px; cursor: pointer; opacity: 0.65; padding: 4px 6px;
+  }
+  .auth-cta {
+    width: 100%; border: none; border-radius: 14px; padding: 14px;
+    font-size: 15px; font-weight: 800; color: #FFFFFF; cursor: pointer;
+    background: linear-gradient(135deg, #2563EB, #4F46E5);
+    box-shadow: 0 6px 16px rgba(37,99,235,0.26); margin-top: 18px;
+  }
+
   /* TOP BAR (가치업 스타일) */
   .topbar {
     background: var(--bg);
@@ -298,7 +359,7 @@
 <body>
 
 <!-- TOP HEADER -->
-<div class="topbar">
+<div id="mainTopbar" class="topbar hidden">
   <div class="brand">공수 체크</div>
   <div id="topbarRight" class="topbar-right hidden">
     <div id="modeSwitch" class="mode-switch hidden">
@@ -310,50 +371,94 @@
 </div>
 
 <!-- AUTH VIEW -->
-<div id="authView" class="container">
-  <div class="card" style="margin-top:16px;">
-    <div class="sub-tabs">
-      <div id="tabLogin" class="sub-tab active" onclick="switchAuthTab('login')">로그인</div>
-      <div id="tabJoin" class="sub-tab" onclick="switchAuthTab('join')">개인·직원 가입</div>
-      <div id="tabAdminJoin" class="sub-tab" onclick="switchAuthTab('adminJoin')">사장님 가입</div>
+<div id="authView" class="auth-wrap">
+  <div class="auth-hero">
+    <div class="auth-logo-badge">
+      <svg width="42" height="42" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 38C12 24.745 20.954 14 32 14C43.046 14 52 24.745 52 38H12Z" fill="#FACC15"/>
+        <path d="M27 14C27 11.791 29.239 10 32 10C34.761 10 37 11.791 37 14V26H27V14Z" fill="#FDE047"/>
+        <rect x="8" y="36" width="48" height="7" rx="3.5" fill="#EAB308"/>
+        <path d="M32 21V29M28 25H36" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1 class="auth-hero-title">공수 체크</h1>
+    <div class="auth-hero-sub">현장과 개인 공수, 한눈에 관리</div>
+  </div>
+
+  <div class="auth-sheet">
+    <div class="auth-pills">
+      <div id="tabLogin" class="auth-pill active" onclick="switchAuthTab('login')">로그인</div>
+      <div id="tabJoin" class="auth-pill" onclick="switchAuthTab('join')">개인·직원</div>
+      <div id="tabAdminJoin" class="auth-pill" onclick="switchAuthTab('adminJoin')">사장님</div>
     </div>
 
     <div id="loginForm">
-      <label>전화번호 (숫자만)</label>
-      <input id="loginPhone" type="tel" placeholder="01012345678" />
+      <label style="margin-top:0;">휴대폰 번호</label>
+      <div class="input-icon-wrap">
+        <span class="in-ico">📱</span>
+        <input id="loginPhone" type="tel" placeholder="01012345678" />
+      </div>
       <label>비밀번호 (숫자 4자리)</label>
-      <input id="loginPin" type="password" inputmode="numeric" maxlength="6" placeholder="0000" />
-      <label style="display:flex;align-items:center;gap:7px;margin-top:10px;font-weight:600;cursor:pointer;color:var(--text);">
-        <input id="rememberPhone" type="checkbox" style="width:auto;margin:0;" checked /> 아이디(전화번호) 기억하기
+      <div class="input-icon-wrap">
+        <span class="in-ico">🔒</span>
+        <input id="loginPin" type="password" inputmode="numeric" maxlength="6" placeholder="4자리 비밀번호" style="padding-right:40px;" />
+        <button type="button" class="pin-eye-btn" onclick="toggleLoginPinVis()" title="비밀번호 보기">👁️</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:600;font-size:13px;cursor:pointer;color:var(--text);">
+        <input id="rememberPhone" type="checkbox" style="width:16px;height:16px;margin:0;accent-color:#2563EB;" checked /> 아이디(휴대폰 번호) 기억하기
       </label>
-      <button class="btn btn-primary" style="margin-top:14px;" onclick="doLogin()">로그인</button>
+      <button class="auth-cta" onclick="doLogin()">로그인</button>
     </div>
 
     <div id="joinForm" class="hidden">
-      <label>초대코드 <span style="font-weight:500;color:var(--sub);">(선택 — 없으면 개인 공수 캘린더)</span></label>
-      <div class="row">
-        <input id="joinCode" type="text" placeholder="없으면 비워두세요 (예: SM4K9P)" style="text-transform:uppercase;" />
-        <button type="button" class="btn btn-soft btn-sm" style="margin:0;flex:0 0 auto;" onclick="pasteJoinCode()">붙여넣기</button>
+      <label style="margin-top:0;">초대코드 <span style="font-weight:500;color:var(--sub);">(선택 — 없으면 개인 공수 캘린더)</span></label>
+      <div class="row" style="margin-top:6px;">
+        <div class="input-icon-wrap" style="flex:1;margin-top:0;">
+          <span class="in-ico">🎫</span>
+          <input id="joinCode" type="text" placeholder="없으면 비워두세요" style="text-transform:uppercase;" />
+        </div>
+        <button type="button" class="btn btn-soft btn-sm" style="margin:0;flex:0 0 auto;padding:12px 14px;border-radius:14px;" onclick="pasteJoinCode()">붙여넣기</button>
       </div>
       <label>이름</label>
-      <input id="joinName" type="text" placeholder="홍길동" />
-      <label>전화번호 (숫자만)</label>
-      <input id="joinPhone" type="tel" placeholder="01012345678" />
+      <div class="input-icon-wrap">
+        <span class="in-ico">👤</span>
+        <input id="joinName" type="text" placeholder="홍길동" />
+      </div>
+      <label>휴대폰 번호 (숫자만)</label>
+      <div class="input-icon-wrap">
+        <span class="in-ico">📱</span>
+        <input id="joinPhone" type="tel" placeholder="01012345678" />
+      </div>
       <label>사용할 비밀번호 (숫자 4자리)</label>
-      <input id="joinPin" type="password" inputmode="numeric" maxlength="6" placeholder="1234" />
-      <button class="btn btn-primary" style="margin-top:16px;" onclick="doRegister()">가입하고 시작하기</button>
+      <div class="input-icon-wrap">
+        <span class="in-ico">🔒</span>
+        <input id="joinPin" type="password" inputmode="numeric" maxlength="6" placeholder="1234" />
+      </div>
+      <button class="auth-cta" onclick="doRegister()">가입하고 시작하기</button>
     </div>
 
     <div id="adminJoinForm" class="hidden">
-      <label>업체명 (팀 이름)</label>
-      <input id="adminTeamName" type="text" placeholder="예: 스마일산업" />
+      <label style="margin-top:0;">업체명 (팀 이름)</label>
+      <div class="input-icon-wrap">
+        <span class="in-ico">🏢</span>
+        <input id="adminTeamName" type="text" placeholder="예: 스마일산업" />
+      </div>
       <label>대표자(관리자) 이름</label>
-      <input id="adminJoinName" type="text" placeholder="홍길동" />
-      <label>전화번호 (숫자만)</label>
-      <input id="adminJoinPhone" type="tel" placeholder="01012345678" />
+      <div class="input-icon-wrap">
+        <span class="in-ico">👤</span>
+        <input id="adminJoinName" type="text" placeholder="홍길동" />
+      </div>
+      <label>휴대폰 번호 (숫자만)</label>
+      <div class="input-icon-wrap">
+        <span class="in-ico">📱</span>
+        <input id="adminJoinPhone" type="tel" placeholder="01012345678" />
+      </div>
       <label>사용할 비밀번호 (숫자 4자리)</label>
-      <input id="adminJoinPin" type="password" inputmode="numeric" maxlength="6" placeholder="0000" />
-      <button class="btn btn-primary" style="margin-top:16px;" onclick="doRegisterAdmin()">새 업체 등록하고 시작하기</button>
+      <div class="input-icon-wrap">
+        <span class="in-ico">🔒</span>
+        <input id="adminJoinPin" type="password" inputmode="numeric" maxlength="6" placeholder="0000" />
+      </div>
+      <button class="auth-cta" onclick="doRegisterAdmin()">새 업체 등록하고 시작하기</button>
     </div>
   </div>
 </div>
@@ -1071,6 +1176,11 @@ async function pasteJoinCode() {
   }
 }
 
+function toggleLoginPinVis() {
+  const el = document.getElementById("loginPin");
+  el.type = (el.type === "password") ? "text" : "password";
+}
+
 function switchAuthTab(tab) {
   document.getElementById("tabLogin").classList.toggle("active", tab === "login");
   document.getElementById("tabJoin").classList.toggle("active", tab === "join");
@@ -1136,6 +1246,7 @@ function logout() {
   localStorage.removeItem("smile_user_v2");
   currentUser = null;
   document.getElementById("topbarRight").classList.add("hidden");
+  document.getElementById("mainTopbar").classList.add("hidden");
   document.getElementById("appMain").classList.add("hidden");
   document.getElementById("bottomNav").classList.add("hidden");
   document.getElementById("authView").classList.remove("hidden");
@@ -1143,6 +1254,7 @@ function logout() {
 
 function enterApp() {
   document.getElementById("authView").classList.add("hidden");
+  document.getElementById("mainTopbar").classList.remove("hidden");
   document.getElementById("topbarRight").classList.remove("hidden");
   document.getElementById("appMain").classList.remove("hidden");
   document.getElementById("bottomNav").classList.remove("hidden");
