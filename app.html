@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>공수 체크</title>
+<title>오늘몇공</title>
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="공수 체크" />
+  <meta name="apple-mobile-web-app-title" content="오늘몇공" />
   <link rel="apple-touch-icon" href="icon.png" />
   <link rel="icon" type="image/png" href="icon.png" />
 <style>
@@ -360,7 +360,7 @@
 
 <!-- TOP HEADER -->
 <div id="mainTopbar" class="topbar hidden">
-  <div class="brand">공수 체크</div>
+  <div class="brand">오늘몇공</div>
   <div id="topbarRight" class="topbar-right hidden">
     <div id="modeSwitch" class="mode-switch hidden">
       <button id="btnModeWork" class="mode-btn" onclick="setViewMode('worker')">워크</button>
@@ -381,8 +381,8 @@
         <path d="M32 21V29M28 25H36" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
       </svg>
     </div>
-    <h1 class="auth-hero-title">공수 체크</h1>
-    <div class="auth-hero-sub">현장과 개인 공수, 한눈에 관리</div>
+    <h1 class="auth-hero-title">오늘몇공</h1>
+    <div class="auth-hero-sub">오늘 몇 공 일했는지, 한눈에</div>
   </div>
 
   <div class="auth-sheet">
@@ -469,6 +469,18 @@
   <!-- TAB 1: HOME (WORKER MODE) -->
   <div id="homeWorkerPanel" class="hidden">
     <div class="card">
+      <div class="card-title" style="margin-bottom:10px;">이번 달 내 공수 요약</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="val" id="wDays">0일</div><div class="lbl">출근일</div></div>
+        <div class="stat-box"><div class="val" id="wGongsu">0</div><div class="lbl">총 공수</div></div>
+        <div class="stat-box"><div class="val" id="wPay">0원</div><div class="lbl">예상 금액</div></div>
+      </div>
+      <div id="profileNudge" class="hidden" style="margin-top:12px;text-align:center;">
+        <span class="pill pill-orange" style="cursor:pointer;" onclick="openSettingsModal(true)">직종·단가 설정하기 →</span>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="row" style="justify-content:space-between;margin-bottom:12px;">
         <span class="pill" onclick="switchNav('calendar')">📅 내 기록</span>
         <div style="position:relative;flex:0 0 auto;">
@@ -477,18 +489,9 @@
         </div>
       </div>
 
-      <div id="workerTodaySummary" class="hidden" style="background:#F7F8FC;border-radius:14px;padding:12px;margin-bottom:12px;">
-        <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:4px;">오늘의 현장</div>
-        <div id="workerTodaySummaryList" style="font-size:14px;font-weight:700;"></div>
-      </div>
+      <div id="workerSiteNotice" style="font-size:12px;font-weight:700;color:var(--sub);margin:2px 0 0;"></div>
 
-      <label style="margin-top:4px;">현장 (선택)</label>
-      <select id="workerSiteSelect" onchange="onWorkerSiteSelect()">
-        <option value="">-- 직접 입력 / 미지정 --</option>
-      </select>
-      <input id="workerSiteInput" type="text" placeholder="현장명 입력 (비워둬도 됨)" style="margin-top:6px;" />
-
-      <label>공수 선택</label>
+      <label style="margin-top:8px;">공수 선택</label>
       <div class="chip-group" id="workerGongsuChips">
         <button class="chip" onclick="pickGongsu(0.5, this)">0.5공수</button>
         <button class="chip active" onclick="pickGongsu(1.0, this)">1.0공수</button>
@@ -504,15 +507,6 @@
         <span id="workerWagePill" class="pill pill-indigo" style="cursor:pointer;" onclick="editMyWage()"></span>
       </div>
     </div>
-
-    <div class="card">
-      <div class="card-title">이번 달 내 공수 요약</div>
-      <div class="stat-grid">
-        <div class="stat-box"><div class="val" id="wDays">0일</div><div class="lbl">출근일</div></div>
-        <div class="stat-box"><div class="val" id="wGongsu">0</div><div class="lbl">총 공수</div></div>
-        <div class="stat-box"><div class="val" id="wPay">0원</div><div class="lbl">예상 일당</div></div>
-      </div>
-    </div>
   </div>
 
   <!-- TAB 1: HOME (ADMIN MODE - 가치업 1번 사진 스타일) -->
@@ -524,6 +518,9 @@
         <div class="quick-item" onclick="switchNav('team'); switchTeamTab('pay')"><div class="quick-ico">💰</div><div class="quick-lbl">정산</div></div>
         <div class="quick-item" onclick="switchNav('team'); switchTeamTab('sites')"><div class="quick-ico">🏗️</div><div class="quick-lbl">현장</div></div>
         <div class="quick-item" onclick="openSettingsModal()"><div class="quick-ico">⚙️</div><div class="quick-lbl">설정</div></div>
+      </div>
+      <div id="adminProfileNudge" class="hidden" style="margin-top:10px;text-align:center;">
+        <span class="pill pill-orange" style="cursor:pointer;" onclick="openSettingsModal(true)">직종·단가 설정하기 →</span>
       </div>
     </div>
 
@@ -590,6 +587,9 @@
   <!-- TAB 4: TEAM / PAYROLL / SITES (가치업 3번 사진 스타일) -->
   <div id="teamPanel" class="hidden">
     <div class="card">
+      <div id="teamAdminTopbar" class="hidden" style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+        <button class="btn btn-dark btn-sm" style="margin:0;" onclick="openAdminOverview()">👑 전체 현황(운영자)</button>
+      </div>
       <div id="teamSubTabs" class="sub-tabs">
         <div id="tTabWorkers" class="sub-tab active" onclick="switchTeamTab('workers')">직원·초대</div>
         <div id="tTabPay" class="sub-tab" onclick="switchTeamTab('pay')">월별 정산</div>
@@ -757,8 +757,10 @@
     </div>
     <label>날짜</label>
     <input id="mDate" type="date" />
-    <label>현장명 (선택)</label>
-    <input id="mSite" type="text" placeholder="비워둬도 저장됩니다" />
+    <div id="mSiteWrap">
+      <label>현장명 (선택)</label>
+      <input id="mSite" type="text" placeholder="비워둬도 저장됩니다" />
+    </div>
     <div class="row">
       <div><label>공수</label><input id="mGongsu" type="number" step="0.5" value="1.0" /></div>
       <div><label>일당 (원)</label><input id="mWage" type="number" step="10000" value="180000" /></div>
@@ -783,6 +785,11 @@
       <div id="setUserName" style="font-size:17px;font-weight:800;"></div>
       <div id="setUserPhone" style="font-size:13px;color:var(--sub);margin-top:2px;"></div>
       <div id="setTeamBadge" style="font-size:12px;color:var(--primary);font-weight:700;margin-top:4px;"></div>
+    </div>
+    <label>담당 현장 (공수 입력 시 자동 입력)</label>
+    <div class="row">
+      <input id="setAssignedSite" type="text" placeholder="예: 강릉 현장 (비워둬도 됨)" />
+      <button class="btn btn-primary btn-sm" style="margin:0;" onclick="saveMySiteFromSettings()">저장</button>
     </div>
     <label>직종 · 경력</label>
     <div class="row" style="gap:8px;align-items:center;">
@@ -818,7 +825,7 @@
       <button id="leaveTeamBtn" class="btn btn-outline btn-sm hidden" style="margin-top:8px;width:100%;" onclick="leaveTeamToSolo()">소속 나가기 (개인 공수 캘린더로 전환)</button>
     </div>
     <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
-      <label style="margin-top:0;">매일 아침 공수 체크 알림</label>
+      <label style="margin-top:0;">매일 아침 오늘몇공 알림</label>
       <div class="row" style="align-items:center;gap:8px;">
         <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:13px;flex:0 0 auto;cursor:pointer;">
           <input id="dailyNotifCheck" type="checkbox" style="width:18px;height:18px;margin:0;" onchange="saveReminderSetting()" />
@@ -827,12 +834,28 @@
         <input id="dailyNotifTime" type="time" value="08:00" style="margin:0;padding:8px 10px;font-size:14px;" onchange="saveReminderSetting()" />
       </div>
     </div>
+    <button id="adminOverviewBtn" class="btn btn-dark hidden" style="margin-top:12px;" onclick="closeSettingsModal(); openAdminOverview()">👑 전체 현황(운영자)</button>
+    <button id="settingsLaterBtn" class="btn btn-outline hidden" style="margin-top:12px;" onclick="skipOnboarding()">나중에 하기</button>
     <button class="btn btn-outline" style="margin-top:18px;color:var(--red);border-color:#FECACA;" onclick="logout()">로그아웃</button>
   </div>
 </div>
 
-<div id="toast" class="toast hidden"></div>
+<!-- OPERATOR OVERVIEW MODAL (admin_01 / 01031357779 전용) -->
+<div id="adminOverviewModal" class="modal-bg hidden">
+  <div class="modal-card" style="max-height:90vh;overflow-y:auto;">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+      <h2 style="margin:0;font-size:17px;">👑 전체 현황(운영자)</h2>
+      <button class="btn btn-outline btn-sm" style="margin:0;" onclick="closeAdminOverview()">닫기</button>
+    </div>
+    <div id="adminOverviewStats" class="stat-grid" style="margin-bottom:14px;"></div>
+    <div style="font-size:13px;font-weight:800;margin:6px 0 8px;">업체(팀)</div>
+    <div id="adminOverviewTeams" style="margin-bottom:14px;"></div>
+    <div style="font-size:13px;font-weight:800;margin:6px 0 8px;">전체 사용자</div>
+    <div id="adminOverviewUsers"></div>
+  </div>
+</div>
 
+<div id="toast" class="toast hidden"></div>
 <script>
 const SB_URL = "https://qklpopvsygdzdxbluywp.supabase.co/rest/v1";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbHBvcHZzeWdkemR4Ymx1eXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4NzQ4NjksImV4cCI6MjExMDQ1MDg2OX0.Jt1fNGvBeIIMkRQhXQpW4MmJoWOTDVSL99qHl5pLyz4";
@@ -887,7 +910,7 @@ async function api(action, p = {}) {
       const tid = u.team_id || "team_smile";
       const tRows = await sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => []);
       const teamName = tRows.length ? tRows[0].name : (tid.startsWith("solo_") ? "개인 공수 캘린더" : "스마일산업");
-      return { ok: true, user: { user_id: u.user_id, name: u.name, phone: u.phone, role: u.role, default_wage: Number(u.default_wage || 180000), team_id: tid, team_name: teamName, job_type: u.job_type || "", career_years: u.career_years } };
+      return { ok: true, user: { user_id: u.user_id, name: u.name, phone: u.phone, role: u.role, default_wage: Number(u.default_wage || 180000), team_id: tid, team_name: teamName, job_type: u.job_type || "", career_years: u.career_years, assigned_site: u.assigned_site || "" } };
     }
     if (action === "register_admin") {
       const teamName = String(p.team_name || "").trim();
@@ -908,7 +931,7 @@ async function api(action, p = {}) {
         method: "POST",
         body: JSON.stringify({ user_id: newUserId, name, phone, role: "admin", default_wage: 180000, invite_code: "", status: "active", pin, team_id: newTeamId })
       });
-      return { ok: true, user: { user_id: newUserId, name, phone, role: "admin", default_wage: 180000, team_id: newTeamId, team_name: teamName, job_type: "", career_years: null } };
+      return { ok: true, user: { user_id: newUserId, name, phone, role: "admin", default_wage: 180000, team_id: newTeamId, team_name: teamName, job_type: "", career_years: null, assigned_site: "" } };
     }
     if (action === "register_worker") {
       const code = String(p.invite_code || "").trim().toUpperCase();
@@ -948,11 +971,11 @@ async function api(action, p = {}) {
           body: JSON.stringify({ user_id: newId, name, phone, role: "worker", default_wage: 180000, invite_code: "", status: "active", pin, team_id: tid })
         });
       }
-      return { ok: true, user: { user_id: newId, name, phone, role: "worker", default_wage: 180000, team_id: tid, team_name: teamName, job_type: "", career_years: null } };
+      return { ok: true, user: { user_id: newId, name, phone, role: "worker", default_wage: 180000, team_id: tid, team_name: teamName, job_type: "", career_years: null, assigned_site: "" } };
     }
     if (action === "get_dashboard") {
       const month = p.month || getCurMonth();
-      const meRows = await sb("/users?user_id=eq." + encodeURIComponent(p.user_id) + "&select=user_id,name,phone,role,default_wage,team_id,job_type,career_years");
+      const meRows = await sb("/users?user_id=eq." + encodeURIComponent(p.user_id) + "&select=user_id,name,phone,role,default_wage,team_id,job_type,career_years,assigned_site");
       if (!meRows.length) return { ok: false, error: "사용자를 찾을 수 없습니다." };
       const me = meRows[0];
       const tid = me.team_id || "team_smile";
@@ -962,7 +985,7 @@ async function api(action, p = {}) {
         ? ("/records?team_id=eq." + encodeURIComponent(tid) + recFilter + "&select=*&order=date.desc,updated_at.desc")
         : ("/records?worker_id=eq." + encodeURIComponent(me.user_id) + recFilter + "&select=*&order=date.desc,updated_at.desc");
       const [users, records, sites, tRows] = await Promise.all([
-        sb("/users?team_id=eq." + encodeURIComponent(tid) + "&select=user_id,name,phone,role,default_wage,team_id,job_type,career_years"),
+        sb("/users?team_id=eq." + encodeURIComponent(tid) + "&select=user_id,name,phone,role,default_wage,team_id,job_type,career_years,assigned_site"),
         sb(recQuery),
         sb("/sites?team_id=eq." + encodeURIComponent(tid) + "&select=*&order=created_at.asc"),
         sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => [])
@@ -973,7 +996,7 @@ async function api(action, p = {}) {
       return {
         ok: true,
         today: todayKST(),
-        user: { user_id: me.user_id, name: me.name, phone: me.phone, role: me.role, default_wage: Number(me.default_wage || 180000), team_id: tid, team_name: teamName, job_type: me.job_type || "", career_years: me.career_years },
+        user: { user_id: me.user_id, name: me.name, phone: me.phone, role: me.role, default_wage: Number(me.default_wage || 180000), team_id: tid, team_name: teamName, job_type: me.job_type || "", career_years: me.career_years, assigned_site: me.assigned_site || "" },
         records: filteredRecs,
         sites,
         workers
@@ -1031,6 +1054,12 @@ async function api(action, p = {}) {
       };
       await sb("/users?user_id=eq." + encodeURIComponent(p.user_id), { method: "PATCH", body: JSON.stringify(patch) });
       return { ok: true, ...patch };
+    }
+    if (action === "update_worker_site") {
+      const targetId = p.worker_id || p.user_id;
+      const site = String(p.assigned_site || "").trim();
+      await sb("/users?user_id=eq." + encodeURIComponent(targetId), { method: "PATCH", body: JSON.stringify({ assigned_site: site }) });
+      return { ok: true, assigned_site: site };
     }
     if (action === "leave_team") {
       const uid = String(p.target_user_id || p.user_id);
@@ -1127,6 +1156,24 @@ async function api(action, p = {}) {
         body: JSON.stringify(row)
       });
       return { ok: true, msg_id };
+    }
+    if (action === "admin_overview") {
+      const [teams, users, records, posts, reports] = await Promise.all([
+        sb("/teams?select=*&order=created_at.asc"),
+        sb("/users?select=user_id,name,phone,role,team_id,job_type,career_years,default_wage,assigned_site,created_at&order=created_at.asc"),
+        sb("/records?select=record_id"),
+        sb("/community_posts?select=post_id"),
+        sb("/community_reports?select=report_id")
+      ]);
+      return { ok: true, teams, users, recordCount: records.length, postCount: posts.length, reportCount: reports.length };
+    }
+    if (action === "delete_account") {
+      const targetId = String(p.target_user_id || "");
+      if (!targetId) return { ok: false, error: "대상 계정이 없습니다." };
+      if (targetId === "admin_01") return { ok: false, error: "운영자(admin_01) 계정은 삭제할 수 없습니다." };
+      await sb("/records?worker_id=eq." + encodeURIComponent(targetId), { method: "DELETE" });
+      await sb("/users?user_id=eq." + encodeURIComponent(targetId), { method: "DELETE" });
+      return { ok: true };
     }
     return { ok: false, error: "알 수 없는 요청" };
   } catch (e) {
@@ -1310,12 +1357,16 @@ async function loadDashboard() {
       currentUser.default_wage = Number(r.user.default_wage || 180000);
       currentUser.team_id = r.user.team_id || "team_smile";
       currentUser.team_name = r.user.team_name || "스마일산업";
+      currentUser.job_type = r.user.job_type || "";
+      currentUser.career_years = r.user.career_years;
+      currentUser.assigned_site = r.user.assigned_site || "";
       localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
     }
     if (!selectedDate || selectedDate.indexOf(curMonth) !== 0) {
       selectedDate = dashData.today.indexOf(curMonth) === 0 ? dashData.today : curMonth + "-01";
     }
     renderAll();
+    maybeOnboard();
   } catch (e) { toast("불러오기 오류"); }
 }
 
@@ -1325,10 +1376,17 @@ function renderAll() {
   renderAdminHome();
   renderCalendar();
   renderTeamTab();
+  updateProfileNudge();
+  updateOperatorButtons();
+  syncWidget();
 }
 
 function getMyRecords() {
   return (dashData.records || []).filter(r => r.worker_id === currentUser.user_id);
+}
+
+async function refreshDashboard() {
+  await loadDashboard();
 }
 
 function renderWorkerHome() {
@@ -1337,32 +1395,8 @@ function renderWorkerHome() {
   document.getElementById("workerDatePicker").value = workerActiveDate;
   document.getElementById("workerWagePill").textContent = "기본일당 " + fmtMoney(currentUser.default_wage || 180000) + " ✎";
 
-  const sel = document.getElementById("workerSiteSelect");
-  sel.innerHTML = '<option value="">-- 직접 입력 / 미지정 --</option>';
-  (dashData.sites || []).forEach(s => {
-    const o = document.createElement("option");
-    o.value = s.name; o.textContent = s.name;
-    sel.appendChild(o);
-  });
-
   const myRecs = getMyRecords();
-  const targetDate = workerActiveDate || dashData.today;
-  const dateRecs = myRecs.filter(r => r.date === targetDate);
-  const sumBox = document.getElementById("workerTodaySummary");
-  const sumList = document.getElementById("workerTodaySummaryList");
-  if (dateRecs.length) {
-    sumBox.classList.remove("hidden");
-    sumList.innerHTML = "";
-    dateRecs.forEach(r => {
-      const row = document.createElement("div");
-      row.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:3px 0;cursor:pointer;";
-      row.innerHTML = `<span>${r.site ? r.site + " · " : ""}<span style="color:var(--primary);">${r.gongsu}공수 · ${fmtMoney(r.amount)}</span>${r.memo ? ` <span style="font-size:12px;color:var(--sub);font-weight:500;">(${r.memo})</span>` : ""}</span><span style="font-size:11px;color:var(--sub);font-weight:600;">수정·삭제</span>`;
-      row.onclick = () => openRecordModal(r);
-      sumList.appendChild(row);
-    });
-  } else {
-    sumBox.classList.add("hidden");
-  }
+  document.getElementById("workerSiteNotice").textContent = "현장 자동 입력: " + (String(currentUser.assigned_site || "").trim() || "미지정");
 
   let days = new Set(), sumG = 0, sumPay = 0;
   myRecs.forEach(r => {
@@ -1371,11 +1405,6 @@ function renderWorkerHome() {
   document.getElementById("wDays").textContent = days.size + "일";
   document.getElementById("wGongsu").textContent = sumG.toFixed(1);
   document.getElementById("wPay").textContent = fmtMoney(sumPay);
-}
-
-function onWorkerSiteSelect() {
-  const v = document.getElementById("workerSiteSelect").value;
-  if (v) document.getElementById("workerSiteInput").value = v;
 }
 
 function pickGongsu(val, btn) {
@@ -1399,7 +1428,7 @@ function onWorkerDateChange() {
 }
 
 async function workerSaveGongsu() {
-  const site = document.getElementById("workerSiteInput").value.trim() || document.getElementById("workerSiteSelect").value;
+  const site = String(currentUser.assigned_site || "").trim();
   const memo = document.getElementById("workerMemo").value.trim();
   const date = workerActiveDate || dashData.today;
   toast("공수 저장 중...");
@@ -1577,6 +1606,7 @@ function renderTeamTab() {
           <div class="row" style="flex:0 0 auto;gap:6px;flex-wrap:wrap;">
             ${roleBtn}
             ${leaveBtn}
+            <button class="btn btn-outline btn-sm" style="margin:0;padding:5px 9px;font-size:11px;" onclick="editWorkerSite('${w.user_id}')">현장: ${w.assigned_site ? escHtml(w.assigned_site) : "미지정"} ✎</button>
             <button class="btn btn-soft btn-sm" style="margin:0;" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
           </div>
         </div>`;
@@ -1700,7 +1730,7 @@ async function issueInvite() {
 function shareInvite() {
   const code = document.getElementById("issuedCodeText").textContent;
   const appUrl = "https://bks1029-ops.github.io/gongsu-check/?code=" + encodeURIComponent(code);
-  const msg = `[공수 체크 초대]\n아래 링크에서 앱 설치(또는 아이폰 바로 열기)를 해 주세요.\n${appUrl}\n\n초대코드: ${code}`;
+  const msg = `[오늘몇공 초대]\n아래 링크에서 앱 설치(또는 아이폰 바로 열기)를 해 주세요.\n${appUrl}\n\n초대코드: ${code}`;
   if (window.AndroidBridge && window.AndroidBridge.shareText) {
     window.AndroidBridge.shareText(msg);
   } else {
@@ -1932,6 +1962,7 @@ function openRecordModal(rec = null) {
   document.getElementById("recordModal").classList.remove("hidden");
   const isAdm = (currentUser.role === "admin" && viewMode === "admin");
   document.getElementById("mWorkerWrap").classList.toggle("hidden", !isAdm);
+  document.getElementById("mSiteWrap").classList.toggle("hidden", !isAdm);
   if (isAdm) {
     const sel = document.getElementById("mWorkerId");
     sel.innerHTML = "";
@@ -1994,7 +2025,7 @@ async function removeWorkerFromTeam(workerId, name) {
   await refreshDashboard();
 }
 
-function openSettingsModal() {
+function openSettingsModal(onboarding = false) {
   const isSolo = String(currentUser.team_id || "").startsWith("solo_");
   document.getElementById("setUserName").textContent = currentUser.name + (currentUser.role === "admin" ? " (관리자)" : (isSolo ? " (개인)" : " (직원)"));
   document.getElementById("setUserPhone").textContent = currentUser.phone || "";
@@ -2012,6 +2043,9 @@ function openSettingsModal() {
   document.getElementById("setJobType").value = currentUser.job_type || "";
   cSel.value = (currentUser.career_years !== null && currentUser.career_years !== undefined && currentUser.career_years !== "") ? String(currentUser.career_years) : "";
   document.getElementById("setWageInput").value = currentUser.default_wage || 180000;
+  document.getElementById("setAssignedSite").value = currentUser.assigned_site || "";
+  document.getElementById("settingsLaterBtn").classList.toggle("hidden", !onboarding);
+  document.getElementById("adminOverviewBtn").classList.toggle("hidden", !isOperator());
   const enabled = localStorage.getItem("gongsu_daily_enabled") !== "0";
   const timeVal = localStorage.getItem("gongsu_daily_time") || "08:00";
   document.getElementById("dailyNotifCheck").checked = enabled;
@@ -2133,6 +2167,166 @@ async function pollNewChatForNotification() {
 }
 setInterval(pollNewChatForNotification, 5000);
 function closeSettingsModal() { document.getElementById("settingsModal").classList.add("hidden"); }
+
+async function saveMySiteFromSettings() {
+  const site = document.getElementById("setAssignedSite").value.trim();
+  toast("저장 중...");
+  const r = await api("update_worker_site", { user_id: currentUser.user_id, worker_id: currentUser.user_id, assigned_site: site });
+  if (!r.ok) return toast(r.error || "저장 실패");
+  currentUser.assigned_site = site;
+  localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+  toast(site ? ("담당 현장이 저장되었습니다: " + site) : "담당 현장이 비워졌습니다.");
+  await loadDashboard();
+}
+
+/* 프로필 설정 유도 (첫 가입 직후 1회 + 상시 뱃지) */
+let onboardingShown = false;
+function needsProfileSetup() {
+  if (!currentUser) return false;
+  return !currentUser.job_type || Number(currentUser.default_wage || 0) === 0;
+}
+function updateProfileNudge() {
+  const show = needsProfileSetup();
+  ["profileNudge", "adminProfileNudge"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("hidden", !show);
+  });
+}
+function maybeOnboard() {
+  if (onboardingShown || !currentUser || !needsProfileSetup()) return;
+  if (localStorage.getItem("onboard_skip_" + currentUser.user_id) === "1") return;
+  onboardingShown = true;
+  if (document.getElementById("settingsModal").classList.contains("hidden")) {
+    openSettingsModal(true);
+  }
+}
+function skipOnboarding() {
+  if (currentUser) localStorage.setItem("onboard_skip_" + currentUser.user_id, "1");
+  closeSettingsModal();
+  toast("나중에 설정 메뉴에서 언제든 바꿀 수 있어요.");
+}
+
+/* 운영자(제작자) 전용 */
+function isOperator() {
+  if (!currentUser) return false;
+  const uid = String(currentUser.user_id || "");
+  const phone = String(currentUser.phone || "").replace(/[^0-9]/g, "");
+  return uid === "admin_01" || phone === "01031357779";
+}
+function updateOperatorButtons() {
+  const on = isOperator();
+  ["adminOverviewBtn", "teamAdminTopbar"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("hidden", !on);
+  });
+}
+function closeAdminOverview() { document.getElementById("adminOverviewModal").classList.add("hidden"); }
+
+function fmtDateKST(s) {
+  if (!s) return "-";
+  const d = new Date(s);
+  if (isNaN(d)) return String(s).slice(0, 10);
+  return (d.getFullYear()) + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+async function openAdminOverview() {
+  if (!isOperator()) return;
+  document.getElementById("adminOverviewModal").classList.remove("hidden");
+  document.getElementById("adminOverviewStats").innerHTML = '<div style="color:var(--sub);font-size:13px;grid-column:1/-1;">불러오는 중...</div>';
+  document.getElementById("adminOverviewTeams").innerHTML = "";
+  document.getElementById("adminOverviewUsers").innerHTML = "";
+  toast("전체 현황 불러오는 중...");
+  const r = await api("admin_overview", { user_id: currentUser.user_id });
+  if (!r.ok) return toast(r.error || "불러오기 실패");
+  const teams = r.teams || [], users = r.users || [];
+  const teamName = {};
+  teams.forEach(t => { teamName[t.team_id] = t.name; });
+  const teamCount = {};
+  users.forEach(u => { teamCount[u.team_id] = (teamCount[u.team_id] || 0) + 1; });
+
+  document.getElementById("adminOverviewStats").innerHTML = `
+    <div class="stat-box"><div class="val">${users.length}명</div><div class="lbl">사용자</div></div>
+    <div class="stat-box"><div class="val">${teams.length}개</div><div class="lbl">업체</div></div>
+    <div class="stat-box"><div class="val">${r.recordCount}건</div><div class="lbl">공수 기록</div></div>
+    <div class="stat-box"><div class="val">${r.postCount}개</div><div class="lbl">광장 글</div></div>
+    <div class="stat-box"><div class="val">${r.reportCount}건</div><div class="lbl">신고</div></div>
+  `;
+
+  document.getElementById("adminOverviewTeams").innerHTML = teams.map(t =>
+    `<div class="list-item"><div class="list-top"><span>${escHtml(t.name)}</span><span class="pill pill-indigo">${teamCount[t.team_id] || 0}명</span></div>` +
+    `<div class="list-sub">${escHtml(t.team_id)} · 생성 ${fmtDateKST(t.created_at)}</div></div>`
+  ).join("") || '<div style="color:var(--sub);font-size:13px;">등록된 업체가 없습니다.</div>';
+
+  const el = document.getElementById("adminOverviewUsers");
+  el.innerHTML = "";
+  window._opUsers = users;
+  users.forEach(u => {
+    const isMain = String(u.user_id) === "admin_01";
+    const roleTxt = u.role === "admin" ? "관리자" : "직원";
+    const job = [u.job_type || "", (u.career_years !== null && u.career_years !== undefined) ? u.career_years + "년" : ""].filter(Boolean).join(" · ");
+    const d = document.createElement("div");
+    d.className = "list-item";
+    d.innerHTML = `
+      <div class="list-top" style="gap:8px;flex-wrap:wrap;">
+        <span>${escHtml(u.name)} <span style="font-size:12px;color:var(--sub);font-weight:500;">${escHtml(u.phone || "")}</span></span>
+        <span class="pill ${u.role === "admin" ? "pill-indigo" : ""}" style="font-size:11px;">${roleTxt}</span>
+      </div>
+      <div class="list-sub">${escHtml(teamName[u.team_id] || u.team_id)} · ${escHtml(job || "직종 미설정")} · 일당 ${fmtMoney(u.default_wage)} · 가입 ${fmtDateKST(u.created_at)}</div>
+      ${isMain ? '<div class="list-sub" style="color:var(--primary);">운영자 계정 (삭제 불가)</div>' : `<div style="margin-top:6px;"><button class="btn btn-outline btn-sm" style="margin:0;color:var(--red);border-color:#FECACA;" onclick="deleteAccountFromOverview('${u.user_id}')">테스트 계정 삭제</button></div>`}
+    `;
+    el.appendChild(d);
+  });
+  if (!users.length) el.innerHTML = '<div style="color:var(--sub);font-size:13px;">사용자가 없습니다.</div>';
+}
+
+async function deleteAccountFromOverview(uid) {
+  if (!isOperator()) return;
+  const target = (window._opUsers || []).find(u => String(u.user_id) === String(uid)) || {};
+  const name = target.name || uid;
+  if (!confirm(`${name} 계정을 삭제할까요?\n그 계정의 공수 기록도 함께 삭제되며 되돌릴 수 없습니다.`)) return;
+  toast("계정 삭제 중...");
+  const r = await api("delete_account", { user_id: currentUser.user_id, target_user_id: uid });
+  if (!r.ok) return toast(r.error || "삭제 실패");
+  toast(name + " 계정이 삭제되었습니다.");
+  await openAdminOverview();
+}
+
+function findPerson(uid) {
+  if (String(uid) === String(currentUser.user_id)) return currentUser;
+  return (dashData.workers || []).find(w => String(w.user_id) === String(uid)) || { user_id: uid, name: "", assigned_site: "" };
+}
+
+async function editWorkerSite(uid) {
+  const person = findPerson(uid);
+  const who = String(uid) === String(currentUser.user_id) ? "내" : ((person.name || "직원") + " 님의");
+  const val = prompt(who + " 담당 현장을 입력하세요 (비우면 미지정):", person.assigned_site || "");
+  if (val === null) return;
+  const site = String(val).trim();
+  toast("담당 현장 저장 중...");
+  const r = await api("update_worker_site", { user_id: currentUser.user_id, worker_id: uid, assigned_site: site });
+  if (!r.ok) return toast(r.error || "저장 실패");
+  if (String(uid) === String(currentUser.user_id)) {
+    currentUser.assigned_site = site;
+    localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+  }
+  toast(site ? (person.name + " 담당 현장: " + site) : "담당 현장이 미지정으로 바뀌었습니다.");
+  await loadDashboard();
+}
+
+/* 홈 위젯 연동 (안드로이드) */
+function syncWidget() {
+  if (!dashData || !currentUser) return;
+  const myRecs = getMyRecords();
+  const daySet = new Set();
+  let g = 0, pay = 0;
+  myRecs.forEach(r => { daySet.add(r.date); g += Number(r.gongsu || 0); pay += Number(r.amount || 0); });
+  const [, m] = curMonth.split("-").map(Number);
+  try {
+    if (window.AndroidBridge && window.AndroidBridge.updateWidget) {
+      window.AndroidBridge.updateWidget("오늘몇공", (m || 1) + "월 요약", daySet.size + "일", g.toFixed(1), fmtMoney(pay));
+    }
+  } catch (e) {}
+}
 
 async function saveMyWageFromSettings() {
   const wage = Number(document.getElementById("setWageInput").value);
