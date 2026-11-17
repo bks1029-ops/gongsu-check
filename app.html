@@ -891,6 +891,7 @@ function enterApp() {
 function setViewMode(mode) {
   if (currentUser.role !== "admin") return;
   viewMode = mode;
+  document.getElementById("navTeamLabel").textContent = (currentUser.role === "admin" && viewMode === "admin") ? "인력관리" : "내 정산";
   updateModeSwitchUI();
   switchNav(curNav);
   renderAll();
