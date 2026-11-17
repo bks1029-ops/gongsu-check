@@ -191,6 +191,7 @@
   .btn-sm { width: auto; padding: 7px 13px; font-size: 13px; border-radius: 10px; }
   .row { display: flex; gap: 10px; align-items: center; }
   .row > * { flex: 1; }
+  .row > .btn-sm, .row > .pill { flex: 0 0 auto; }
 
   label { display: block; font-size: 12px; font-weight: 700; color: var(--sub); margin: 12px 0 5px; }
   input, select {
@@ -843,11 +844,11 @@
 <!-- OPERATOR OVERVIEW MODAL (admin_01 / 01031357779 전용) -->
 <div id="adminOverviewModal" class="modal-bg hidden">
   <div class="modal-card" style="max-height:90vh;overflow-y:auto;">
-    <div class="row" style="justify-content:space-between;margin-bottom:10px;">
-      <h2 style="margin:0;font-size:17px;">👑 전체 현황(운영자)</h2>
-      <button class="btn btn-outline btn-sm" style="margin:0;" onclick="closeAdminOverview()">닫기</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="margin:0;font-size:17px;flex:1;">👑 전체 현황(운영자)</h2>
+      <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="closeAdminOverview()">닫기</button>
     </div>
-    <div id="adminOverviewStats" class="stat-grid" style="margin-bottom:14px;"></div>
+    <div id="adminOverviewStats" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;"></div>
     <div style="font-size:13px;font-weight:800;margin:6px 0 8px;">업체(팀)</div>
     <div id="adminOverviewTeams" style="margin-bottom:14px;"></div>
     <div style="font-size:13px;font-weight:800;margin:6px 0 8px;">전체 사용자</div>
@@ -2245,11 +2246,11 @@ async function openAdminOverview() {
   users.forEach(u => { teamCount[u.team_id] = (teamCount[u.team_id] || 0) + 1; });
 
   document.getElementById("adminOverviewStats").innerHTML = `
-    <div class="stat-box"><div class="val">${users.length}명</div><div class="lbl">사용자</div></div>
-    <div class="stat-box"><div class="val">${teams.length}개</div><div class="lbl">업체</div></div>
-    <div class="stat-box"><div class="val">${r.recordCount}건</div><div class="lbl">공수 기록</div></div>
-    <div class="stat-box"><div class="val">${r.postCount}개</div><div class="lbl">광장 글</div></div>
-    <div class="stat-box"><div class="val">${r.reportCount}건</div><div class="lbl">신고</div></div>
+    <div class="stat-box" style="flex:1 1 30%;min-width:92px;"><div class="val">${users.length}명</div><div class="lbl">사용자</div></div>
+    <div class="stat-box" style="flex:1 1 30%;min-width:92px;"><div class="val">${teams.length}개</div><div class="lbl">업체</div></div>
+    <div class="stat-box" style="flex:1 1 30%;min-width:92px;"><div class="val">${r.recordCount}건</div><div class="lbl">공수 기록</div></div>
+    <div class="stat-box" style="flex:1 1 30%;min-width:92px;"><div class="val">${r.postCount}개</div><div class="lbl">광장 글</div></div>
+    <div class="stat-box" style="flex:1 1 30%;min-width:92px;"><div class="val">${r.reportCount}건</div><div class="lbl">신고</div></div>
   `;
 
   document.getElementById("adminOverviewTeams").innerHTML = teams.map(t =>
