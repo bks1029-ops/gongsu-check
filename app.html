@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-title" content="공수 채크" />
-<title>공수 채크</title>
+<meta name="apple-mobile-web-app-title" content="공수 체크" />
+<title>공수 체크</title>
 <style>
   :root {
     --primary: #5B5FE8;
@@ -281,7 +281,7 @@
 
 <!-- TOP HEADER -->
 <div class="topbar">
-  <div class="brand">공수 채크</div>
+  <div class="brand">공수 체크</div>
   <div id="topbarRight" class="topbar-right hidden">
     <div id="modeSwitch" class="mode-switch hidden">
       <button id="btnModeWork" class="mode-btn" onclick="setViewMode('worker')">워크</button>
@@ -315,7 +315,10 @@
 
     <div id="joinForm" class="hidden">
       <label>초대코드</label>
-      <input id="joinCode" type="text" placeholder="예: SM4K9P" style="text-transform:uppercase;" />
+      <div class="row">
+        <input id="joinCode" type="text" placeholder="예: SM4K9P" style="text-transform:uppercase;" />
+        <button type="button" class="btn btn-soft btn-sm" style="margin:0;flex:0 0 auto;" onclick="pasteJoinCode()">붙여넣기</button>
+      </div>
       <label>이름</label>
       <input id="joinName" type="text" placeholder="홍길동" />
       <label>전화번호 (숫자만)</label>
@@ -533,7 +536,10 @@
     </div>
     <label>메모</label>
     <input id="mMemo" type="text" placeholder="선택 입력" />
-    <button class="btn btn-primary" style="margin-top:16px;" onclick="submitRecordModal()">저장하기</button>
+    <div class="row" style="margin-top:16px;">
+      <button id="mDeleteBtn" class="btn btn-outline hidden" style="margin:0;color:var(--red);border-color:#FECACA;flex:0.45;" onclick="deleteRecordFromModal()">삭제</button>
+      <button class="btn btn-primary" style="margin:0;" onclick="submitRecordModal()">저장하기</button>
+    </div>
   </div>
 </div>
 
@@ -611,10 +617,29 @@ function init() {
     document.getElementById("loginPhone").value = savedPhone;
     document.getElementById("rememberPhone").checked = true;
   }
+  const inviteParam = new URLSearchParams(location.search).get("code");
+  if (inviteParam) {
+    document.getElementById("joinCode").value = inviteParam.trim().toUpperCase();
+    switchAuthTab("join");
+  }
   const saved = localStorage.getItem("smile_user_v2");
   if (saved) {
     currentUser = JSON.parse(saved);
     enterApp();
+  }
+}
+
+async function pasteJoinCode() {
+  try {
+    const txt = await navigator.clipboard.readText();
+    if (txt) {
+      document.getElementById("joinCode").value = txt.trim().toUpperCase();
+      toast("초대코드를 붙여넣었습니다!");
+    } else {
+      toast("복사된 초대코드가 없습니다.");
+    }
+  } catch (e) {
+    toast("입력칸을 길게 눌러 붙여넣기 해 주세요.");
   }
 }
 
@@ -762,9 +787,14 @@ function renderWorkerHome() {
   const sumList = document.getElementById("workerTodaySummaryList");
   if (dateRecs.length) {
     sumBox.classList.remove("hidden");
-    sumList.innerHTML = dateRecs.map(r =>
-      `<div>${r.site ? r.site + " · " : ""}<span style="color:var(--primary);">${r.gongsu}공수 · ${fmtMoney(r.amount)}</span>${r.memo ? ` <span style="font-size:12px;color:var(--sub);font-weight:500;">(${r.memo})</span>` : ""}</div>`
-    ).join("");
+    sumList.innerHTML = "";
+    dateRecs.forEach(r => {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:3px 0;cursor:pointer;";
+      row.innerHTML = `<span>${r.site ? r.site + " · " : ""}<span style="color:var(--primary);">${r.gongsu}공수 · ${fmtMoney(r.amount)}</span>${r.memo ? ` <span style="font-size:12px;color:var(--sub);font-weight:500;">(${r.memo})</span>` : ""}</span><span style="font-size:11px;color:var(--sub);font-weight:600;">수정·삭제</span>`;
+      row.onclick = () => openRecordModal(r);
+      sumList.appendChild(row);
+    });
   } else {
     sumBox.classList.add("hidden");
   }
@@ -1015,8 +1045,8 @@ async function issueInvite() {
 
 function shareInvite() {
   const code = document.getElementById("issuedCodeText").textContent;
-  const appUrl = "https://bks1029-ops.github.io/gongsu-check/";
-  const msg = `[공수 채크 초대]\n1. 아래 링크에서 앱 설치(또는 아이폰 바로 열기)를 해 주세요.\n${appUrl}\n\n2. 앱을 열고 '초대코드 직원가입'에서 아래 코드를 입력해 주세요.\n초대코드: ${code}`;
+  const appUrl = "https://bks1029-ops.github.io/gongsu-check/?code=" + encodeURIComponent(code);
+  const msg = `[공수 체크 초대]\n아래 링크에서 앱 설치(또는 아이폰 바로 열기)를 해 주세요.\n${appUrl}\n\n초대코드: ${code}`;
   if (window.AndroidBridge && window.AndroidBridge.shareText) {
     window.AndroidBridge.shareText(msg);
   } else {
@@ -1165,6 +1195,7 @@ function openRecordModal(rec = null) {
     if (rec) sel.value = rec.worker_id;
   }
   document.getElementById("mRecId").value = rec ? rec.record_id : "";
+  document.getElementById("mDeleteBtn").classList.toggle("hidden", !(rec && rec.record_id));
   document.getElementById("mDate").value = rec ? rec.date : (selectedDate || dashData.today);
   document.getElementById("mSite").value = rec ? rec.site : "";
   document.getElementById("mGongsu").value = rec ? rec.gongsu : 1.0;
@@ -1173,6 +1204,18 @@ function openRecordModal(rec = null) {
 }
 
 function closeRecordModal() { document.getElementById("recordModal").classList.add("hidden"); }
+
+async function deleteRecordFromModal() {
+  const recId = document.getElementById("mRecId").value;
+  if (!recId) return;
+  if (!confirm("이 공수 기록을 삭제할까요?")) return;
+  toast("삭제 중...");
+  const r = await api("delete_record", { user_id: currentUser.user_id, record_id: recId });
+  if (!r.ok) return toast(r.error);
+  closeRecordModal();
+  toast("기록이 삭제되었습니다.");
+  loadDashboard();
+}
 
 async function submitRecordModal() {
   const isAdm = (currentUser.role === "admin" && viewMode === "admin");

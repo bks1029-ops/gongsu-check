@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>스마일산업 · 공수 채크 앱 다운로드</title>
-<meta property="og:title" content="스마일산업 · 공수 채크 앱 설치" />
-<meta property="og:description" content="출퇴근 · 공수 확인 · 현장 채팅을 한 번에! 아래 버튼을 눌러 공수 채크 앱을 설치하세요." />
+<title>스마일산업 · 공수 체크 앱 다운로드</title>
+<meta property="og:title" content="스마일산업 · 공수 체크 앱 설치" />
+<meta property="og:description" content="출퇴근 · 공수 확인 · 현장 채팅을 한 번에! 아래 버튼을 눌러 공수 체크 앱을 설치하세요." />
 <style>
   :root {
     --primary: #5B5FE8;
@@ -146,11 +146,12 @@
   <div class="hero">
     <div class="app-icon">공</div>
     <div class="badge">스마일산업 공식 출근부</div>
-    <h1>공수 채크 (Android)</h1>
-    <p class="desc">출퇴근 체크 · 내 공수 확인 · 현장 채팅을<br />한 화면에서 간편하게 확인하세요.</p>
-    <a class="dl-btn" href="./gongsu-check.apk" download="공수채크.apk">📥 안드로이드 앱(.apk) 다운로드</a>
-    <a class="dl-btn" href="./app.html" style="margin-top:10px;background:#1E2433;box-shadow:0 4px 12px rgba(30,36,51,0.2);">🍎 아이폰 · 웹으로 바로 열기</a>
-    <div class="meta">안드로이드 v2.4 (약 3.1MB) · 아이폰은 설치 없이 바로 실행</div>
+    <h1>공수 체크 (Android)</h1>
+    <p class="desc">공수 입력 · 내 공수 확인 · 현장 채팅을<br />한 화면에서 간편하게 확인하세요.</p>
+    <div id="inviteCodeBanner" style="display:none;background:#EEF0FF;color:#4F46E5;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:700;margin-bottom:14px;"></div>
+    <a id="apkDlBtn" class="dl-btn" href="./gongsu-check.apk" download="공수체크.apk" onclick="copyInviteOnDownload()">📥 안드로이드 앱(.apk) 다운로드</a>
+    <a id="webAppBtn" class="dl-btn" href="./app.html" style="margin-top:10px;background:#1E2433;box-shadow:0 4px 12px rgba(30,36,51,0.2);">🍎 아이폰 · 웹으로 바로 열기</a>
+    <div class="meta">안드로이드 v2.5 (약 3.1MB) · 아이폰은 설치 없이 바로 실행</div>
   </div>
 
   <div class="card">
@@ -165,7 +166,7 @@
     <div class="step">
       <div class="num">2</div>
       <div>
-        <div class="step-title">저장된 [공수채크.apk] 파일 누르기</div>
+        <div class="step-title">저장된 [공수체크.apk] 파일 누르기</div>
         <div class="step-sub">화면 위 알림창이나 <b>내 파일 → 다운로드</b> 폴더에서 찾을 수 있어요.</div>
       </div>
     </div>
@@ -191,7 +192,7 @@
       <div class="num">1</div>
       <div>
         <div class="step-title">위 검은색 버튼 [아이폰 · 웹으로 바로 열기] 누르기</div>
-        <div class="step-sub">사파리(Safari)에서 바로 공수 채크 화면이 열립니다.</div>
+        <div class="step-sub">사파리(Safari)에서 바로 공수 체크 화면이 열립니다.</div>
       </div>
     </div>
     <div class="step">
@@ -206,6 +207,19 @@
 <script>
   if (/KAKAOTALK/i.test(navigator.userAgent)) {
     document.getElementById("kakaoWarn").style.display = "block";
+  }
+  const urlCode = new URLSearchParams(location.search).get("code");
+  if (urlCode) {
+    const clean = urlCode.trim().toUpperCase();
+    const banner = document.getElementById("inviteCodeBanner");
+    banner.style.display = "block";
+    banner.innerHTML = `초대코드 <b>${clean}</b> 포함됨 · 웹으로 열면 자동 입력됩니다`;
+    document.getElementById("webAppBtn").href = "./app.html?code=" + encodeURIComponent(clean);
+  }
+  function copyInviteOnDownload() {
+    if (urlCode && navigator.clipboard) {
+      navigator.clipboard.writeText(urlCode.trim().toUpperCase()).catch(() => {});
+    }
   }
 </script>
 </body>
