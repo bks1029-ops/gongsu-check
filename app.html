@@ -281,7 +281,7 @@
 
 <!-- TOP HEADER -->
 <div class="topbar">
-  <div class="brand">스마일산업</div>
+  <div class="brand">공수 채크</div>
   <div id="topbarRight" class="topbar-right hidden">
     <div id="modeSwitch" class="mode-switch hidden">
       <button id="btnModeWork" class="mode-btn" onclick="setViewMode('worker')">워크</button>
@@ -304,7 +304,10 @@
       <input id="loginPhone" type="tel" placeholder="01012345678" />
       <label>비밀번호 PIN</label>
       <input id="loginPin" type="password" inputmode="numeric" maxlength="6" placeholder="0000" />
-      <button class="btn btn-primary" style="margin-top:16px;" onclick="doLogin()">로그인</button>
+      <label style="display:flex;align-items:center;gap:7px;margin-top:10px;font-weight:600;cursor:pointer;color:var(--text);">
+        <input id="rememberPhone" type="checkbox" style="width:auto;margin:0;" checked /> 아이디(전화번호) 기억하기
+      </label>
+      <button class="btn btn-primary" style="margin-top:14px;" onclick="doLogin()">로그인</button>
       <p style="font-size:12px;color:var(--sub);margin:12px 0 0;text-align:center;">
         사장님(관리자) 초기 PIN은 <b>0000</b>입니다.
       </p>
@@ -338,39 +341,27 @@
         </div>
       </div>
 
-      <div id="workerCheckInArea">
-        <label style="margin-top:4px;">오늘 현장</label>
-        <select id="workerSiteSelect" onchange="onWorkerSiteSelect()">
-          <option value="">-- 직접 입력 --</option>
-        </select>
-        <input id="workerSiteInput" type="text" placeholder="현장명을 입력하세요" style="margin-top:6px;" />
-        <div class="row" style="margin-top:14px;">
-          <button class="btn btn-primary" style="margin:0;" onclick="workerCheckIn()">출근</button>
-          <button class="btn btn-soft" style="margin:0;" onclick="toast('먼저 출근 체크를 눌러주세요.')">퇴근</button>
-        </div>
+      <div id="workerTodaySummary" class="hidden" style="background:#F7F8FC;border-radius:14px;padding:12px;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:4px;">오늘의 현장</div>
+        <div id="workerTodaySummaryList" style="font-size:14px;font-weight:700;"></div>
       </div>
 
-      <div id="workerCheckOutArea" class="hidden">
-        <div style="background:#F7F8FC;border-radius:14px;padding:12px;margin-bottom:10px;">
-          <div style="font-size:13px;color:var(--sub);">현재 근무 중</div>
-          <div style="font-size:16px;font-weight:800;margin-top:2px;">
-            <span id="activeSiteName"></span> · <span id="activeCheckInTime" style="color:var(--primary);"></span> 출근
-          </div>
-        </div>
-        <label>공수 선택</label>
-        <div class="chip-group" id="workerGongsuChips">
-          <button class="chip" onclick="pickGongsu(0.5, this)">0.5공수</button>
-          <button class="chip active" onclick="pickGongsu(1.0, this)">1.0공수</button>
-          <button class="chip" onclick="pickGongsu(1.5, this)">1.5공수</button>
-          <button class="chip" onclick="pickGongsu(2.0, this)">2.0공수</button>
-        </div>
-        <label>메모</label>
-        <input id="workerMemo" type="text" placeholder="야간·특근 등 메모 (선택)" />
-        <div class="row" style="margin-top:14px;">
-          <button class="btn btn-soft" style="margin:0;" onclick="toast('이미 출근 체크되었습니다.')">출근 완료</button>
-          <button class="btn btn-primary" style="margin:0;" onclick="workerCheckOut()">퇴근 · 저장</button>
-        </div>
+      <label style="margin-top:4px;">현장 (선택)</label>
+      <select id="workerSiteSelect" onchange="onWorkerSiteSelect()">
+        <option value="">-- 직접 입력 / 미지정 --</option>
+      </select>
+      <input id="workerSiteInput" type="text" placeholder="현장명 입력 (비워둬도 됨)" style="margin-top:6px;" />
+
+      <label>공수 선택</label>
+      <div class="chip-group" id="workerGongsuChips">
+        <button class="chip" onclick="pickGongsu(0.5, this)">0.5공수</button>
+        <button class="chip active" onclick="pickGongsu(1.0, this)">1.0공수</button>
+        <button class="chip" onclick="pickGongsu(1.5, this)">1.5공수</button>
+        <button class="chip" onclick="pickGongsu(2.0, this)">2.0공수</button>
       </div>
+      <label>메모</label>
+      <input id="workerMemo" type="text" placeholder="야간·특근 등 메모 (선택)" />
+      <button class="btn btn-primary" style="margin-top:14px;" onclick="workerSaveGongsu()">공수 입력 저장</button>
 
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;" onclick="openRecordModal()">근무 기록 수정 ▾</span>
@@ -478,9 +469,8 @@
             <div id="issuedCodeText" class="invite-code"></div>
             <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="shareInvite()">카톡·문자로 공유하기</button>
           </div>
-          <div id="unusedInvitesList" style="font-size:12px;color:var(--sub);margin:8px 0 12px;"></div>
         </div>
-        <div id="teamWorkersList"></div>
+        <div id="teamWorkersList" style="margin-top:12px;"></div>
       </div>
 
       <!-- SUB 2: PAYROLL -->
@@ -535,12 +525,8 @@
     </div>
     <label>날짜</label>
     <input id="mDate" type="date" />
-    <label>현장명</label>
-    <input id="mSite" type="text" placeholder="현장명" />
-    <div class="row">
-      <div><label>출근 시각</label><input id="mIn" type="time" value="08:00" /></div>
-      <div><label>퇴근 시각</label><input id="mOut" type="time" value="17:00" /></div>
-    </div>
+    <label>현장명 (선택)</label>
+    <input id="mSite" type="text" placeholder="비워둬도 저장됩니다" />
     <div class="row">
       <div><label>공수</label><input id="mGongsu" type="number" step="0.5" value="1.0" /></div>
       <div><label>일당 (원)</label><input id="mWage" type="number" step="10000" value="180000" /></div>
@@ -620,6 +606,11 @@ function getCurMonth() {
 
 function init() {
   curMonth = getCurMonth();
+  const savedPhone = localStorage.getItem("smile_saved_phone");
+  if (savedPhone) {
+    document.getElementById("loginPhone").value = savedPhone;
+    document.getElementById("rememberPhone").checked = true;
+  }
   const saved = localStorage.getItem("smile_user_v2");
   if (saved) {
     currentUser = JSON.parse(saved);
@@ -637,7 +628,10 @@ function switchAuthTab(tab) {
 async function doLogin() {
   const phone = document.getElementById("loginPhone").value.trim();
   const pin = document.getElementById("loginPin").value.trim();
+  const remember = document.getElementById("rememberPhone").checked;
   if (!phone || !pin) return toast("전화번호와 PIN을 입력해 주세요.");
+  if (remember) localStorage.setItem("smile_saved_phone", phone);
+  else localStorage.removeItem("smile_saved_phone");
   toast("로그인 중...");
   try {
     const r = await api("login", { phone, pin });
@@ -754,7 +748,7 @@ function renderWorkerHome() {
   document.getElementById("workerWagePill").textContent = "기본일당 " + fmtMoney(currentUser.default_wage || 180000) + " ✎";
 
   const sel = document.getElementById("workerSiteSelect");
-  sel.innerHTML = '<option value="">-- 직접 입력 --</option>';
+  sel.innerHTML = '<option value="">-- 직접 입력 / 미지정 --</option>';
   (dashData.sites || []).forEach(s => {
     const o = document.createElement("option");
     o.value = s.name; o.textContent = s.name;
@@ -763,17 +757,16 @@ function renderWorkerHome() {
 
   const myRecs = getMyRecords();
   const targetDate = workerActiveDate || dashData.today;
-  const todayOpen = myRecs.find(r => r.date === targetDate && !r.check_out);
-  if (todayOpen) {
-    activeRecordId = todayOpen.record_id;
-    document.getElementById("workerCheckInArea").classList.add("hidden");
-    document.getElementById("workerCheckOutArea").classList.remove("hidden");
-    document.getElementById("activeSiteName").textContent = todayOpen.site;
-    document.getElementById("activeCheckInTime").textContent = todayOpen.check_in;
+  const dateRecs = myRecs.filter(r => r.date === targetDate);
+  const sumBox = document.getElementById("workerTodaySummary");
+  const sumList = document.getElementById("workerTodaySummaryList");
+  if (dateRecs.length) {
+    sumBox.classList.remove("hidden");
+    sumList.innerHTML = dateRecs.map(r =>
+      `<div>${r.site ? r.site + " · " : ""}<span style="color:var(--primary);">${r.gongsu}공수 · ${fmtMoney(r.amount)}</span>${r.memo ? ` <span style="font-size:12px;color:var(--sub);font-weight:500;">(${r.memo})</span>` : ""}</div>`
+    ).join("");
   } else {
-    activeRecordId = null;
-    document.getElementById("workerCheckInArea").classList.remove("hidden");
-    document.getElementById("workerCheckOutArea").classList.add("hidden");
+    sumBox.classList.add("hidden");
   }
 
   let days = new Set(), sumG = 0, sumPay = 0;
@@ -810,22 +803,23 @@ function onWorkerDateChange() {
   }
 }
 
-async function workerCheckIn() {
+async function workerSaveGongsu() {
   const site = document.getElementById("workerSiteInput").value.trim() || document.getElementById("workerSiteSelect").value;
-  if (!site) return toast("현장명을 입력해 주세요.");
-  toast("출근 체크 중...");
-  const r = await api("check_in", { user_id: currentUser.user_id, site, date: workerActiveDate || dashData.today });
-  if (!r.ok) return toast(r.error);
-  toast("출근 체크 완료!");
-  loadDashboard();
-}
-
-async function workerCheckOut() {
   const memo = document.getElementById("workerMemo").value.trim();
-  toast("퇴근 저장 중...");
-  const r = await api("check_out", { user_id: currentUser.user_id, record_id: activeRecordId, gongsu: selectedGongsu, memo });
+  const date = workerActiveDate || dashData.today;
+  toast("공수 저장 중...");
+  const r = await api("save_record", {
+    user_id: currentUser.user_id,
+    worker_id: currentUser.user_id,
+    date,
+    site,
+    gongsu: selectedGongsu,
+    wage: currentUser.default_wage || 180000,
+    memo
+  });
   if (!r.ok) return toast(r.error);
-  toast("퇴근 · 공수 저장 완료!");
+  document.getElementById("workerMemo").value = "";
+  toast("공수 입력이 저장되었습니다!");
   loadDashboard();
 }
 
@@ -851,7 +845,7 @@ function renderAdminHome() {
     d.className = "list-item";
     d.innerHTML = `
       <div class="list-top">
-        <span>${r.worker_name} · ${r.site}</span>
+        <span>${r.worker_name}${r.site ? " · " + r.site : ""}</span>
         <span class="pill pill-indigo">${r.gongsu}공수 · ${fmtMoney(r.amount)}</span>
       </div>
       ${r.memo ? `<div class="list-sub">${r.memo}</div>` : ""}`;
@@ -930,7 +924,7 @@ function renderCalDayRecords() {
     d.className = "list-item";
     d.innerHTML = `
       <div class="list-top">
-        <span>${isAdm ? r.worker_name + " · " : ""}${r.site}</span>
+        <span>${isAdm ? (r.worker_name + (r.site ? " · " + r.site : "")) : (r.site || "현장 미지정")}</span>
         <span class="pill pill-indigo">${r.gongsu}공수 · ${fmtMoney(r.amount)}</span>
       </div>
       ${r.memo ? `<div class="list-sub">${r.memo}</div>` : ""}`;
@@ -953,9 +947,6 @@ function switchTeamTab(tab) {
 function renderTeamTab() {
   const isAdm = (currentUser.role === "admin" && viewMode === "admin");
   document.getElementById("adminInviteBlock").classList.toggle("hidden", !isAdm);
-
-  const unused = dashData.unused_invites || [];
-  document.getElementById("unusedInvitesList").textContent = unused.length ? "미사용 초대코드: " + unused.join(", ") : "";
 
   const wEl = document.getElementById("teamWorkersList");
   wEl.innerHTML = "";
@@ -1008,7 +999,9 @@ function renderTeamTab() {
   if (!Object.keys(map).length) pEl.innerHTML = '<div style="color:var(--sub);font-size:13px;text-align:center;padding:12px 0;">이번 달 정산 기록이 없습니다.</div>';
 
   const sEl = document.getElementById("teamSitesList");
-  sEl.innerHTML = (dashData.sites || []).map(s => `<span class="pill pill-indigo" style="margin:3px;">${s.name}</span>`).join("") || '<div style="color:var(--sub);font-size:13px;">등록된 현장이 없습니다.</div>';
+  sEl.innerHTML = (dashData.sites || []).map(s =>
+    `<span class="pill pill-indigo" style="margin:3px;">${s.name}${isAdm ? ` <span style="cursor:pointer;margin-left:4px;color:#EF4444;font-weight:900;" onclick="deleteSite('${s.site_id}','${s.name}')">×</span>` : ""}</span>`
+  ).join("") || '<div style="color:var(--sub);font-size:13px;">등록된 현장이 없습니다.</div>';
 }
 
 async function issueInvite() {
@@ -1059,6 +1052,15 @@ async function addSite() {
   if (!r.ok) return toast(r.error);
   document.getElementById("newSiteName").value = "";
   toast("현장이 추가되었습니다.");
+  loadDashboard();
+}
+
+async function deleteSite(siteId, name) {
+  if (!confirm(`'${name}' 현장을 목록에서 제거할까요?`)) return;
+  toast("현장 제거 중...");
+  const r = await api("delete_site", { user_id: currentUser.user_id, site_id: siteId, name });
+  if (!r.ok) return toast(r.error);
+  toast("현장이 제거되었습니다.");
   loadDashboard();
 }
 
@@ -1165,8 +1167,6 @@ function openRecordModal(rec = null) {
   document.getElementById("mRecId").value = rec ? rec.record_id : "";
   document.getElementById("mDate").value = rec ? rec.date : (selectedDate || dashData.today);
   document.getElementById("mSite").value = rec ? rec.site : "";
-  document.getElementById("mIn").value = rec && rec.check_in ? rec.check_in : "08:00";
-  document.getElementById("mOut").value = rec && rec.check_out ? rec.check_out : "17:00";
   document.getElementById("mGongsu").value = rec ? rec.gongsu : 1.0;
   document.getElementById("mWage").value = rec ? rec.wage : (currentUser.default_wage || 180000);
   document.getElementById("mMemo").value = rec ? rec.memo : "";
@@ -1182,13 +1182,10 @@ async function submitRecordModal() {
     worker_id: isAdm ? document.getElementById("mWorkerId").value : currentUser.user_id,
     date: document.getElementById("mDate").value,
     site: document.getElementById("mSite").value.trim(),
-    check_in: document.getElementById("mIn").value,
-    check_out: document.getElementById("mOut").value,
     gongsu: Number(document.getElementById("mGongsu").value),
     wage: Number(document.getElementById("mWage").value),
     memo: document.getElementById("mMemo").value.trim()
   };
-  if (!payload.site) return toast("현장명을 입력해 주세요.");
   toast("저장 중...");
   const r = await api("save_record", payload);
   if (!r.ok) return toast(r.error);
