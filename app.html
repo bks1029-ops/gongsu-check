@@ -544,6 +544,7 @@
         <button class="chip" onclick="pickCommCat('구인·구직', this)">구인·구직</button>
         <button class="chip" onclick="pickCommCat('현장후기', this)">현장후기</button>
         <button class="chip" onclick="pickCommCat('장비·팁', this)">장비·팁</button>
+        <button class="chip" onclick="pickCommCat('숙소·쉐어', this)">숙소·쉐어</button>
         <button class="chip" onclick="pickCommCat('자유', this)">자유</button>
       </div>
       <div id="communityPostList"></div>
@@ -572,6 +573,7 @@
       <option value="구인·구직">구인·구직</option>
       <option value="현장후기">현장후기</option>
       <option value="장비·팁">장비·팁</option>
+      <option value="숙소·쉐어">숙소·쉐어</option>
       <option value="자유">자유</option>
     </select>
     <label>제목</label>
@@ -804,7 +806,7 @@ async function api(action, p = {}) {
       const teamName = tRows.length ? tRows[0].name : "스마일산업";
       const isAdm = me.role === "admin";
       const filteredRecs = isAdm ? records : records.filter(r => String(r.worker_id) === String(me.user_id));
-      const workers = isAdm ? users.filter(u => u.role !== "admin") : [];
+      const workers = isAdm ? users.filter(u => String(u.user_id) !== String(me.user_id)) : [];
       return {
         ok: true,
         today: todayKST(),
@@ -852,6 +854,12 @@ async function api(action, p = {}) {
       const wage = Number(p.default_wage || 0);
       await sb("/users?user_id=eq." + encodeURIComponent(targetId), { method: "PATCH", body: JSON.stringify({ default_wage: wage }) });
       return { ok: true, default_wage: wage };
+    }
+    if (action === "update_worker_role") {
+      const targetId = p.worker_id;
+      const nextRole = p.role === "admin" ? "admin" : "worker";
+      await sb("/users?user_id=eq." + encodeURIComponent(targetId), { method: "PATCH", body: JSON.stringify({ role: nextRole }) });
+      return { ok: true, role: nextRole };
     }
     if (action === "add_site") {
       const site_id = "s_" + Date.now();
@@ -1337,16 +1345,26 @@ function renderTeamTab() {
   wEl.innerHTML = "";
   if (isAdm) {
     const allPeople = [
-      { user_id: currentUser.user_id, name: currentUser.name + " (나)", phone: currentUser.phone || "", default_wage: currentUser.default_wage || 180000 },
+      { user_id: currentUser.user_id, name: currentUser.name + " (나)", phone: currentUser.phone || "", default_wage: currentUser.default_wage || 180000, role: currentUser.role || "admin", isSelf: true },
       ...(dashData.workers || [])
     ];
     allPeople.forEach(w => {
+      const isCoAdmin = w.role === "admin";
+      const badge = isCoAdmin ? `<span class="pill pill-indigo" style="margin-left:6px;font-size:10px;padding:2px 7px;">관리자</span>` : "";
+      const roleBtn = w.isSelf
+        ? ""
+        : (isCoAdmin
+          ? `<button class="btn btn-outline btn-sm" style="margin:0;padding:5px 9px;font-size:11px;" onclick="toggleAdminRole('${w.user_id}', 'worker', '${w.name}')">관리자 해제</button>`
+          : `<button class="btn btn-soft btn-sm" style="margin:0;padding:5px 9px;font-size:11px;" onclick="toggleAdminRole('${w.user_id}', 'admin', '${w.name}')">관리자 지정</button>`);
       const d = document.createElement("div");
       d.className = "list-item";
       d.innerHTML = `
-        <div class="list-top">
-          <span>${w.name} <span style="font-size:12px;color:var(--sub);font-weight:500;">${w.phone}</span></span>
-          <button class="btn btn-soft btn-sm" style="margin:0;" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
+        <div class="list-top" style="gap:8px;flex-wrap:wrap;">
+          <span>${w.name}${badge} <span style="font-size:12px;color:var(--sub);font-weight:500;">${w.phone}</span></span>
+          <div class="row" style="flex:0 0 auto;gap:6px;">
+            ${roleBtn}
+            <button class="btn btn-soft btn-sm" style="margin:0;" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
+          </div>
         </div>`;
       wEl.appendChild(d);
     });
@@ -1494,6 +1512,18 @@ async function editWage(workerId, curWage, name) {
     localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
   }
   toast("기본 일당이 수정되었습니다!");
+  loadDashboard();
+}
+
+async function toggleAdminRole(workerId, nextRole, name) {
+  const msg = nextRole === "admin"
+    ? `${name} 님을 공동 관리자로 지정할까요?\n모든 직원의 출근·공수·정산·현장을 함께 관리할 수 있습니다.`
+    : `${name} 님의 관리자 권한을 해제하고 일반 직원으로 바꿀까요?`;
+  if (!confirm(msg)) return;
+  toast("권한 변경 중...");
+  const r = await api("update_worker_role", { user_id: currentUser.user_id, worker_id: workerId, role: nextRole });
+  if (!r.ok) return toast(r.error || "변경 실패");
+  toast(nextRole === "admin" ? "공동 관리자로 지정되었습니다!" : "관리자 권한이 해제되었습니다.");
   loadDashboard();
 }
 
