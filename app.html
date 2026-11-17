@@ -486,6 +486,19 @@
           </div>
           <span style="font-size:13px;font-weight:700;color:var(--sub);">월별 정산</span>
         </div>
+        <div id="taxControlBar" style="background:#F7F8FC;border-radius:12px;padding:10px 12px;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px;">세금 설정</div>
+          <div class="row" style="gap:6px;">
+            <button type="button" id="taxBtnNone" class="chip" style="flex:1;text-align:center;" onclick="setTaxMode('none')">설정 안함</button>
+            <button type="button" id="taxBtn33" class="chip active" style="flex:1;text-align:center;" onclick="setTaxMode('3.3')">3.3%</button>
+            <button type="button" id="taxBtnCustom" class="chip" style="flex:1;text-align:center;" onclick="setTaxMode('custom')">직접입력</button>
+          </div>
+          <div id="taxCustomWrap" class="row hidden" style="margin-top:8px;gap:6px;align-items:center;">
+            <input id="taxCustomInput" type="number" step="0.1" min="0" max="50" placeholder="세율 예: 8.8" style="margin:0;padding:8px 10px;font-size:14px;" />
+            <span style="font-size:13px;font-weight:700;color:var(--sub);flex:0 0 auto;">%</span>
+            <button type="button" class="btn btn-primary btn-sm" style="margin:0;flex:0 0 auto;" onclick="applyCustomTax()">적용</button>
+          </div>
+        </div>
         <div id="teamPayList"></div>
         <div id="workerPayCalendarWrap" class="hidden" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
           <div style="font-size:14px;font-weight:800;margin-bottom:8px;">전체 달력</div>
@@ -576,6 +589,16 @@
       <input id="newPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 PIN 입력" />
       <button class="btn btn-primary btn-sm" style="margin:0;" onclick="changePin()">변경</button>
     </div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
+      <label style="margin-top:0;">매일 아침 공수 체크 알림</label>
+      <div class="row" style="align-items:center;gap:8px;">
+        <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:13px;flex:0 0 auto;cursor:pointer;">
+          <input id="dailyNotifCheck" type="checkbox" style="width:18px;height:18px;margin:0;" onchange="saveReminderSetting()" />
+          <span>알림 켜기</span>
+        </label>
+        <input id="dailyNotifTime" type="time" value="08:00" style="margin:0;padding:8px 10px;font-size:14px;" onchange="saveReminderSetting()" />
+      </div>
+    </div>
     <button class="btn btn-outline" style="margin-top:18px;color:var(--red);border-color:#FECACA;" onclick="logout()">로그아웃</button>
   </div>
 </div>
@@ -597,6 +620,8 @@ let activeRecordId = null;
 let activeChatRoomId = null;
 let chatTimer = null;
 let workerActiveDate = "";
+let bgChatTimer = null;
+let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 function toast(msg) {
   const el = document.getElementById("toast");
@@ -1199,12 +1224,15 @@ function renderTeamTab() {
     map[r.worker_id].g += Number(r.gongsu || 0);
     map[r.worker_id].amt += Number(r.amount || 0);
   });
+  const taxRate = getTaxRate();
+  const taxLabel = taxRate > 0 ? `세금 (${taxRate}%)` : "세금 (미설정)";
   const pEl = document.getElementById("teamPayList");
   pEl.innerHTML = "";
+  updateTaxButtons();
   if (isAdm) {
     document.getElementById("workerPayCalendarWrap").classList.add("hidden");
     Object.values(map).forEach(w => {
-      const tax = Math.round(w.amt * 0.033);
+      const tax = Math.round(w.amt * taxRate / 100);
       const net = w.amt - tax;
       const d = document.createElement("div");
       d.className = "list-item";
@@ -1213,13 +1241,13 @@ function renderTeamTab() {
           <span>${w.name}</span>
           <span class="pill pill-green">실수령 ${fmtMoney(net)}</span>
         </div>
-        <div class="list-sub">${curMonth} · ${w.days.size}일 · 총 ${w.g.toFixed(1)}공수 · 세전 ${fmtMoney(w.amt)} · 세금(3.3%) ${fmtMoney(tax)}</div>`;
+        <div class="list-sub">${curMonth} · ${w.days.size}일 · 총 ${w.g.toFixed(1)}공수 · 세전 ${fmtMoney(w.amt)}${taxRate > 0 ? ` · ${taxLabel} ${fmtMoney(tax)}` : ""}</div>`;
       pEl.appendChild(d);
     });
     if (!Object.keys(map).length) pEl.innerHTML = '<div style="color:var(--sub);font-size:13px;text-align:center;padding:12px 0;">이번 달 정산 기록이 없습니다.</div>';
   } else {
     const myStat = map[currentUser.user_id] || { name: currentUser.name, days: new Set(), g: 0, amt: 0 };
-    const tax = Math.round(myStat.amt * 0.033);
+    const tax = Math.round(myStat.amt * taxRate / 100);
     const net = myStat.amt - tax;
     const wage = currentUser.default_wage || 180000;
     pEl.innerHTML = `
@@ -1237,8 +1265,8 @@ function renderTeamTab() {
           <b>${fmtMoney(myStat.amt)}</b>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:14px;padding:4px 0;">
-          <span style="color:var(--sub);">세금 (3.3%)</span>
-          <span style="color:#EF4444;font-weight:700;">-${fmtMoney(tax)}</span>
+          <span style="color:var(--sub);">${taxLabel}</span>
+          <span style="color:${taxRate > 0 ? '#EF4444' : 'var(--sub)'};font-weight:700;">${taxRate > 0 ? "-" + fmtMoney(tax) : "0원"}</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:16px;padding:10px 0 2px;margin-top:6px;border-top:1px solid var(--line);">
           <span style="font-weight:800;">실수령 월급</span>
@@ -1499,8 +1527,85 @@ function openSettingsModal() {
   document.getElementById("setUserName").textContent = currentUser.name + (currentUser.role === "admin" ? " (관리자)" : " (직원)");
   document.getElementById("setUserPhone").textContent = currentUser.phone || "";
   document.getElementById("setWageInput").value = currentUser.default_wage || 180000;
+  const enabled = localStorage.getItem("gongsu_daily_enabled") !== "0";
+  const timeVal = localStorage.getItem("gongsu_daily_time") || "08:00";
+  document.getElementById("dailyNotifCheck").checked = enabled;
+  document.getElementById("dailyNotifTime").value = timeVal;
   document.getElementById("settingsModal").classList.remove("hidden");
 }
+
+function saveReminderSetting() {
+  const enabled = document.getElementById("dailyNotifCheck").checked;
+  const timeVal = document.getElementById("dailyNotifTime").value || "08:00";
+  localStorage.setItem("gongsu_daily_enabled", enabled ? "1" : "0");
+  localStorage.setItem("gongsu_daily_time", timeVal);
+  const [hh, mm] = timeVal.split(":").map(Number);
+  if (window.AndroidBridge && window.AndroidBridge.setDailyReminder) {
+    window.AndroidBridge.setDailyReminder(enabled, hh || 8, mm || 0);
+  }
+  toast(enabled ? `매일 ${timeVal} 알림이 설정되었습니다.` : "매일 알림이 꺼졌습니다.");
+}
+
+function getTaxMode() { return localStorage.getItem("gongsu_tax_mode") || "3.3"; }
+function getTaxRate() {
+  const mode = getTaxMode();
+  if (mode === "none") return 0;
+  if (mode === "custom") return Number(localStorage.getItem("gongsu_tax_custom") || 0);
+  return 3.3;
+}
+function updateTaxButtons() {
+  const mode = getTaxMode();
+  document.getElementById("taxBtnNone").classList.toggle("active", mode === "none");
+  document.getElementById("taxBtn33").classList.toggle("active", mode === "3.3");
+  document.getElementById("taxBtnCustom").classList.toggle("active", mode === "custom");
+  document.getElementById("taxCustomWrap").classList.toggle("hidden", mode !== "custom");
+  if (mode === "custom") {
+    document.getElementById("taxCustomInput").value = localStorage.getItem("gongsu_tax_custom") || "";
+  }
+}
+function setTaxMode(mode) {
+  localStorage.setItem("gongsu_tax_mode", mode);
+  updateTaxButtons();
+  if (mode !== "custom") renderTeamTab();
+}
+function applyCustomTax() {
+  const v = Number(document.getElementById("taxCustomInput").value);
+  if (isNaN(v) || v < 0 || v > 50) return toast("0~50% 사이로 입력해 주세요.");
+  localStorage.setItem("gongsu_tax_custom", String(v));
+  renderTeamTab();
+  toast(`세율 ${v}%가 적용되었습니다.`);
+}
+
+async function pollNewChatForNotification() {
+  if (!currentUser) return;
+  try {
+    const msgs = await sb("/messages?select=*&order=created_at.desc&limit=5");
+    if (!msgs || !msgs.length) return;
+    const latest = msgs[0];
+    if (!lastNotifiedMsgId) {
+      lastNotifiedMsgId = latest.msg_id;
+      localStorage.setItem("gongsu_last_msg_id", latest.msg_id);
+      return;
+    }
+    if (latest.msg_id !== lastNotifiedMsgId) {
+      lastNotifiedMsgId = latest.msg_id;
+      localStorage.setItem("gongsu_last_msg_id", latest.msg_id);
+      const isMine = String(latest.sender_id) === String(currentUser.user_id);
+      const isDmForMe = !latest.room_id.startsWith("dm_") || latest.room_id.includes(String(currentUser.user_id));
+      const inSameRoom = (curNav === "chat" && activeChatRoomId === latest.room_id && !document.hidden);
+      if (!isMine && isDmForMe && !inSameRoom) {
+        const title = `${latest.sender_name || "새 메시지"}`;
+        const body = latest.text || "";
+        if (window.AndroidBridge && window.AndroidBridge.showChatNotification) {
+          window.AndroidBridge.showChatNotification(title, body);
+        } else {
+          toast(`💬 ${title}: ${body}`);
+        }
+      }
+    }
+  } catch (e) {}
+}
+setInterval(pollNewChatForNotification, 5000);
 function closeSettingsModal() { document.getElementById("settingsModal").classList.add("hidden"); }
 
 async function saveMyWageFromSettings() {
