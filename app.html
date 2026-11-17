@@ -314,7 +314,7 @@
   <div class="card" style="margin-top:16px;">
     <div class="sub-tabs">
       <div id="tabLogin" class="sub-tab active" onclick="switchAuthTab('login')">로그인</div>
-      <div id="tabJoin" class="sub-tab" onclick="switchAuthTab('join')">직원가입</div>
+      <div id="tabJoin" class="sub-tab" onclick="switchAuthTab('join')">개인·직원 가입</div>
       <div id="tabAdminJoin" class="sub-tab" onclick="switchAuthTab('adminJoin')">사장님 가입</div>
     </div>
 
@@ -327,15 +327,12 @@
         <input id="rememberPhone" type="checkbox" style="width:auto;margin:0;" checked /> 아이디(전화번호) 기억하기
       </label>
       <button class="btn btn-primary" style="margin-top:14px;" onclick="doLogin()">로그인</button>
-      <p style="font-size:12px;color:var(--sub);margin:12px 0 0;text-align:center;">
-        사장님(관리자) 초기 비밀번호는 <b>0000</b>입니다.
-      </p>
     </div>
 
     <div id="joinForm" class="hidden">
-      <label>초대코드</label>
+      <label>초대코드 <span style="font-weight:500;color:var(--sub);">(선택 — 없으면 개인 공수 캘린더)</span></label>
       <div class="row">
-        <input id="joinCode" type="text" placeholder="예: SM4K9P" style="text-transform:uppercase;" />
+        <input id="joinCode" type="text" placeholder="없으면 비워두세요 (예: SM4K9P)" style="text-transform:uppercase;" />
         <button type="button" class="btn btn-soft btn-sm" style="margin:0;flex:0 0 auto;" onclick="pasteJoinCode()">붙여넣기</button>
       </div>
       <label>이름</label>
@@ -680,6 +677,22 @@
     <div style="background:#F7F8FC;border-radius:14px;padding:14px;margin-bottom:12px;">
       <div id="setUserName" style="font-size:17px;font-weight:800;"></div>
       <div id="setUserPhone" style="font-size:13px;color:var(--sub);margin-top:2px;"></div>
+      <div id="setTeamBadge" style="font-size:12px;color:var(--primary);font-weight:700;margin-top:4px;"></div>
+    </div>
+    <label>직종 · 경력</label>
+    <div class="row" style="gap:8px;align-items:center;">
+      <select id="setJobType" style="margin:0;flex:1;">
+        <option value="">직종 선택</option>
+        <option value="배관">배관</option>
+        <option value="용접">용접</option>
+        <option value="제관">제관</option>
+        <option value="조공">조공</option>
+        <option value="기타">기타</option>
+      </select>
+      <select id="setCareerYears" style="margin:0;flex:1;">
+        <option value="">경력 선택</option>
+      </select>
+      <button class="btn btn-primary btn-sm" style="margin:0;flex:0 0 auto;" onclick="saveMyProfileFromSettings()">저장</button>
     </div>
     <label>내 기본 일당 (원)</label>
     <div class="row">
@@ -690,6 +703,14 @@
     <div class="row">
       <input id="newPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 비밀번호 입력" />
       <button class="btn btn-primary btn-sm" style="margin:0;" onclick="changePin()">변경</button>
+    </div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
+      <label style="margin-top:0;">소속 팀 · 공수 캘린더 전환</label>
+      <div class="row" style="gap:6px;">
+        <input id="joinTeamCodeInput" type="text" placeholder="초대코드 입력해 팀 합류" style="margin:0;text-transform:uppercase;" />
+        <button class="btn btn-soft btn-sm" style="margin:0;flex:0 0 auto;" onclick="joinTeamByCode()">팀 합류</button>
+      </div>
+      <button id="leaveTeamBtn" class="btn btn-outline btn-sm hidden" style="margin-top:8px;width:100%;" onclick="leaveTeamToSolo()">소속 나가기 (개인 공수 캘린더로 전환)</button>
     </div>
     <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
       <label style="margin-top:0;">매일 아침 공수 체크 알림</label>
@@ -760,8 +781,8 @@ async function api(action, p = {}) {
       if (String(u.pin) !== String(p.pin || "").trim()) return { ok: false, error: "비밀번호가 일치하지 않습니다." };
       const tid = u.team_id || "team_smile";
       const tRows = await sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => []);
-      const teamName = tRows.length ? tRows[0].name : "스마일산업";
-      return { ok: true, user: { user_id: u.user_id, name: u.name, phone: u.phone, role: u.role, default_wage: Number(u.default_wage || 180000), team_id: tid, team_name: teamName } };
+      const teamName = tRows.length ? tRows[0].name : (tid.startsWith("solo_") ? "개인 공수 캘린더" : "스마일산업");
+      return { ok: true, user: { user_id: u.user_id, name: u.name, phone: u.phone, role: u.role, default_wage: Number(u.default_wage || 180000), team_id: tid, team_name: teamName, job_type: u.job_type || "", career_years: u.career_years } };
     }
     if (action === "register_admin") {
       const teamName = String(p.team_name || "").trim();
@@ -782,54 +803,72 @@ async function api(action, p = {}) {
         method: "POST",
         body: JSON.stringify({ user_id: newUserId, name, phone, role: "admin", default_wage: 180000, invite_code: "", status: "active", pin, team_id: newTeamId })
       });
-      return { ok: true, user: { user_id: newUserId, name, phone, role: "admin", default_wage: 180000, team_id: newTeamId, team_name: teamName } };
+      return { ok: true, user: { user_id: newUserId, name, phone, role: "admin", default_wage: 180000, team_id: newTeamId, team_name: teamName, job_type: "", career_years: null } };
     }
     if (action === "register_worker") {
       const code = String(p.invite_code || "").trim().toUpperCase();
       const phone = String(p.phone || "").replace(/[^0-9]/g, "");
       const name = String(p.name || "").trim();
       const pin = String(p.pin || "").trim();
-      if (!code || !phone || !name || !pin) return { ok: false, error: "모든 항목을 입력해 주세요." };
-      const invs = await sb("/invites?code=eq." + encodeURIComponent(code) + "&select=*");
-      if (!invs.length) return { ok: false, error: "유효하지 않은 초대코드입니다." };
-      if (invs[0].used === "Y") return { ok: false, error: "이미 사용된 초대코드입니다." };
+      if (!phone || !name || !pin) return { ok: false, error: "이름, 전화번호, 비밀번호를 입력해 주세요." };
+      if (pin.length < 4) return { ok: false, error: "비밀번호는 4자리 이상 입력하세요." };
       const dup = await sb("/users?phone=eq." + encodeURIComponent(phone) + "&select=user_id");
       if (dup.length) return { ok: false, error: "이미 가입된 전화번호입니다." };
-      const tid = invs[0].team_id || "team_smile";
-      const tRows = await sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => []);
-      const teamName = tRows.length ? tRows[0].name : "스마일산업";
       const newId = "w_" + Date.now();
-      await sb("/users", {
-        method: "POST",
-        body: JSON.stringify({ user_id: newId, name, phone, role: "worker", default_wage: 180000, invite_code: code, status: "active", pin, team_id: tid })
-      });
-      await sb("/invites?code=eq." + encodeURIComponent(code), {
-        method: "PATCH",
-        body: JSON.stringify({ used: "Y", used_by: newId })
-      });
-      return { ok: true, user: { user_id: newId, name, phone, role: "worker", default_wage: 180000, team_id: tid, team_name: teamName } };
+      let tid = "";
+      let teamName = "개인 공수 캘린더";
+      if (code) {
+        const invs = await sb("/invites?code=eq." + encodeURIComponent(code) + "&select=*");
+        if (!invs.length) return { ok: false, error: "유효하지 않은 초대코드입니다." };
+        if (invs[0].used === "Y") return { ok: false, error: "이미 사용된 초대코드입니다." };
+        tid = invs[0].team_id || "team_smile";
+        const tRows = await sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => []);
+        teamName = tRows.length ? tRows[0].name : "스마일산업";
+        await sb("/users", {
+          method: "POST",
+          body: JSON.stringify({ user_id: newId, name, phone, role: "worker", default_wage: 180000, invite_code: code, status: "active", pin, team_id: tid })
+        });
+        await sb("/invites?code=eq." + encodeURIComponent(code), {
+          method: "PATCH",
+          body: JSON.stringify({ used: "Y", used_by: newId })
+        });
+      } else {
+        tid = "solo_" + newId;
+        await sb("/teams", {
+          method: "POST",
+          body: JSON.stringify({ team_id: tid, name: "개인 공수 캘린더", owner_id: newId })
+        });
+        await sb("/users", {
+          method: "POST",
+          body: JSON.stringify({ user_id: newId, name, phone, role: "worker", default_wage: 180000, invite_code: "", status: "active", pin, team_id: tid })
+        });
+      }
+      return { ok: true, user: { user_id: newId, name, phone, role: "worker", default_wage: 180000, team_id: tid, team_name: teamName, job_type: "", career_years: null } };
     }
     if (action === "get_dashboard") {
       const month = p.month || getCurMonth();
-      const meRows = await sb("/users?user_id=eq." + encodeURIComponent(p.user_id) + "&select=user_id,name,phone,role,default_wage,team_id");
+      const meRows = await sb("/users?user_id=eq." + encodeURIComponent(p.user_id) + "&select=user_id,name,phone,role,default_wage,team_id,job_type,career_years");
       if (!meRows.length) return { ok: false, error: "사용자를 찾을 수 없습니다." };
       const me = meRows[0];
       const tid = me.team_id || "team_smile";
       const recFilter = month === "ALL" ? "" : ("&date=like." + encodeURIComponent(month + "*"));
+      const isAdm = me.role === "admin";
+      const recQuery = isAdm
+        ? ("/records?team_id=eq." + encodeURIComponent(tid) + recFilter + "&select=*&order=date.desc,updated_at.desc")
+        : ("/records?worker_id=eq." + encodeURIComponent(me.user_id) + recFilter + "&select=*&order=date.desc,updated_at.desc");
       const [users, records, sites, tRows] = await Promise.all([
-        sb("/users?team_id=eq." + encodeURIComponent(tid) + "&select=user_id,name,phone,role,default_wage,team_id"),
-        sb("/records?team_id=eq." + encodeURIComponent(tid) + recFilter + "&select=*&order=date.desc,updated_at.desc"),
+        sb("/users?team_id=eq." + encodeURIComponent(tid) + "&select=user_id,name,phone,role,default_wage,team_id,job_type,career_years"),
+        sb(recQuery),
         sb("/sites?team_id=eq." + encodeURIComponent(tid) + "&select=*&order=created_at.asc"),
         sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => [])
       ]);
-      const teamName = tRows.length ? tRows[0].name : "스마일산업";
-      const isAdm = me.role === "admin";
-      const filteredRecs = isAdm ? records : records.filter(r => String(r.worker_id) === String(me.user_id));
+      const teamName = tRows.length ? tRows[0].name : (tid.startsWith("solo_") ? "개인 공수 캘린더" : "스마일산업");
+      const filteredRecs = records;
       const workers = isAdm ? users.filter(u => String(u.user_id) !== String(me.user_id)) : [];
       return {
         ok: true,
         today: todayKST(),
-        user: { user_id: me.user_id, name: me.name, phone: me.phone, role: me.role, default_wage: Number(me.default_wage || 180000), team_id: tid, team_name: teamName },
+        user: { user_id: me.user_id, name: me.name, phone: me.phone, role: me.role, default_wage: Number(me.default_wage || 180000), team_id: tid, team_name: teamName, job_type: me.job_type || "", career_years: me.career_years },
         records: filteredRecs,
         sites,
         workers
@@ -879,6 +918,37 @@ async function api(action, p = {}) {
       const nextRole = p.role === "admin" ? "admin" : "worker";
       await sb("/users?user_id=eq." + encodeURIComponent(targetId), { method: "PATCH", body: JSON.stringify({ role: nextRole }) });
       return { ok: true, role: nextRole };
+    }
+    if (action === "update_profile") {
+      const patch = {
+        job_type: p.job_type ? String(p.job_type) : null,
+        career_years: (p.career_years !== "" && p.career_years !== null && p.career_years !== undefined) ? Number(p.career_years) : null
+      };
+      await sb("/users?user_id=eq." + encodeURIComponent(p.user_id), { method: "PATCH", body: JSON.stringify(patch) });
+      return { ok: true, ...patch };
+    }
+    if (action === "leave_team") {
+      const uid = String(p.target_user_id || p.user_id);
+      const soloTid = "solo_" + uid;
+      const existTeam = await sb("/teams?team_id=eq." + encodeURIComponent(soloTid) + "&select=team_id").catch(() => []);
+      if (!existTeam.length) {
+        await sb("/teams", { method: "POST", body: JSON.stringify({ team_id: soloTid, name: "개인 공수 캘린더", owner_id: uid }) });
+      }
+      await sb("/users?user_id=eq." + encodeURIComponent(uid), { method: "PATCH", body: JSON.stringify({ team_id: soloTid, role: "worker" }) });
+      return { ok: true, team_id: soloTid, team_name: "개인 공수 캘린더" };
+    }
+    if (action === "join_team_by_code") {
+      const code = String(p.invite_code || "").trim().toUpperCase();
+      if (!code) return { ok: false, error: "초대코드를 입력해 주세요." };
+      const invs = await sb("/invites?code=eq." + encodeURIComponent(code) + "&select=*");
+      if (!invs.length) return { ok: false, error: "유효하지 않은 초대코드입니다." };
+      if (invs[0].used === "Y") return { ok: false, error: "이미 사용된 초대코드입니다." };
+      const tid = invs[0].team_id || "team_smile";
+      const tRows = await sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => []);
+      const teamName = tRows.length ? tRows[0].name : "스마일산업";
+      await sb("/users?user_id=eq." + encodeURIComponent(p.user_id), { method: "PATCH", body: JSON.stringify({ team_id: tid, role: "worker", invite_code: code }) });
+      await sb("/invites?code=eq." + encodeURIComponent(code), { method: "PATCH", body: JSON.stringify({ used: "Y", used_by: p.user_id }) });
+      return { ok: true, team_id: tid, team_name: teamName };
     }
     if (action === "add_site") {
       const site_id = "s_" + Date.now();
@@ -1049,7 +1119,7 @@ async function doRegister() {
   const name = document.getElementById("joinName").value.trim();
   const phone = document.getElementById("joinPhone").value.trim();
   const pin = document.getElementById("joinPin").value.trim();
-  if (!invite_code || !name || !phone || !pin) return toast("모든 항목을 입력해 주세요.");
+  if (!name || !phone || !pin) return toast("이름, 전화번호, 비밀번호를 입력해 주세요.");
   toast("가입 처리 중...");
   try {
     const r = await api("register_worker", { invite_code, name, phone, pin });
@@ -1371,24 +1441,30 @@ function renderTeamTab() {
   wEl.innerHTML = "";
   if (isAdm) {
     const allPeople = [
-      { user_id: currentUser.user_id, name: currentUser.name + " (나)", phone: currentUser.phone || "", default_wage: currentUser.default_wage || 180000, role: currentUser.role || "admin", isSelf: true },
+      { user_id: currentUser.user_id, name: currentUser.name + " (나)", phone: currentUser.phone || "", default_wage: currentUser.default_wage || 180000, role: currentUser.role || "admin", job_type: currentUser.job_type || "", career_years: currentUser.career_years, isSelf: true },
       ...(dashData.workers || [])
     ];
     allPeople.forEach(w => {
       const isCoAdmin = w.role === "admin";
       const badge = isCoAdmin ? `<span class="pill pill-indigo" style="margin-left:6px;font-size:10px;padding:2px 7px;">관리자</span>` : "";
+      const jobMeta = [w.job_type, (w.career_years !== null && w.career_years !== undefined && w.career_years !== "") ? (w.career_years + "년") : ""].filter(Boolean).join(" · ");
+      const jobBadge = jobMeta ? `<span style="font-size:11px;color:var(--primary);margin-left:6px;font-weight:700;">${escHtml(jobMeta)}</span>` : "";
       const roleBtn = w.isSelf
         ? ""
         : (isCoAdmin
           ? `<button class="btn btn-outline btn-sm" style="margin:0;padding:5px 9px;font-size:11px;" onclick="toggleAdminRole('${w.user_id}', 'worker', '${w.name}')">관리자 해제</button>`
           : `<button class="btn btn-soft btn-sm" style="margin:0;padding:5px 9px;font-size:11px;" onclick="toggleAdminRole('${w.user_id}', 'admin', '${w.name}')">관리자 지정</button>`);
+      const leaveBtn = w.isSelf
+        ? ""
+        : `<button class="btn btn-outline btn-sm" style="margin:0;padding:5px 8px;font-size:11px;color:var(--sub);" onclick="removeWorkerFromTeam('${w.user_id}', '${w.name}')">팀 종료</button>`;
       const d = document.createElement("div");
       d.className = "list-item";
       d.innerHTML = `
         <div class="list-top" style="gap:8px;flex-wrap:wrap;">
-          <span>${w.name}${badge} <span style="font-size:12px;color:var(--sub);font-weight:500;">${w.phone}</span></span>
-          <div class="row" style="flex:0 0 auto;gap:6px;">
+          <span>${escHtml(w.name)}${badge}${jobBadge} <span style="font-size:12px;color:var(--sub);font-weight:500;">${w.phone}</span></span>
+          <div class="row" style="flex:0 0 auto;gap:6px;flex-wrap:wrap;">
             ${roleBtn}
+            ${leaveBtn}
             <button class="btn btn-soft btn-sm" style="margin:0;" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
           </div>
         </div>`;
@@ -1798,15 +1874,77 @@ async function submitRecordModal() {
   loadDashboard();
 }
 
+async function removeWorkerFromTeam(workerId, name) {
+  if (!confirm(`${name}님을 현재 팀에서 내보낼까요?\n계정과 기존 공수 기록은 삭제되지 않고 개인 공수 캘린더로 전환됩니다.`)) return;
+  const r = await api("leave_team", { user_id: currentUser.user_id, target_user_id: workerId });
+  if (!r.ok) return toast(r.error);
+  toast(`${name}님이 개인 공수 캘린더로 전환되었습니다.`);
+  await refreshDashboard();
+}
+
 function openSettingsModal() {
-  document.getElementById("setUserName").textContent = currentUser.name + (currentUser.role === "admin" ? " (관리자)" : " (직원)");
+  const isSolo = String(currentUser.team_id || "").startsWith("solo_");
+  document.getElementById("setUserName").textContent = currentUser.name + (currentUser.role === "admin" ? " (관리자)" : (isSolo ? " (개인)" : " (직원)"));
   document.getElementById("setUserPhone").textContent = currentUser.phone || "";
+  document.getElementById("setTeamBadge").textContent = "소속: " + (currentUser.team_name || (isSolo ? "개인 공수 캘린더" : "스마일산업"));
+  document.getElementById("leaveTeamBtn").classList.toggle("hidden", isSolo || currentUser.role === "admin");
+  const cSel = document.getElementById("setCareerYears");
+  if (cSel.options.length <= 1) {
+    for (let y = 0; y <= 40; y++) {
+      const o = document.createElement("option");
+      o.value = String(y);
+      o.textContent = y === 0 ? "0년 (신입)" : (y + "년");
+      cSel.appendChild(o);
+    }
+  }
+  document.getElementById("setJobType").value = currentUser.job_type || "";
+  cSel.value = (currentUser.career_years !== null && currentUser.career_years !== undefined && currentUser.career_years !== "") ? String(currentUser.career_years) : "";
   document.getElementById("setWageInput").value = currentUser.default_wage || 180000;
   const enabled = localStorage.getItem("gongsu_daily_enabled") !== "0";
   const timeVal = localStorage.getItem("gongsu_daily_time") || "08:00";
   document.getElementById("dailyNotifCheck").checked = enabled;
   document.getElementById("dailyNotifTime").value = timeVal;
   document.getElementById("settingsModal").classList.remove("hidden");
+}
+
+async function saveMyProfileFromSettings() {
+  const job_type = document.getElementById("setJobType").value;
+  const career_years = document.getElementById("setCareerYears").value;
+  const r = await api("update_profile", { user_id: currentUser.user_id, job_type, career_years });
+  if (!r.ok) return toast(r.error || "저장 실패");
+  currentUser.job_type = r.job_type || "";
+  currentUser.career_years = r.career_years;
+  localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+  toast("직종·경력이 저장되었습니다.");
+  await refreshDashboard();
+}
+
+async function leaveTeamToSolo() {
+  if (!confirm("현재 팀에서 나가고 개인 공수 캘린더로 전환할까요?\n지금까지 입력한 공수 기록은 그대로 유지됩니다.")) return;
+  const r = await api("leave_team", { user_id: currentUser.user_id });
+  if (!r.ok) return toast(r.error);
+  currentUser.team_id = r.team_id;
+  currentUser.team_name = r.team_name;
+  currentUser.role = "worker";
+  localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+  toast("개인 공수 캘린더로 전환되었습니다.");
+  closeSettingsModal();
+  enterApp();
+}
+
+async function joinTeamByCode() {
+  const code = document.getElementById("joinTeamCodeInput").value.trim().toUpperCase();
+  if (!code) return toast("초대코드를 입력해 주세요.");
+  const r = await api("join_team_by_code", { user_id: currentUser.user_id, invite_code: code });
+  if (!r.ok) return toast(r.error);
+  currentUser.team_id = r.team_id;
+  currentUser.team_name = r.team_name;
+  currentUser.role = "worker";
+  document.getElementById("joinTeamCodeInput").value = "";
+  localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+  toast(r.team_name + " 팀에 합류했습니다!");
+  closeSettingsModal();
+  enterApp();
 }
 
 function saveReminderSetting() {
