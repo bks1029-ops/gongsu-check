@@ -457,7 +457,7 @@
   <!-- TAB 4: TEAM / PAYROLL / SITES (가치업 3번 사진 스타일) -->
   <div id="teamPanel" class="hidden">
     <div class="card">
-      <div class="sub-tabs">
+      <div id="teamSubTabs" class="sub-tabs">
         <div id="tTabWorkers" class="sub-tab active" onclick="switchTeamTab('workers')">직원·초대</div>
         <div id="tTabPay" class="sub-tab" onclick="switchTeamTab('pay')">월별 정산</div>
         <div id="tTabSites" class="sub-tab" onclick="switchTeamTab('sites')">현장</div>
@@ -478,7 +478,19 @@
 
       <!-- SUB 2: PAYROLL -->
       <div id="teamPayBox" class="hidden">
+        <div id="payMonthBar" class="cal-head" style="margin-bottom:10px;">
+          <div class="row" style="flex:0;gap:6px;">
+            <button class="btn btn-outline btn-sm" onclick="shiftCalMonth(-1)">‹</button>
+            <span id="payMonthLabel" class="cal-month">2026.11</span>
+            <button class="btn btn-outline btn-sm" onclick="shiftCalMonth(1)">›</button>
+          </div>
+          <span style="font-size:13px;font-weight:700;color:var(--sub);">월별 정산</span>
+        </div>
         <div id="teamPayList"></div>
+        <div id="workerPayCalendarWrap" class="hidden" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
+          <div style="font-size:14px;font-weight:800;margin-bottom:8px;">전체 달력</div>
+          <div id="workerPayCalGrid" class="cal-grid"></div>
+        </div>
       </div>
 
       <!-- SUB 3: SITES -->
@@ -571,7 +583,8 @@
 <div id="toast" class="toast hidden"></div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbw5pNE_IScwzjGooxHS06K5QhKG5RkR61jissrf4jyGyYmNIOxpua4fqDEbP1iN6LUw/exec";
+const SB_URL = "https://qklpopvsygdzdxbluywp.supabase.co/rest/v1";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbHBvcHZzeWdkemR4Ymx1eXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4NzQ4NjksImV4cCI6MjExMDQ1MDg2OX0.Jt1fNGvBeIIMkRQhXQpW4MmJoWOTDVSL99qHl5pLyz4";
 
 let currentUser = null;
 let viewMode = "admin";
@@ -592,13 +605,179 @@ function toast(msg) {
   setTimeout(() => el.classList.add("hidden"), 2500);
 }
 
-async function api(action, payload = {}) {
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action, ...payload })
-  });
-  return await res.json();
+function todayKST() {
+  return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+}
+
+async function sb(path, opts = {}) {
+  const headers = {
+    apikey: SB_KEY,
+    Authorization: "Bearer " + SB_KEY,
+    "Content-Type": "application/json",
+    ...(opts.headers || {})
+  };
+  const res = await fetch(SB_URL + path, { ...opts, headers });
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || ("HTTP " + res.status));
+  return text ? JSON.parse(text) : [];
+}
+
+async function api(action, p = {}) {
+  try {
+    if (action === "login") {
+      const phone = String(p.phone || "").replace(/[^0-9]/g, "");
+      const rows = await sb("/users?phone=eq." + encodeURIComponent(phone) + "&select=*");
+      if (!rows.length) return { ok: false, error: "등록되지 않은 전화번호입니다." };
+      const u = rows[0];
+      if (String(u.pin) !== String(p.pin || "").trim()) return { ok: false, error: "비밀번호(PIN)가 일치하지 않습니다." };
+      return { ok: true, user: { user_id: u.user_id, name: u.name, phone: u.phone, role: u.role, default_wage: Number(u.default_wage || 180000) } };
+    }
+    if (action === "register_worker") {
+      const code = String(p.invite_code || "").trim().toUpperCase();
+      const phone = String(p.phone || "").replace(/[^0-9]/g, "");
+      const name = String(p.name || "").trim();
+      const pin = String(p.pin || "").trim();
+      if (!code || !phone || !name || !pin) return { ok: false, error: "모든 항목을 입력해 주세요." };
+      const invs = await sb("/invites?code=eq." + encodeURIComponent(code) + "&select=*");
+      if (!invs.length) return { ok: false, error: "유효하지 않은 초대코드입니다." };
+      if (invs[0].used === "Y") return { ok: false, error: "이미 사용된 초대코드입니다." };
+      const dup = await sb("/users?phone=eq." + encodeURIComponent(phone) + "&select=user_id");
+      if (dup.length) return { ok: false, error: "이미 가입된 전화번호입니다." };
+      const newId = "w_" + Date.now();
+      await sb("/users", {
+        method: "POST",
+        body: JSON.stringify({ user_id: newId, name, phone, role: "worker", default_wage: 180000, invite_code: code, status: "active", pin })
+      });
+      await sb("/invites?code=eq." + encodeURIComponent(code), {
+        method: "PATCH",
+        body: JSON.stringify({ used: "Y", used_by: newId })
+      });
+      return { ok: true, user: { user_id: newId, name, phone, role: "worker", default_wage: 180000 } };
+    }
+    if (action === "get_dashboard") {
+      const month = p.month || getCurMonth();
+      const recFilter = month === "ALL" ? "" : ("&date=like." + encodeURIComponent(month + "*"));
+      const [users, records, sites] = await Promise.all([
+        sb("/users?select=user_id,name,phone,role,default_wage"),
+        sb("/records?select=*" + recFilter + "&order=date.desc,updated_at.desc"),
+        sb("/sites?select=*&order=created_at.asc")
+      ]);
+      const me = users.find(u => String(u.user_id) === String(p.user_id));
+      if (!me) return { ok: false, error: "사용자를 찾을 수 없습니다." };
+      const isAdm = me.role === "admin";
+      const filteredRecs = isAdm ? records : records.filter(r => String(r.worker_id) === String(me.user_id));
+      const workers = isAdm ? users.filter(u => u.role !== "admin") : [];
+      return {
+        ok: true,
+        today: todayKST(),
+        user: { user_id: me.user_id, name: me.name, phone: me.phone, role: me.role, default_wage: Number(me.default_wage || 180000) },
+        records: filteredRecs,
+        sites,
+        workers
+      };
+    }
+    if (action === "save_record") {
+      const targetId = p.worker_id || p.user_id;
+      const uRows = await sb("/users?user_id=eq." + encodeURIComponent(targetId) + "&select=user_id,name,default_wage");
+      if (!uRows.length) return { ok: false, error: "대상 직원을 찾을 수 없습니다." };
+      const tu = uRows[0];
+      const gongsu = Number(p.gongsu || 1.0);
+      const wage = Number(p.wage || tu.default_wage || 180000);
+      const amount = Math.round(gongsu * wage);
+      const row = {
+        date: String(p.date || todayKST()),
+        site: String(p.site || "").trim(),
+        worker_id: tu.user_id,
+        worker_name: tu.name,
+        gongsu,
+        wage,
+        amount,
+        memo: String(p.memo || ""),
+        updated_at: new Date().toISOString()
+      };
+      if (p.record_id) {
+        await sb("/records?record_id=eq." + encodeURIComponent(p.record_id), { method: "PATCH", body: JSON.stringify(row) });
+        return { ok: true, record_id: p.record_id };
+      } else {
+        const record_id = "r_" + Date.now();
+        await sb("/records", { method: "POST", body: JSON.stringify({ record_id, ...row }) });
+        return { ok: true, record_id };
+      }
+    }
+    if (action === "delete_record") {
+      await sb("/records?record_id=eq." + encodeURIComponent(p.record_id), { method: "DELETE" });
+      return { ok: true };
+    }
+    if (action === "update_worker_wage") {
+      const targetId = p.worker_id || p.user_id;
+      const wage = Number(p.default_wage || 0);
+      await sb("/users?user_id=eq." + encodeURIComponent(targetId), { method: "PATCH", body: JSON.stringify({ default_wage: wage }) });
+      return { ok: true, default_wage: wage };
+    }
+    if (action === "add_site") {
+      const site_id = "s_" + Date.now();
+      await sb("/sites", { method: "POST", body: JSON.stringify({ site_id, name: String(p.name || "").trim(), status: "진행중" }) });
+      return { ok: true, site_id, name: p.name };
+    }
+    if (action === "delete_site") {
+      await sb("/sites?site_id=eq." + encodeURIComponent(p.site_id), { method: "DELETE" });
+      return { ok: true };
+    }
+    if (action === "create_invite") {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let code = "SM";
+      for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      await sb("/invites", { method: "POST", body: JSON.stringify({ code, created_by: p.user_id, used: "N", used_by: "" }) });
+      return { ok: true, invite_code: code };
+    }
+    if (action === "change_pin") {
+      await sb("/users?user_id=eq." + encodeURIComponent(p.user_id), { method: "PATCH", body: JSON.stringify({ pin: String(p.new_pin) }) });
+      return { ok: true };
+    }
+    if (action === "get_chat_overview") {
+      const [users, msgs] = await Promise.all([
+        sb("/users?select=user_id,name,role"),
+        sb("/messages?select=*&order=created_at.desc&limit=200")
+      ]);
+      const lastByRoom = {};
+      msgs.forEach(m => { if (!lastByRoom[m.room_id]) lastByRoom[m.room_id] = m; });
+      const rooms = [{
+        room_id: "all",
+        type: "channel",
+        title: "공수 체크 전체 채널",
+        last_text: lastByRoom["all"] ? (lastByRoom["all"].sender_name + ": " + lastByRoom["all"].text) : "공지 및 현장 소통방",
+        last_time: lastByRoom["all"] ? lastByRoom["all"].created_at : ""
+      }];
+      users.filter(u => String(u.user_id) !== String(p.user_id)).forEach(u => {
+        const rid = "dm_" + [String(p.user_id), String(u.user_id)].sort().join("__");
+        rooms.push({
+          room_id: rid,
+          type: "dm",
+          peer_id: u.user_id,
+          peer_name: u.name,
+          title: u.name,
+          last_text: lastByRoom[rid] ? lastByRoom[rid].text : "1:1 대화 시작하기",
+          last_time: lastByRoom[rid] ? lastByRoom[rid].created_at : ""
+        });
+      });
+      return { ok: true, rooms };
+    }
+    if (action === "get_messages") {
+      const msgs = await sb("/messages?room_id=eq." + encodeURIComponent(p.room_id) + "&order=created_at.asc&limit=200");
+      return { ok: true, messages: msgs };
+    }
+    if (action === "send_message") {
+      const msg_id = "m_" + Date.now();
+      await sb("/messages", {
+        method: "POST",
+        body: JSON.stringify({ msg_id, room_id: p.room_id, sender_id: p.user_id, sender_name: currentUser.name, text: p.text })
+      });
+      return { ok: true, msg_id };
+    }
+    return { ok: false, error: "알 수 없는 요청" };
+  } catch (e) {
+    return { ok: false, error: e.message || "오류 발생" };
+  }
 }
 
 function fmtMoney(n) {
@@ -976,7 +1155,13 @@ function switchTeamTab(tab) {
 
 function renderTeamTab() {
   const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  document.getElementById("teamSubTabs").classList.toggle("hidden", !isAdm);
   document.getElementById("adminInviteBlock").classList.toggle("hidden", !isAdm);
+  if (!isAdm) {
+    switchTeamTab("pay");
+  }
+  const [py, pm] = curMonth.split("-").map(Number);
+  document.getElementById("payMonthLabel").textContent = py + "." + String(pm).padStart(2, "0");
 
   const wEl = document.getElementById("teamWorkersList");
   wEl.innerHTML = "";
@@ -1015,18 +1200,82 @@ function renderTeamTab() {
   });
   const pEl = document.getElementById("teamPayList");
   pEl.innerHTML = "";
-  Object.values(map).forEach(w => {
-    const d = document.createElement("div");
-    d.className = "list-item";
-    d.innerHTML = `
-      <div class="list-top">
-        <span>${w.name}</span>
-        <span class="pill pill-green">${fmtMoney(w.amt)}</span>
-      </div>
-      <div class="list-sub">${curMonth} · 출근 ${w.days.size}일 · 총 ${w.g.toFixed(1)}공수</div>`;
-    pEl.appendChild(d);
-  });
-  if (!Object.keys(map).length) pEl.innerHTML = '<div style="color:var(--sub);font-size:13px;text-align:center;padding:12px 0;">이번 달 정산 기록이 없습니다.</div>';
+  if (isAdm) {
+    document.getElementById("workerPayCalendarWrap").classList.add("hidden");
+    Object.values(map).forEach(w => {
+      const tax = Math.round(w.amt * 0.033);
+      const net = w.amt - tax;
+      const d = document.createElement("div");
+      d.className = "list-item";
+      d.innerHTML = `
+        <div class="list-top">
+          <span>${w.name}</span>
+          <span class="pill pill-green">실수령 ${fmtMoney(net)}</span>
+        </div>
+        <div class="list-sub">${curMonth} · ${w.days.size}일 · 총 ${w.g.toFixed(1)}공수 · 세전 ${fmtMoney(w.amt)} · 세금(3.3%) ${fmtMoney(tax)}</div>`;
+      pEl.appendChild(d);
+    });
+    if (!Object.keys(map).length) pEl.innerHTML = '<div style="color:var(--sub);font-size:13px;text-align:center;padding:12px 0;">이번 달 정산 기록이 없습니다.</div>';
+  } else {
+    const myStat = map[currentUser.user_id] || { name: currentUser.name, days: new Set(), g: 0, amt: 0 };
+    const tax = Math.round(myStat.amt * 0.033);
+    const net = myStat.amt - tax;
+    const wage = currentUser.default_wage || 180000;
+    pEl.innerHTML = `
+      <div style="background:#F7F8FC;border-radius:16px;padding:14px;">
+        <div class="list-top" style="margin-bottom:8px;">
+          <span style="font-size:16px;">${currentUser.name}</span>
+          <span class="pill pill-indigo">일당 ${fmtMoney(wage)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;padding:4px 0;">
+          <span style="color:var(--sub);">총 공수</span>
+          <b>${myStat.g.toFixed(1)}공수 (${myStat.days.size}일)</b>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;padding:4px 0;">
+          <span style="color:var(--sub);">총 월급 (세전)</span>
+          <b>${fmtMoney(myStat.amt)}</b>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;padding:4px 0;">
+          <span style="color:var(--sub);">세금 (3.3%)</span>
+          <span style="color:#EF4444;font-weight:700;">-${fmtMoney(tax)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;padding:10px 0 2px;margin-top:6px;border-top:1px solid var(--line);">
+          <span style="font-weight:800;">실수령 월급</span>
+          <span style="font-weight:900;color:var(--primary);">${fmtMoney(net)}</span>
+        </div>
+      </div>`;
+
+    document.getElementById("workerPayCalendarWrap").classList.remove("hidden");
+    const wGrid = document.getElementById("workerPayCalGrid");
+    wGrid.innerHTML = "";
+    ["일","월","화","수","목","금","토"].forEach((d, idx) => {
+      const el = document.createElement("div");
+      el.className = "cal-dow" + (idx===0 ? " sun" : idx===6 ? " sat" : "");
+      el.textContent = d;
+      wGrid.appendChild(el);
+    });
+    const byDate = {};
+    srcRecs.forEach(r => {
+      if (!byDate[r.date]) byDate[r.date] = { g: 0, sites: [] };
+      byDate[r.date].g += Number(r.gongsu || 0);
+      if (r.site) byDate[r.date].sites.push(r.site);
+    });
+    const firstDay = new Date(py, pm - 1, 1).getDay();
+    const lastDate = new Date(py, pm, 0).getDate();
+    for (let i = 0; i < firstDay; i++) wGrid.appendChild(document.createElement("div"));
+    for (let day = 1; day <= lastDate; day++) {
+      const dateStr = curMonth + "-" + String(day).padStart(2, "0");
+      const info = byDate[dateStr];
+      const cell = document.createElement("div");
+      cell.className = "cal-cell";
+      cell.style.height = "52px";
+      if (dateStr === dashData.today) cell.classList.add("today");
+      cell.innerHTML = `<span style="font-size:13px;">${day}</span>` +
+        (info ? `<span style="font-size:10px;font-weight:800;color:var(--primary);margin-top:1px;">${info.g}공수</span>` : "");
+      cell.onclick = () => { selectedDate = dateStr; switchNav("calendar"); renderCalendar(); };
+      wGrid.appendChild(cell);
+    }
+  }
 
   const sEl = document.getElementById("teamSitesList");
   sEl.innerHTML = (dashData.sites || []).map(s =>
@@ -1132,7 +1381,7 @@ function openChatRoom(roomId, title) {
   document.getElementById("chatThread").classList.remove("hidden");
   loadMessages();
   if (chatTimer) clearInterval(chatTimer);
-  chatTimer = setInterval(loadMessages, 5000);
+  chatTimer = setInterval(loadMessages, 2000);
 }
 
 function closeChatRoom() {
@@ -1154,7 +1403,8 @@ async function loadMessages() {
       const mine = String(m.sender_id) === String(currentUser.user_id);
       const wrap = document.createElement("div");
       wrap.className = "msg-wrap " + (mine ? "mine" : "other");
-      const timeStr = (m.created_at || "").slice(11, 16);
+      const t = m.created_at ? new Date(m.created_at) : null;
+      const timeStr = t && !isNaN(t) ? t.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }) : (m.created_at || "").slice(11, 16);
       wrap.innerHTML = `
         ${mine ? "" : `<div class="msg-sender">${m.sender_name}</div>`}
         <div class="msg-bubble">${m.text.replace(/</g, "&lt;")}</div>
@@ -1173,9 +1423,16 @@ async function sendChatMsg() {
   const text = input.value.trim();
   if (!text || !activeChatRoomId) return;
   input.value = "";
+  const box = document.getElementById("chatMessages");
+  if (box.textContent.includes("첫 메시지를 보내보세요")) box.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "msg-wrap mine";
+  const nowStr = new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
+  wrap.innerHTML = `<div class="msg-bubble">${text.replace(/</g, "&lt;")}</div><div class="msg-time">${nowStr}</div>`;
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
   const r = await api("send_message", { user_id: currentUser.user_id, room_id: activeChatRoomId, text });
-  if (!r.ok) return toast(r.error);
-  loadMessages();
+  if (!r.ok) toast(r.error);
 }
 
 /* MODALS */
