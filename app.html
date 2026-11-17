@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-title" content="공수 체크" />
-<link rel="apple-touch-icon" href="./icon.png" />
-<link rel="icon" type="image/png" href="./icon.png" />
 <title>공수 체크</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="공수 체크" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="icon" type="image/png" href="icon.png" />
 <style>
   :root {
     --primary: #5B5FE8;
@@ -232,7 +232,23 @@
   .chat-send-btn {
     background: var(--primary); color: #fff; border: none; border-radius: 999px;
     padding: 10px 16px; font-weight: 700; font-size: 14px; cursor: pointer;
+    flex: 0 0 auto; white-space: nowrap;
   }
+  .chat-attach-btn {
+    background: #F3F4F6; color: var(--text); border: 1px solid var(--line); border-radius: 999px;
+    width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer; flex: 0 0 auto; padding: 0;
+  }
+  .msg-img {
+    max-width: 220px; max-height: 220px; border-radius: 10px; display: block;
+    margin-bottom: 4px; cursor: pointer; object-fit: cover;
+  }
+  .msg-file-card {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+    border-radius: 10px; background: rgba(255,255,255,0.18);
+    text-decoration: none; color: inherit; margin-bottom: 4px;
+  }
+  .other .msg-file-card { background: #F3F4F6; color: var(--text); }
 
   /* BOTTOM NAV */
   .bottom-nav {
@@ -305,14 +321,14 @@
     <div id="loginForm">
       <label>전화번호 (숫자만)</label>
       <input id="loginPhone" type="tel" placeholder="01012345678" />
-      <label>비밀번호 PIN</label>
+      <label>비밀번호 (숫자 4자리)</label>
       <input id="loginPin" type="password" inputmode="numeric" maxlength="6" placeholder="0000" />
       <label style="display:flex;align-items:center;gap:7px;margin-top:10px;font-weight:600;cursor:pointer;color:var(--text);">
         <input id="rememberPhone" type="checkbox" style="width:auto;margin:0;" checked /> 아이디(전화번호) 기억하기
       </label>
       <button class="btn btn-primary" style="margin-top:14px;" onclick="doLogin()">로그인</button>
       <p style="font-size:12px;color:var(--sub);margin:12px 0 0;text-align:center;">
-        사장님(관리자) 초기 PIN은 <b>0000</b>입니다.
+        사장님(관리자) 초기 비밀번호는 <b>0000</b>입니다.
       </p>
     </div>
 
@@ -326,7 +342,7 @@
       <input id="joinName" type="text" placeholder="홍길동" />
       <label>전화번호 (숫자만)</label>
       <input id="joinPhone" type="tel" placeholder="01012345678" />
-      <label>사용할 PIN 번호 (4자리)</label>
+      <label>사용할 비밀번호 (숫자 4자리)</label>
       <input id="joinPin" type="password" inputmode="numeric" maxlength="6" placeholder="1234" />
       <button class="btn btn-primary" style="margin-top:16px;" onclick="doRegister()">가입하고 시작하기</button>
     </div>
@@ -338,7 +354,7 @@
       <input id="adminJoinName" type="text" placeholder="홍길동" />
       <label>전화번호 (숫자만)</label>
       <input id="adminJoinPhone" type="tel" placeholder="01012345678" />
-      <label>사용할 PIN 번호 (4자리)</label>
+      <label>사용할 비밀번호 (숫자 4자리)</label>
       <input id="adminJoinPin" type="password" inputmode="numeric" maxlength="6" placeholder="0000" />
       <button class="btn btn-primary" style="margin-top:16px;" onclick="doRegisterAdmin()">새 업체 등록하고 시작하기</button>
     </div>
@@ -618,6 +634,8 @@
   </div>
   <div id="chatMessages" class="chat-messages"></div>
   <div class="chat-inputbar">
+    <input id="chatFileInput" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.hwp,.hwpx,.dwg,.dxf,.zip,.txt" style="display:none;" onchange="onChatFileSelected(event)" />
+    <button class="chat-attach-btn" type="button" title="파일·사진 첨부" onclick="document.getElementById('chatFileInput').click()">📎</button>
     <input id="chatInput" type="text" placeholder="메시지를 입력하세요..." onkeypress="if(event.key==='Enter') sendChatMsg()" />
     <button class="chat-send-btn" onclick="sendChatMsg()">전송</button>
   </div>
@@ -668,9 +686,9 @@
       <input id="setWageInput" type="number" step="10000" placeholder="180000" />
       <button class="btn btn-primary btn-sm" style="margin:0;" onclick="saveMyWageFromSettings()">저장</button>
     </div>
-    <label>새 PIN 번호로 변경 (4자리 이상)</label>
+    <label>새 비밀번호로 변경 (숫자 4자리 이상)</label>
     <div class="row">
-      <input id="newPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 PIN 입력" />
+      <input id="newPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 비밀번호 입력" />
       <button class="btn btn-primary btn-sm" style="margin:0;" onclick="changePin()">변경</button>
     </div>
     <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
@@ -738,7 +756,7 @@ async function api(action, p = {}) {
       const rows = await sb("/users?phone=eq." + encodeURIComponent(phone) + "&select=*");
       if (!rows.length) return { ok: false, error: "등록되지 않은 전화번호입니다." };
       const u = rows[0];
-      if (String(u.pin) !== String(p.pin || "").trim()) return { ok: false, error: "비밀번호(PIN)가 일치하지 않습니다." };
+      if (String(u.pin) !== String(p.pin || "").trim()) return { ok: false, error: "비밀번호가 일치하지 않습니다." };
       const tid = u.team_id || "team_smile";
       const tRows = await sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => []);
       const teamName = tRows.length ? tRows[0].name : "스마일산업";
@@ -750,7 +768,7 @@ async function api(action, p = {}) {
       const phone = String(p.phone || "").replace(/[^0-9]/g, "");
       const pin = String(p.pin || "").trim();
       if (!teamName || !name || !phone || !pin) return { ok: false, error: "모든 항목을 입력해 주세요." };
-      if (pin.length < 4) return { ok: false, error: "PIN은 4자리 이상 입력하세요." };
+      if (pin.length < 4) return { ok: false, error: "비밀번호는 4자리 이상 입력하세요." };
       const dup = await sb("/users?phone=eq." + encodeURIComponent(phone) + "&select=user_id");
       if (dup.length) return { ok: false, error: "이미 가입된 전화번호입니다." };
       const newTeamId = "team_" + Date.now();
@@ -896,7 +914,7 @@ async function api(action, p = {}) {
         room_id: "all",
         type: "channel",
         title: tName + " 전체 채널",
-        last_text: lastByRoom["all"] ? (lastByRoom["all"].sender_name + ": " + lastByRoom["all"].text) : "공지 및 현장 소통방",
+        last_text: lastByRoom["all"] ? (lastByRoom["all"].sender_name + ": " + (lastByRoom["all"].text || (lastByRoom["all"].file_name ? "📎 " + lastByRoom["all"].file_name : ""))) : "공지 및 현장 소통방",
         last_time: lastByRoom["all"] ? lastByRoom["all"].created_at : ""
       }];
       users.filter(u => String(u.user_id) !== String(p.user_id)).forEach(u => {
@@ -907,7 +925,7 @@ async function api(action, p = {}) {
           peer_id: u.user_id,
           peer_name: u.name,
           title: u.name,
-          last_text: lastByRoom[rid] ? lastByRoom[rid].text : "1:1 대화 시작하기",
+          last_text: lastByRoom[rid] ? (lastByRoom[rid].text || (lastByRoom[rid].file_name ? "📎 " + lastByRoom[rid].file_name : "")) : "1:1 대화 시작하기",
           last_time: lastByRoom[rid] ? lastByRoom[rid].created_at : ""
         });
       });
@@ -921,9 +939,16 @@ async function api(action, p = {}) {
     if (action === "send_message") {
       const msg_id = "m_" + Date.now();
       const tid = (currentUser && currentUser.team_id) || "team_smile";
+      const row = { msg_id, room_id: p.room_id, sender_id: p.user_id, sender_name: currentUser.name, text: p.text || "", team_id: tid };
+      if (p.file_url) {
+        row.file_url = p.file_url;
+        row.file_name = p.file_name || "첨부파일";
+        row.file_type = p.file_type || "";
+        row.file_size = Number(p.file_size || 0);
+      }
       await sb("/messages", {
         method: "POST",
-        body: JSON.stringify({ msg_id, room_id: p.room_id, sender_id: p.user_id, sender_name: currentUser.name, text: p.text, team_id: tid })
+        body: JSON.stringify(row)
       });
       return { ok: true, msg_id };
     }
@@ -1005,7 +1030,7 @@ async function doLogin() {
   const phone = document.getElementById("loginPhone").value.trim();
   const pin = document.getElementById("loginPin").value.trim();
   const remember = document.getElementById("rememberPhone").checked;
-  if (!phone || !pin) return toast("전화번호와 PIN을 입력해 주세요.");
+  if (!phone || !pin) return toast("전화번호와 비밀번호를 입력해 주세요.");
   if (remember) localStorage.setItem("smile_saved_phone", phone);
   else localStorage.removeItem("smile_saved_phone");
   toast("로그인 중...");
@@ -1594,6 +1619,34 @@ function closeChatRoom() {
   loadChatOverview();
 }
 
+function escHtml(s) {
+  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function fmtFileSize(bytes) {
+  const b = Number(bytes || 0);
+  if (b < 1024) return b + "B";
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + "KB";
+  return (b / (1024 * 1024)).toFixed(1) + "MB";
+}
+
+function renderMsgInner(m) {
+  let html = "";
+  if (m.file_url) {
+    const safeUrl = escHtml(m.file_url);
+    const safeName = escHtml(m.file_name || "첨부파일");
+    if ((m.file_type || "").startsWith("image/")) {
+      html += `<a href="${safeUrl}" target="_blank" download="${safeName}"><img class="msg-img" src="${safeUrl}" alt="${safeName}" /></a>`;
+    } else {
+      html += `<a class="msg-file-card" href="${safeUrl}" target="_blank" download="${safeName}"><span style="font-size:20px;">📄</span><div style="min-width:0;flex:1;"><div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${safeName}</div><div style="font-size:11px;opacity:0.8;">${fmtFileSize(m.file_size)} · 눌러서 받기</div></div></a>`;
+    }
+  }
+  if (m.text) {
+    html += `<div>${escHtml(m.text)}</div>`;
+  }
+  return html || "<div></div>";
+}
+
 async function loadMessages() {
   if (!activeChatRoomId) return;
   try {
@@ -1609,8 +1662,8 @@ async function loadMessages() {
       const t = m.created_at ? new Date(m.created_at) : null;
       const timeStr = t && !isNaN(t) ? t.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }) : (m.created_at || "").slice(11, 16);
       wrap.innerHTML = `
-        ${mine ? "" : `<div class="msg-sender">${m.sender_name}</div>`}
-        <div class="msg-bubble">${m.text.replace(/</g, "&lt;")}</div>
+        ${mine ? "" : `<div class="msg-sender">${escHtml(m.sender_name)}</div>`}
+        <div class="msg-bubble">${renderMsgInner(m)}</div>
         <div class="msg-time">${timeStr}</div>`;
       box.appendChild(wrap);
     });
@@ -1619,6 +1672,53 @@ async function loadMessages() {
     }
     if (wasBottom || true) box.scrollTop = box.scrollHeight;
   } catch (e) {}
+}
+
+async function onChatFileSelected(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (!file || !activeChatRoomId) return;
+  if (file.size > 20 * 1024 * 1024) {
+    toast("파일 크기는 20MB 이하만 올릴 수 있어요");
+    return;
+  }
+  toast("파일 업로드 중...");
+  try {
+    const tid = (currentUser && currentUser.team_id) || "team_smile";
+    const ext = (file.name.includes(".") ? "." + file.name.split(".").pop() : "").replace(/[^a-zA-Z0-9.]/g, "");
+    const objPath = encodeURIComponent(tid) + "/" + Date.now() + "_" + Math.random().toString(36).slice(2, 7) + ext;
+    const upRes = await fetch(SUPABASE_URL + "/storage/v1/object/chat-files/" + objPath, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": "Bearer " + SUPABASE_KEY,
+        "Content-Type": file.type || "application/octet-stream",
+        "x-upsert": "true"
+      },
+      body: file
+    });
+    if (!upRes.ok) {
+      const errText = await upRes.text();
+      toast("업로드 실패: " + (errText || upRes.status));
+      return;
+    }
+    const fileUrl = SUPABASE_URL + "/storage/v1/object/public/chat-files/" + objPath;
+    const caption = document.getElementById("chatInput").value.trim();
+    if (caption) document.getElementById("chatInput").value = "";
+    const r = await api("send_message", {
+      user_id: currentUser.user_id,
+      room_id: activeChatRoomId,
+      text: caption,
+      file_url: fileUrl,
+      file_name: file.name,
+      file_type: file.type || "application/octet-stream",
+      file_size: file.size
+    });
+    if (!r.ok) { toast(r.error); return; }
+    await loadMessages();
+  } catch (e) {
+    toast("업로드 오류: " + (e.message || ""));
+  }
 }
 
 async function sendChatMsg() {
@@ -1797,11 +1897,11 @@ async function saveMyWageFromSettings() {
 
 async function changePin() {
   const np = document.getElementById("newPinInput").value.trim();
-  if (np.length < 4) return toast("PIN은 4자리 이상 입력하세요.");
+  if (np.length < 4) return toast("비밀번호는 4자리 이상 입력하세요.");
   const r = await api("change_pin", { user_id: currentUser.user_id, new_pin: np });
   if (!r.ok) return toast(r.error);
   document.getElementById("newPinInput").value = "";
-  toast("PIN 번호가 변경되었습니다.");
+  toast("비밀번호가 변경되었습니다.");
 }
 
 /* COMMUNITY (광장) */
