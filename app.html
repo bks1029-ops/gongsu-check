@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F6FA" id="themeColorMeta" />
 <title>오늘몇공</title>
 <style>
-  /* ===== 오늘몇공 v5.4.2 — 급여 정산서 이미지 공유 (v5.4.1: 현장별 합계 기본 접힘) ===== */
+  /* ===== 오늘몇공 v5.4.3 — 뒤로가기로 열린 창 닫기 · 키보드 이동으로 로그인 · 인력 DB 카드 정리 ===== */
   :root {
     /* 라이트 테마 (기본) */
     --primary: #EAB308;
@@ -561,6 +561,8 @@
   }
   .hr-tag.job { color: var(--accent-ink); background: var(--primary-soft); border-color: transparent; }
   .hr-actions { margin-top: 8px; display: flex; justify-content: flex-end; }
+  .hr-actions-row { flex-wrap: nowrap; gap: 6px; align-items: center; }
+  .hr-actions-row .btn { flex: 0 0 auto; white-space: nowrap; margin: 0; }
   .hr-card.tap { cursor: pointer; }
   .hr-card.tap:active { opacity: .78; }
   /* ===== v5.4.2 운영자 회원 출근달력 ===== */
@@ -720,12 +722,12 @@ try {
       <label style="margin-top:0;">휴대폰 번호</label>
       <div class="input-icon-wrap">
         <span class="in-ico">📱</span>
-        <input id="loginPhone" type="tel" placeholder="01012345678" />
+        <input id="loginPhone" type="tel" placeholder="01012345678" enterkeyhint="next" />
       </div>
       <label>비밀번호 (숫자 4자리)</label>
       <div class="input-icon-wrap">
         <span class="in-ico">🔒</span>
-        <input id="loginPin" type="password" inputmode="numeric" maxlength="6" placeholder="4자리 비밀번호" style="padding-right:40px;" />
+        <input id="loginPin" type="password" inputmode="numeric" maxlength="6" placeholder="4자리 비밀번호" style="padding-right:40px;" enterkeyhint="go" />
         <button type="button" class="pin-eye-btn" onclick="toggleLoginPinVis()" title="비밀번호 보기">👁️</button>
       </div>
       <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:600;font-size:13px;cursor:pointer;color:var(--text);">
@@ -756,7 +758,7 @@ try {
       <label>사용할 비밀번호 (숫자 4자리)</label>
       <div class="input-icon-wrap">
         <span class="in-ico">🔒</span>
-        <input id="joinPin" type="password" inputmode="numeric" maxlength="6" placeholder="1234" />
+        <input id="joinPin" type="password" inputmode="numeric" maxlength="6" placeholder="1234" enterkeyhint="go" />
       </div>
       <div class="consent-box">
         <label class="consent-row">
@@ -792,7 +794,7 @@ try {
       <label>사용할 비밀번호 (숫자 4자리)</label>
       <div class="input-icon-wrap">
         <span class="in-ico">🔒</span>
-        <input id="adminJoinPin" type="password" inputmode="numeric" maxlength="6" placeholder="0000" />
+        <input id="adminJoinPin" type="password" inputmode="numeric" maxlength="6" placeholder="0000" enterkeyhint="go" />
       </div>
       <div class="consent-box">
         <label class="consent-row">
@@ -1236,7 +1238,7 @@ try {
     </div>
     <label>새 비밀번호로 변경 (숫자 4자리 이상)</label>
     <div class="row">
-      <input id="newPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 비밀번호 입력" />
+      <input id="newPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 비밀번호 입력" enterkeyhint="done" />
       <button class="btn btn-primary btn-sm" style="margin:0;" onclick="changePin()">변경</button>
     </div>
     <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
@@ -1273,7 +1275,7 @@ try {
       <div class="set-row" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div>
           <div class="set-row-title">📦 앱 버전</div>
-          <div class="set-row-sub" id="setVersionSub">v5.4.2 · 최신 버전 확인</div>
+          <div class="set-row-sub" id="setVersionSub">v5.4.3 · 최신 버전 확인</div>
         </div>
         <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="checkAppUpdate(true)">업데이트 확인</button>
       </div>
@@ -1389,8 +1391,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 22;
-const APP_VERSION_NAME = "5.4.2";
+const APP_VERSION_CODE = 23;
+const APP_VERSION_NAME = "5.4.3";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -1926,6 +1928,34 @@ function toggleLoginPinVis() {
   const el = document.getElementById("loginPin");
   el.type = (el.type === "password") ? "text" : "password";
 }
+
+/* ===== v5.4.3: 키보드 '이동/완료' 키를 누르면 키보드를 내리지 않아도 바로 실행 ===== */
+function bindEnterKey(id, fn) {
+  const el = document.getElementById(id);
+  if (!el || el.getAttribute("data-enter-bound") === "1") return;
+  el.setAttribute("data-enter-bound", "1");
+  el.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.keyCode === 13 || e.which === 13) {
+      e.preventDefault();
+      fn();
+    }
+  });
+}
+function focusField(id) {
+  const el = document.getElementById(id);
+  if (el) { try { el.focus(); } catch (e) {} }
+}
+bindEnterKey("loginPhone", function () { focusField("loginPin"); });
+bindEnterKey("loginPin", function () { doLogin(); });
+bindEnterKey("joinCode", function () { focusField("joinName"); });
+bindEnterKey("joinName", function () { focusField("joinPhone"); });
+bindEnterKey("joinPhone", function () { focusField("joinPin"); });
+bindEnterKey("joinPin", function () { doRegister(); });
+bindEnterKey("adminTeamName", function () { focusField("adminJoinName"); });
+bindEnterKey("adminJoinName", function () { focusField("adminJoinPhone"); });
+bindEnterKey("adminJoinPhone", function () { focusField("adminJoinPin"); });
+bindEnterKey("adminJoinPin", function () { doRegisterAdmin(); });
+bindEnterKey("newPinInput", function () { changePin(); });
 
 function switchAuthTab(tab) {
   document.getElementById("tabLogin").classList.toggle("active", tab === "login");
@@ -3784,9 +3814,8 @@ function renderHrList() {
         <span class="hr-tag">경력 ${escHtml(career || "미설정")}</span>
         <span class="hr-tag">일당 ${fmtMoney(u.default_wage)}</span>
         <span class="hr-tag">🕒 ${escHtml(opLastSeen(u))}</span>
-        <span class="hr-tag">📅 ${escHtml(opLastWork(u))}</span>
       </div>
-      ${isMain ? `<div class="hr-actions" style="justify-content:flex-start;"><span class="hr-tag" style="border-style:dashed;">카드를 누르면 실시간 출근달력</span></div>` : `<div class="hr-actions" style="display:flex;flex-wrap:wrap;gap:6px;"><button class="btn btn-soft btn-sm" style="margin:0;" onclick="event.stopPropagation();resetUserPin('${uid}','${escHtml(u.name || "")}')">비밀번호 초기화 (0000)</button><button class="btn btn-outline btn-sm" style="margin:0;color:var(--red);border-color:rgba(220,38,38,0.35);" onclick="event.stopPropagation();deleteAccountFromOverview('${uid}')">회원 탈퇴(삭제)</button></div>`}
+      ${isMain ? `<div class="hr-actions" style="justify-content:flex-start;"><span class="hr-tag" style="border-style:dashed;">카드를 누르면 실시간 출근달력</span></div>` : `<div class="hr-actions hr-actions-row"><button class="btn btn-soft btn-sm" onclick="event.stopPropagation();resetUserPin('${uid}','${escHtml(u.name || "")}')">초기화</button><button class="btn btn-outline btn-sm" style="color:var(--red);border-color:rgba(220,38,38,0.35);" onclick="event.stopPropagation();deleteAccountFromOverview('${uid}')">회원 탈퇴(삭제)</button></div>`}
     </div>`;
   }).join("");
 }
@@ -4353,6 +4382,40 @@ async function deleteCurrentPost() {
     loadCommunityPosts();
   } catch (e) { toast("삭제 오류"); }
 }
+
+/* ===== v5.4.3: 안드로이드 뒤로가기 — 열린 창이 있으면 앱을 끄지 않고 그 창만 닫는다 ===== */
+const ANDROID_BACK_OVERLAYS = [
+  { id: "appDlg", close: function () { if (dlgState) closeAppDialog(dlgCancelValue()); } },
+  { id: "policyModal", close: closePolicyModal },
+  { id: "memberCalModal", close: closeMemberCalendar },
+  { id: "adminOverviewModal", close: closeAdminOverview },
+  { id: "paySheetModal", close: closePaySheet },
+  { id: "postDetailModal", close: closePostDetailModal },
+  { id: "postComposeModal", close: closePostComposeModal },
+  { id: "recordModal", close: closeRecordModal },
+  { id: "settingsModal", close: closeSettingsModal }
+];
+
+function isOverlayOpen(id) {
+  if (id === "appDlg") return !!dlgState;
+  const el = document.getElementById(id);
+  return !!el && !el.classList.contains("hidden");
+}
+
+/* MainActivity의 뒤로가기 콜백이 호출한다. true = 앱에서 처리함(종료하지 않음), false = 열린 창 없음(종료 허용) */
+window.handleAndroidBack = function () {
+  try {
+    for (let i = 0; i < ANDROID_BACK_OVERLAYS.length; i++) {
+      const o = ANDROID_BACK_OVERLAYS[i];
+      if (isOverlayOpen(o.id)) {
+        try { o.close(); } catch (e) {}
+        return true;
+      }
+    }
+    if (isOverlayOpen("chatThread")) { closeChatRoom(); return true; }
+  } catch (e) {}
+  return false;
+};
 
 init();
 </script>

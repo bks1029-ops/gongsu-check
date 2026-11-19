@@ -1,8 +1,8 @@
 {
-  "versionCode": 22,
-  "versionName": "5.4.2",
-  "releasedAt": "2026-11-19",
+  "versionCode": 23,
+  "versionName": "5.4.3",
+  "releasedAt": "2026-11-20",
   "apkUrl": "https://bks1029-ops.github.io/gongsu-check/gongsu-check.apk",
   "pageUrl": "https://bks1029-ops.github.io/gongsu-check/",
-  "note": "정산서가 영수증 모양 이미지로 카톡에 바로 공유됩니다. 운영자는 회원별 실시간 출근달력과 최근 접속을 볼 수 있어요."
+  "note": "비밀번호 입력 후 키보드 이동을 누르면 바로 로그인되고, 뒤로가기는 열린 창만 닫습니다. 운영자 인력 DB 카드도 깔끔해졌어요."
 }
