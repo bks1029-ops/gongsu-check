@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>오늘몇공 · 개인정보처리방침 및 이용약관</title>
+<meta name="description" content="오늘몇공 앱의 개인정보처리방침, 이용약관, 인력 매칭 정보 열람 동의 안내" />
+<style>
+  :root {
+    --accent: #FACC15;
+    --bg: #0B1120;
+    --card: #162033;
+    --surface: #1B2740;
+    --text: #F8FAFC;
+    --sub: #94A3B8;
+    --line: #27354D;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    color-scheme: dark;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 18px 56px; }
+  .top { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .top a {
+    color: var(--sub); text-decoration: none; font-size: 13px; font-weight: 700;
+    border: 1px solid var(--line); border-radius: 10px; padding: 7px 12px;
+  }
+  .brand { font-size: 16px; font-weight: 900; color: var(--accent); letter-spacing: -0.2px; }
+  .hero {
+    background: radial-gradient(120% 90% at 50% 0%, #1B2A47 0%, #162033 60%, #162033 100%);
+    border: 1px solid var(--line); border-radius: 20px; padding: 22px 20px; margin-bottom: 16px;
+  }
+  .hero h1 { font-size: 21px; font-weight: 900; margin: 0 0 6px; letter-spacing: -0.4px; }
+  .hero p { margin: 0; font-size: 13px; color: var(--sub); }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tabs a {
+    flex: 1 1 auto; text-align: center; text-decoration: none; font-size: 13px; font-weight: 800;
+    padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); color: var(--sub); background: var(--surface);
+  }
+  .tabs a.on { color: #0B1120; background: linear-gradient(135deg, #FACC15, #EAB308); border-color: transparent; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    padding: 20px 18px; margin-bottom: 14px;
+  }
+  section.card h2 { font-size: 17px; font-weight: 900; margin: 0 0 4px; }
+  section.card h2 span { color: var(--accent); }
+  section.card h3 { font-size: 14px; font-weight: 800; margin: 18px 0 6px; color: #FDE68A; }
+  section.card p { margin: 0 0 8px; font-size: 13.5px; }
+  section.card ul { margin: 0 0 8px; padding-left: 18px; font-size: 13.5px; }
+  section.card li { margin-bottom: 3px; }
+  .meta { font-size: 12px; color: var(--sub); }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 13px; }
+  th, td { border: 1px solid var(--line); padding: 8px 9px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 800; color: #FDE68A; }
+  footer { text-align: center; font-size: 12px; color: var(--sub); margin-top: 22px; line-height: 1.8; }
+  footer a { color: #FDE68A; text-decoration: none; font-weight: 700; }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #F4F6FA; --card: #FFFFFF; --surface: #F1F5F9; --text: #0F172A; --sub: #64748B; --line: #E2E8F0; --accent: #EAB308; }
+    html { background: var(--bg); }
+    body { color-scheme: light; }
+    .hero { background: linear-gradient(180deg, #FFFBEB 0%, #FFFFFF 70%); }
+    section.card h3, footer a, .tabs a.on { color: #0B1120; }
+    .tabs a.on { background: linear-gradient(135deg, #FACC15, #EAB308); }
+    section.card h3 { color: #A16207; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a href="./index.html">← 설치 페이지</a>
+    <a href="./app.html">앱 열기</a>
+    <div class="brand">오늘몇공</div>
+  </div>
+
+  <div class="hero">
+    <h1>개인정보처리방침 및 이용약관</h1>
+    <p>스마일산업(대표 박기성)이 제공하는 모바일 앱 「오늘몇공」의 개인정보처리방침과 이용약관입니다.<br />시행일: 2026년 11월 19일</p>
+  </div>
+
+  <div class="tabs">
+    <a href="#privacy" class="on">개인정보처리방침</a>
+    <a href="#terms">이용약관</a>
+    <a href="#matching">인력 매칭 동의</a>
+  </div>
+
+  <section class="card" id="privacy">
+    <h2><span>01</span> 개인정보처리방침</h2>
+    <p class="meta">오늘몇공(이하 “앱”)은 이용자의 개인정보를 소중히 다루고 「개인정보 보호법」 등 관계 법령을 준수합니다.</p>
+
+    <h3>1. 수집하는 개인정보 항목</h3>
+    <ul>
+      <li>필수: 이름, 휴대폰 번호, 비밀번호(4자리 이상), 소속 업체(팀) 정보</li>
+      <li>서비스 이용 중 생성: 공수(출근) 기록, 기본 일당, 직종, 경력 연수, 담당 현장, 팀 채팅 메시지와 첨부파일, 광장 게시글·댓글</li>
+      <li>선택: 초대코드(개인·직원 가입 시)</li>
+    </ul>
+
+    <h3>2. 수집·이용 목적</h3>
+    <ul>
+      <li>본인 확인 및 로그인</li>
+      <li>일용직 공수(출근) 기록과 월별 정산 계산</li>
+      <li>같은 업체 관리자·직원 간 공수와 일정 공유</li>
+      <li>인력 매칭(경력·직종·연락처 확인) 및 채팅·광장 서비스 제공</li>
+      <li>부정 이용 방지와 문의 대응</li>
+    </ul>
+
+    <h3>3. 보유 및 이용 기간</h3>
+    <p>회원 탈퇴 또는 서비스 종료 시까지 보관하며, 목적을 달성하면 지체 없이 파기합니다. 관계 법령에 따라 보존이 필요한 경우 아래 기간 동안 보관합니다.</p>
+    <table>
+      <tr><th>보존 항목</th><th>근거</th><th>기간</th></tr>
+      <tr><td>계약·청약철회 기록</td><td>전자상거래법</td><td>5년</td></tr>
+      <tr><td>대금결제 기록</td><td>전자상거래법</td><td>5년</td></tr>
+      <tr><td>소비자 불만·분쟁처리 기록</td><td>전자상거래법</td><td>3년</td></tr>
+    </table>
+
+    <h3>4. 제3자 제공</h3>
+    <p>앱은 이용자의 개인정보를 원칙적으로 제3자에게 제공하지 않습니다. 다만 이용자가 속한 업체의 관리자에게는 같은 업체 소속 직원의 이름·연락처·직종·경력·공수 기록이 서비스 제공 목적으로 열람되며, 법령에 따라 수사기관이 적법한 절차로 요청하는 경우에만 제공합니다.</p>
+
+    <h3>5. 처리 위탁</h3>
+    <ul>
+      <li>Supabase Inc. (일본 도쿄 리전) — 클라우드 데이터베이스 보관·백업</li>
+      <li>GitHub Inc. — 앱 저장소·다운로드 페이지 배포</li>
+    </ul>
+    <p>위탁 사업자는 서버 운영·백업·배포 목적으로만 데이터에 접근합니다.</p>
+
+    <h3>6. 이용자의 권리</h3>
+    <ul>
+      <li>앱의 <b>내 정보 · 설정</b>에서 이름, 직종, 경력, 기본 일당, 비밀번호를 조회·변경할 수 있습니다.</li>
+      <li>비밀번호를 잊은 경우 운영자(010-3135-7779)에게 요청하면 0000으로 초기화할 수 있으며, 초기화 후 직접 새 비밀번호로 변경할 수 있습니다.</li>
+      <li>회원 탈퇴·개인정보 삭제는 앱 내 문의 또는 운영자 연락처로 요청할 수 있고, 요청받은 날부터 지체 없이 처리합니다.</li>
+    </ul>
+
+    <h3>7. 파기 방법 및 안전성 확보 조치</h3>
+    <p>전자적 파일은 복구할 수 없는 방법으로 삭제합니다. 비밀번호는 앱 화면과 서버 응답에 직접 노출되지 않으며, 앱은 서버의 인증 함수를 통해서만 데이터에 접근합니다. 데이터베이스 접근 권한은 최소화하고 통신 구간은 HTTPS로 암호화합니다.</p>
+
+    <h3>8. 개인정보 보호책임자</h3>
+    <p>성명: 박기성 · 연락처: 010-3135-7779 · 이메일: bks1029@gmail.com<br />문의는 7일 이내에 답변드립니다.</p>
+
+    <h3>9. 고지의 의무</h3>
+    <p>이 방침이 변경되면 앱 내 공지 또는 이 페이지를 통해 시행일자를 명시하여 알립니다.</p>
+  </section>
+
+  <section class="card" id="terms">
+    <h2><span>02</span> 이용약관</h2>
+
+    <h3>제1조 (목적)</h3>
+    <p>이 약관은 스마일산업(이하 “운영자”)이 제공하는 모바일 앱 “오늘몇공”(이하 “앱”)의 이용 조건과 절차, 이용자와 운영자의 권리·의무를 정합니다.</p>
+
+    <h3>제2조 (정의)</h3>
+    <p>① “이용자”란 이 약관에 동의하고 앱을 이용하는 자를 말합니다. ② “업체 관리자”란 업체(팀)를 개설하거나 위임받아 소속 직원의 공수·정산을 관리하는 자를 말합니다. ③ “공수”란 하루 일한 양을 1공수를 기준으로 표시한 단위입니다.</p>
+
+    <h3>제3조 (약관의 효력과 변경)</h3>
+    <p>① 이 약관은 앱 화면 또는 이 페이지에 게시함으로써 효력이 발생합니다. ② 운영자는 약관을 변경할 수 있으며, 변경 시 시행일 7일 전부터 앱 내에 공지합니다. 이용자에게 불리한 변경은 30일 전에 공지합니다. ③ 변경된 약관에 동의하지 않는 이용자는 이용을 중단하고 탈퇴할 수 있습니다.</p>
+
+    <h3>제4조 (서비스의 내용)</h3>
+    <p>① 앱은 공수(출근) 기록과 월별 정산, 업체별 직원 관리·초대, 팀 채팅과 파일 공유, 전체 이용자 광장(구인·구직·현장 정보·팁), 공수 입력 알림을 제공합니다. ② 앱은 무료로 제공되며, 운영자는 서비스의 전부 또는 일부를 변경·중단할 수 있고 중단 시 사전에 공지합니다.</p>
+
+    <h3>제5조 (이용자의 의무)</h3>
+    <p>① 이용자는 본인의 휴대폰 번호와 비밀번호를 정확히 관리해야 하며 타인에게 양도·대여할 수 없습니다. ② 타인의 정보 도용, 허위 공수·정산 기록 입력, 욕설·비방·차별·음란물·스팸 게시, 서비스 운영 방해, 법령 위반 행위를 할 수 없습니다. ③ 운영자는 위 행위에 대해 게시물을 삭제하고 이용을 제한할 수 있습니다.</p>
+
+    <h3>제6조 (게시물의 관리)</h3>
+    <p>이용자가 작성한 게시물의 책임은 작성자에게 있으며, 신고가 접수된 게시물은 운영자가 확인 후 삭제할 수 있습니다.</p>
+
+    <h3>제7조 (책임의 제한)</h3>
+    <p>① 앱은 공수 기록과 정산을 돕는 도구이며, 실제 임금 지급과 근로계약의 당사자는 이용자와 소속 업체입니다. ② 운영자는 천재지변, 통신 장애, 기기 문제 등 운영자의 귀책이 없는 사유로 발생한 손해에 대해 책임지지 않습니다. ③ 이용자가 입력한 정보의 오류로 발생한 불이익은 이용자가 부담합니다.</p>
+
+    <h3>제8조 (지식재산권)</h3>
+    <p>앱의 디자인·프로그램·상표에 대한 권리는 운영자에게 있으며, 이용자는 운영자의 허락 없이 복제·배포·변형할 수 없습니다.</p>
+
+    <h3>제9조 (분쟁의 해결)</h3>
+    <p>이 약관은 대한민국 법률에 따르며, 분쟁은 운영자의 소재지 관할 법원에서 해결합니다.</p>
+
+    <h3>부칙</h3>
+    <p>이 약관은 2026년 11월 19일부터 시행합니다.</p>
+  </section>
+
+  <section class="card" id="matching">
+    <h2><span>03</span> 인력 매칭을 위한 경력·직종·연락처 운영자 열람 동의</h2>
+    <p>「오늘몇공」은 일용직 인력 매칭을 위해 아래와 같이 개인정보 열람에 동의를 받습니다.</p>
+
+    <h3>1. 열람 주체</h3>
+    <p>앱 운영자 — 스마일산업(대표 박기성), 연락처 010-3135-7779</p>
+
+    <h3>2. 열람 항목</h3>
+    <ul>
+      <li>이름, 휴대폰 번호</li>
+      <li>직종(배관·용접·제관·조공·기타), 경력 연수</li>
+      <li>소속 업체, 담당 현장</li>
+    </ul>
+
+    <h3>3. 열람 목적</h3>
+    <p>현장에 필요한 인력의 경력·직종 확인과 연락(인력 매칭), 현장 배치 상담</p>
+
+    <h3>4. 보유 및 이용 기간</h3>
+    <p>회원 탈퇴 또는 동의 철회 시까지</p>
+
+    <h3>5. 동의 거부 안내</h3>
+    <p>이 동의는 인력 매칭 서비스 제공에 필수이므로, 동의하지 않으면 가입할 수 없습니다. 같은 업체의 관리자(사장님)는 소속 직원의 이름·연락처·직종·경력·공수 기록을 팀 관리 목적으로 열람할 수 있습니다.</p>
+
+    <h3>6. 열람 범위</h3>
+    <p>운영자는 업무에 필요한 최소한의 정보만 확인하며, 위 목적 외로 사용하거나 제3자에게 제공하지 않습니다.</p>
+  </section>
+
+  <footer>
+    스마일산업 · 대표 박기성 · 010-3135-7779 · bks1029@gmail.com<br />
+    <a href="./index.html">설치 페이지로 돌아가기</a> · <a href="./app.html">앱 열기</a><br />
+    시행일 2026년 11월 19일
+  </footer>
+</div>
+</body>
+</html>

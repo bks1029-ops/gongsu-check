@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#F4F6FA" id="themeColorMeta" />
 <title>오늘몇공</title>
 <style>
-  /* ===== 오늘몇공 v5.2 — 기본 라이트 + 선택 다크(네이비·골드) ===== */
+  /* ===== 오늘몇공 v5.3 — 기본 라이트 + 선택 다크(네이비·골드) / RPC 보안 · 가입 동의 ===== */
   :root {
     /* 라이트 테마 (기본) */
     --primary: #EAB308;
@@ -503,6 +503,17 @@
   }
   .invite-code { font-size: 28px; font-weight: 900; letter-spacing: 3px; color: var(--accent-text); }
 
+  /* ===== v5.3 가입 필수 동의 ===== */
+  .consent-box { margin: 14px 0 6px; padding: 12px 12px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+  .consent-row { display: flex; align-items: center; gap: 8px; margin: 0; padding: 4px 0; font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.35; cursor: pointer; }
+  .consent-row input[type="checkbox"] { width: 17px; height: 17px; margin: 0; flex: 0 0 auto; accent-color: #FACC15; }
+  .consent-row span { flex: 1; min-width: 0; }
+  .consent-view { flex: 0 0 auto; margin: 0; padding: 5px 9px; font-size: 11px; font-weight: 800; color: var(--primary); background: transparent; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+  .policy-section { margin-bottom: 14px; }
+  .policy-section h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--text); }
+  .policy-section p { margin: 0 0 4px; font-size: 12.5px; line-height: 1.6; color: var(--text); }
+  .policy-section ul { margin: 0 0 4px; padding-left: 16px; font-size: 12.5px; line-height: 1.6; color: var(--text); }
+
   /* ===== v5.2 설정 스위치 (다크 모드) ===== */
   .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .set-row-title { font-size: 14px; font-weight: 800; color: var(--text); }
@@ -694,6 +705,18 @@ try {
         <span class="in-ico">🔒</span>
         <input id="joinPin" type="password" inputmode="numeric" maxlength="6" placeholder="1234" />
       </div>
+      <div class="consent-box">
+        <label class="consent-row">
+          <input id="joinAgree1" type="checkbox" />
+          <span>[필수] 개인정보 수집·이용 및 이용약관 동의</span>
+          <button type="button" class="consent-view" onclick="event.preventDefault();event.stopPropagation();openPolicyModal('privacy')">보기</button>
+        </label>
+        <label class="consent-row">
+          <input id="joinAgree2" type="checkbox" />
+          <span>[필수] 인력 매칭을 위한 경력·직종·연락처 운영자 열람 동의</span>
+          <button type="button" class="consent-view" onclick="event.preventDefault();event.stopPropagation();openPolicyModal('matching')">보기</button>
+        </label>
+      </div>
       <button class="auth-cta" onclick="doRegister()">가입하고 시작하기</button>
     </div>
 
@@ -717,6 +740,18 @@ try {
       <div class="input-icon-wrap">
         <span class="in-ico">🔒</span>
         <input id="adminJoinPin" type="password" inputmode="numeric" maxlength="6" placeholder="0000" />
+      </div>
+      <div class="consent-box">
+        <label class="consent-row">
+          <input id="adminAgree1" type="checkbox" />
+          <span>[필수] 개인정보 수집·이용 및 이용약관 동의</span>
+          <button type="button" class="consent-view" onclick="event.preventDefault();event.stopPropagation();openPolicyModal('privacy')">보기</button>
+        </label>
+        <label class="consent-row">
+          <input id="adminAgree2" type="checkbox" />
+          <span>[필수] 인력 매칭을 위한 경력·직종·연락처 운영자 열람 동의</span>
+          <button type="button" class="consent-view" onclick="event.preventDefault();event.stopPropagation();openPolicyModal('matching')">보기</button>
+        </label>
       </div>
       <button class="auth-cta" onclick="doRegisterAdmin()">새 업체 등록하고 시작하기</button>
     </div>
@@ -1111,13 +1146,13 @@ try {
       <button id="leaveTeamBtn" class="btn btn-outline btn-sm hidden" style="margin-top:8px;width:100%;" onclick="leaveTeamToSolo()">소속 나가기 (개인 공수 캘린더로 전환)</button>
     </div>
     <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
-      <label style="margin-top:0;">매일 아침 오늘몇공 알림</label>
+      <label style="margin-top:0;">매일 오늘몇공 알림 (기본 오후 6시)</label>
       <div class="row" style="align-items:center;gap:8px;">
         <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:13px;flex:0 0 auto;cursor:pointer;">
           <input id="dailyNotifCheck" type="checkbox" style="width:18px;height:18px;margin:0;" onchange="saveReminderSetting()" />
           <span>알림 켜기</span>
         </label>
-        <input id="dailyNotifTime" type="time" value="08:00" style="margin:0;padding:8px 10px;font-size:14px;" onchange="saveReminderSetting()" />
+        <input id="dailyNotifTime" type="time" value="18:00" style="margin:0;padding:8px 10px;font-size:14px;" onchange="saveReminderSetting()" />
       </div>
     </div>
     <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
@@ -1189,6 +1224,17 @@ try {
       <button id="dlgCancel" class="dlg-btn dlg-cancel" type="button">취소</button>
       <button id="dlgOk" class="dlg-btn dlg-ok" type="button">확인</button>
     </div>
+  </div>
+</div>
+
+<div id="policyModal" class="modal-bg hidden">
+  <div class="modal-card" style="max-height:88vh;overflow-y:auto;">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 id="policyTitle" style="margin:0;font-size:17px;">개인정보처리방침</h2>
+      <button class="btn btn-outline btn-sm" style="margin:0;" onclick="closePolicyModal()">닫기</button>
+    </div>
+    <div id="policyBody"></div>
+    <button class="auth-cta" style="margin-top:6px;" onclick="closePolicyModal()">확인했습니다</button>
   </div>
 </div>
 
@@ -1370,302 +1416,234 @@ function appAlert(message, o) { return appDialog(Object.assign({}, o || {}, { mo
 function appConfirm(message, o) { return appDialog(Object.assign({}, o || {}, { mode: "confirm", message })).then(v => !!v); }
 function appPrompt(message, o) { return appDialog(Object.assign({}, o || {}, { mode: "prompt", message })); }
 
+/* ===== v5.3 개인정보처리방침 · 이용약관 (앱 내 전문) ===== */
+const POLICY_PRIVACY_HTML = `
+<div class="policy-section">
+  <h4>개인정보처리방침</h4>
+  <p>오늘몇공(이하 "앱")은 스마일산업(대표 박기성)이 운영하며, 이용자의 개인정보를 소중히 다루고 「개인정보 보호법」 등 관계 법령을 준수합니다. 이 방침은 2026년 11월 19일부터 적용됩니다.</p>
+</div>
+<div class="policy-section">
+  <h4>1. 수집하는 개인정보 항목</h4>
+  <ul>
+    <li>필수: 이름, 휴대폰 번호, 비밀번호(4자리 이상), 소속 업체(팀) 정보</li>
+    <li>서비스 이용 중 생성: 공수(출근) 기록, 기본 일당, 직종, 경력 연수, 담당 현장, 팀 채팅 메시지와 첨부파일, 광장 게시글·댓글</li>
+    <li>선택: 초대코드(개인·직원 가입 시)</li>
+  </ul>
+</div>
+<div class="policy-section">
+  <h4>2. 수집·이용 목적</h4>
+  <ul>
+    <li>본인 확인 및 로그인</li>
+    <li>일용직 공수(출근) 기록과 월별 정산 계산</li>
+    <li>같은 업체 관리자·직원 간 공수와 일정 공유</li>
+    <li>인력 매칭(경력·직종·연락처 확인) 및 채팅·광장 서비스 제공</li>
+    <li>부정 이용 방지와 문의 대응</li>
+  </ul>
+</div>
+<div class="policy-section">
+  <h4>3. 보유 및 이용 기간</h4>
+  <p>회원 탈퇴 또는 서비스 종료 시까지 보관하며, 목적을 달성하면 지체 없이 파기합니다. 관계 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관합니다(계약·청약철회 기록 5년, 대금결제 기록 5년, 소비자 불만 기록 3년).</p>
+</div>
+<div class="policy-section">
+  <h4>4. 제3자 제공</h4>
+  <p>앱은 이용자의 개인정보를 원칙적으로 제3자에게 제공하지 않습니다. 다만 이용자가 속한 업체의 관리자에게는 같은 업체 소속 직원의 이름·연락처·직종·경력·공수 기록이 서비스 제공 목적으로 열람되며, 법령에 따라 수사기관이 적법한 절차로 요청하는 경우에만 제공합니다.</p>
+</div>
+<div class="policy-section">
+  <h4>5. 처리 위탁</h4>
+  <p>서비스 운영을 위해 클라우드 데이터베이스(Supabase Inc., 일본 도쿄 리전)에 데이터를 보관하고, 앱 배포를 위해 GitHub Inc.의 저장소·페이지 서비스를 이용합니다. 위탁 사업자는 서버 운영·백업·배포 목적으로만 데이터에 접근합니다.</p>
+</div>
+<div class="policy-section">
+  <h4>6. 이용자의 권리</h4>
+  <ul>
+    <li>내 정보·설정에서 본인의 이름, 직종, 경력, 기본 일당, 비밀번호를 조회·변경할 수 있습니다.</li>
+    <li>비밀번호를 잊은 경우 운영자(010-3135-7779)에게 요청하면 0000으로 초기화할 수 있고, 초기화 후 직접 새 비밀번호로 변경할 수 있습니다.</li>
+    <li>회원 탈퇴·개인정보 삭제는 앱 내 문의 또는 운영자 연락처로 요청할 수 있으며, 요청받은 날부터 지체 없이 처리합니다.</li>
+  </ul>
+</div>
+<div class="policy-section">
+  <h4>7. 파기 방법 및 안전성 확보 조치</h4>
+  <p>전자적 파일은 복구할 수 없는 방법으로 삭제합니다. 비밀번호는 앱 화면과 서버 응답에 직접 노출되지 않으며, 앱은 서버의 인증 함수를 통해서만 데이터에 접근합니다. 데이터베이스 접근 권한은 최소화하고 통신 구간은 HTTPS로 암호화합니다.</p>
+</div>
+<div class="policy-section">
+  <h4>8. 개인정보 보호책임자</h4>
+  <p>성명: 박기성 · 연락처: 010-3135-7779 · 이메일: bks1029@gmail.com<br/>문의는 7일 이내에 답변드립니다.</p>
+</div>
+<div class="policy-section">
+  <h4>9. 고지의 의무</h4>
+  <p>이 방침이 변경되면 앱 내 공지 또는 다운로드 페이지를 통해 시행일자를 명시하여 알립니다.</p>
+</div>
+<div class="policy-section">
+  <h4>이용약관</h4>
+  <p><b>제1조 (목적)</b> 이 약관은 스마일산업(이하 "운영자")이 제공하는 모바일 앱 "오늘몇공"(이하 "앱")의 이용 조건과 절차, 이용자와 운영자의 권리·의무를 정합니다.</p>
+  <p><b>제2조 (정의)</b> ① "이용자"란 이 약관에 동의하고 앱을 이용하는 자를 말합니다. ② "업체 관리자"란 업체(팀)를 개설하거나 위임받아 소속 직원의 공수·정산을 관리하는 자를 말합니다. ③ "공수"란 하루 일한 양을 1공수를 기준으로 표시한 단위입니다.</p>
+  <p><b>제3조 (약관의 효력과 변경)</b> ① 이 약관은 앱 화면 또는 다운로드 페이지에 게시함으로써 효력이 발생합니다. ② 운영자는 약관을 변경할 수 있으며, 변경 시 시행일 7일 전부터 앱 내에 공지합니다. 이용자에게 불리한 변경은 30일 전에 공지합니다. ③ 변경된 약관에 동의하지 않는 이용자는 이용을 중단하고 탈퇴할 수 있습니다.</p>
+  <p><b>제4조 (서비스의 내용)</b> ① 앱은 공수(출근) 기록과 월별 정산, 업체별 직원 관리·초대, 팀 채팅과 파일 공유, 전체 이용자 광장(구인·구직·현장 정보·팁), 공수 입력 알림을 제공합니다. ② 앱은 무료로 제공되며, 운영자는 서비스의 전부 또는 일부를 변경·중단할 수 있고 중단 시 사전에 공지합니다.</p>
+  <p><b>제5조 (이용자의 의무)</b> ① 이용자는 본인의 휴대폰 번호와 비밀번호를 정확히 관리해야 하며 타인에게 양도·대여할 수 없습니다. ② 타인의 정보 도용, 허위 공수·정산 기록 입력, 욕설·비방·차별·음란물·스팸 게시, 서비스 운영 방해, 법령 위반 행위를 할 수 없습니다. ③ 운영자는 위 행위에 대해 게시물을 삭제하고 이용을 제한할 수 있습니다.</p>
+  <p><b>제6조 (게시물의 관리)</b> 이용자가 작성한 게시물의 책임은 작성자에게 있으며, 신고가 접수된 게시물은 운영자가 확인 후 삭제할 수 있습니다.</p>
+  <p><b>제7조 (책임의 제한)</b> ① 앱은 공수 기록과 정산을 돕는 도구이며, 실제 임금 지급과 근로계약의 당사자는 이용자와 소속 업체입니다. ② 운영자는 천재지변, 통신 장애, 기기 문제 등 운영자의 귀책이 없는 사유로 발생한 손해에 대해 책임지지 않습니다. ③ 이용자가 입력한 정보의 오류로 발생한 불이익은 이용자가 부담합니다.</p>
+  <p><b>제8조 (지식재산권)</b> 앱의 디자인·프로그램·상표에 대한 권리는 운영자에게 있으며, 이용자는 운영자의 허락 없이 복제·배포·변형할 수 없습니다.</p>
+  <p><b>제9조 (분쟁의 해결)</b> 이 약관은 대한민국 법률에 따르며, 분쟁은 운영자의 소재지 관할 법원에서 해결합니다.</p>
+  <p><b>부칙</b> 이 약관은 2026년 11월 19일부터 시행합니다.</p>
+</div>`;
+
+const POLICY_MATCHING_HTML = `
+<div class="policy-section">
+  <h4>인력 매칭을 위한 경력·직종·연락처 운영자 열람 동의</h4>
+  <p>「오늘몇공」은 일용직 인력 매칭을 위해 아래와 같이 개인정보 열람에 동의를 받습니다.</p>
+</div>
+<div class="policy-section">
+  <h4>1. 열람 주체</h4>
+  <p>앱 운영자 — 스마일산업(대표 박기성), 연락처 010-3135-7779</p>
+</div>
+<div class="policy-section">
+  <h4>2. 열람 항목</h4>
+  <ul>
+    <li>이름, 휴대폰 번호</li>
+    <li>직종(배관·용접·제관·조공·기타), 경력 연수</li>
+    <li>소속 업체, 담당 현장</li>
+  </ul>
+</div>
+<div class="policy-section">
+  <h4>3. 열람 목적</h4>
+  <p>현장에 필요한 인력의 경력·직종 확인과 연락(인력 매칭), 현장 배치 상담</p>
+</div>
+<div class="policy-section">
+  <h4>4. 보유 및 이용 기간</h4>
+  <p>회원 탈퇴 또는 동의 철회 시까지</p>
+</div>
+<div class="policy-section">
+  <h4>5. 동의 거부 안내</h4>
+  <p>이 동의는 인력 매칭 서비스 제공에 필수이므로, 동의하지 않으면 가입할 수 없습니다. 같은 업체의 관리자(사장님)는 소속 직원의 이름·연락처·직종·경력·공수 기록을 팀 관리 목적으로 열람할 수 있습니다.</p>
+</div>
+<div class="policy-section">
+  <h4>6. 열람 범위</h4>
+  <p>운영자는 업무에 필요한 최소한의 정보만 확인하며, 위 목적 외로 사용하거나 제3자에게 제공하지 않습니다.</p>
+</div>`;
+
+function openPolicyModal(kind) {
+  const isMatching = kind === "matching";
+  document.getElementById("policyTitle").textContent = isMatching ? "인력 매칭 정보 열람 동의" : "개인정보처리방침 · 이용약관";
+  document.getElementById("policyBody").innerHTML = isMatching ? POLICY_MATCHING_HTML : POLICY_PRIVACY_HTML;
+  document.getElementById("policyModal").classList.remove("hidden");
+  const card = document.querySelector("#policyModal .modal-card");
+  if (card) card.scrollTop = 0;
+}
+function closePolicyModal() { document.getElementById("policyModal").classList.add("hidden"); }
+
 function todayKST() {
   return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
 }
 
-async function sb(path, opts = {}) {
-  const headers = {
-    apikey: SB_KEY,
-    Authorization: "Bearer " + SB_KEY,
-    "Content-Type": "application/json",
-    ...(opts.headers || {})
-  };
-  const res = await fetch(SB_URL + path, { ...opts, headers });
+/* ===== v5.3 보안: 앱은 서버 RPC로만 데이터에 접근 (로그인 토큰 필요) ===== */
+let SB_TOKEN = "";
+try { SB_TOKEN = localStorage.getItem("gongsu_token") || ""; } catch (e) { SB_TOKEN = ""; }
+
+async function rpc(fn, args) {
+  const res = await fetch(SB_URL + "/rpc/" + fn, {
+    method: "POST",
+    headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(args || {})
+  });
   const text = await res.text();
   if (!res.ok) throw new Error(text || ("HTTP " + res.status));
-  return text ? JSON.parse(text) : [];
+  return text ? JSON.parse(text) : null;
+}
+
+function setSessionToken(t) {
+  SB_TOKEN = t || "";
+  try { if (SB_TOKEN) localStorage.setItem("gongsu_token", SB_TOKEN); else localStorage.removeItem("gongsu_token"); } catch (e) {}
+}
+
+function isAuthError(r) {
+  return !!r && r.ok === false && (r.code === "auth" || String(r.error || "").indexOf("로그인이 만료") >= 0);
+}
+
+function forceLogout(message) {
+  setSessionToken("");
+  try { localStorage.removeItem("smile_user_v2"); } catch (e) {}
+  currentUser = null;
+  dashData = null;
+  if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
+  ["settingsModal", "recordModal", "adminOverviewModal", "postComposeModal", "postDetailModal", "policyModal"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
+  document.getElementById("topbarRight").classList.add("hidden");
+  document.getElementById("mainTopbar").classList.add("hidden");
+  document.getElementById("appMain").classList.add("hidden");
+  document.getElementById("bottomNav").classList.add("hidden");
+  document.getElementById("authView").classList.remove("hidden");
+  switchAuthTab("login");
+  if (message) toast(message);
 }
 
 async function api(action, p = {}) {
+  p = p || {};
   try {
+    let r = null;
     if (action === "login") {
-      const phone = String(p.phone || "").replace(/[^0-9]/g, "");
-      const rows = await sb("/users?phone=eq." + encodeURIComponent(phone) + "&select=*");
-      if (!rows.length) return { ok: false, error: "등록되지 않은 전화번호입니다." };
-      const u = rows[0];
-      if (String(u.pin) !== String(p.pin || "").trim()) return { ok: false, error: "비밀번호가 일치하지 않습니다." };
-      const tid = u.team_id || "team_smile";
-      const tRows = await sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => []);
-      const teamName = tRows.length ? tRows[0].name : (tid.startsWith("solo_") ? "개인 공수 캘린더" : "스마일산업");
-      return { ok: true, user: { user_id: u.user_id, name: u.name, phone: u.phone, role: u.role, default_wage: Number(u.default_wage || 180000), team_id: tid, team_name: teamName, job_type: u.job_type || "", career_years: u.career_years, assigned_site: u.assigned_site || "" } };
-    }
-    if (action === "register_admin") {
-      const teamName = String(p.team_name || "").trim();
-      const name = String(p.name || "").trim();
-      const phone = String(p.phone || "").replace(/[^0-9]/g, "");
-      const pin = String(p.pin || "").trim();
-      if (!teamName || !name || !phone || !pin) return { ok: false, error: "모든 항목을 입력해 주세요." };
-      if (pin.length < 4) return { ok: false, error: "비밀번호는 4자리 이상 입력하세요." };
-      const dup = await sb("/users?phone=eq." + encodeURIComponent(phone) + "&select=user_id");
-      if (dup.length) return { ok: false, error: "이미 가입된 전화번호입니다." };
-      const newTeamId = "team_" + Date.now();
-      const newUserId = "a_" + Date.now();
-      await sb("/teams", {
-        method: "POST",
-        body: JSON.stringify({ team_id: newTeamId, name: teamName, owner_id: newUserId })
+      r = await rpc("app_login", { p_phone: p.phone, p_pin: p.pin });
+    } else if (action === "register_admin") {
+      r = await rpc("app_register_admin", { p_team_name: p.team_name, p_name: p.name, p_phone: p.phone, p_pin: p.pin });
+    } else if (action === "register_worker") {
+      r = await rpc("app_register_worker", { p_invite_code: p.invite_code, p_name: p.name, p_phone: p.phone, p_pin: p.pin });
+    } else if (action === "get_dashboard") {
+      r = await rpc("app_dashboard", { p_token: SB_TOKEN, p_month: p.month || getCurMonth() });
+    } else if (action === "save_record") {
+      r = await rpc("app_save_record", {
+        p_token: SB_TOKEN, p_record_id: p.record_id || "",
+        p_worker_id: p.worker_id || p.user_id, p_date: p.date, p_site: p.site,
+        p_gongsu: p.gongsu, p_wage: p.wage, p_memo: p.memo
       });
-      await sb("/users", {
-        method: "POST",
-        body: JSON.stringify({ user_id: newUserId, name, phone, role: "admin", default_wage: 180000, invite_code: "", status: "active", pin, team_id: newTeamId })
+    } else if (action === "delete_record") {
+      r = await rpc("app_delete_record", { p_token: SB_TOKEN, p_record_id: p.record_id });
+    } else if (action === "update_worker_wage") {
+      r = await rpc("app_update_wage", { p_token: SB_TOKEN, p_target_id: p.worker_id || p.user_id, p_default_wage: p.default_wage });
+    } else if (action === "update_worker_role") {
+      r = await rpc("app_set_role", { p_token: SB_TOKEN, p_target_id: p.worker_id, p_role: p.role });
+    } else if (action === "update_profile") {
+      r = await rpc("app_update_profile", { p_token: SB_TOKEN, p_job_type: p.job_type, p_career_years: p.career_years });
+    } else if (action === "update_worker_site") {
+      r = await rpc("app_update_site_assign", { p_token: SB_TOKEN, p_target_id: p.worker_id || p.user_id, p_assigned_site: p.assigned_site });
+    } else if (action === "leave_team") {
+      r = await rpc("app_leave_team", { p_token: SB_TOKEN, p_target_id: p.target_user_id || p.user_id });
+    } else if (action === "join_team_by_code") {
+      r = await rpc("app_join_team", { p_token: SB_TOKEN, p_invite_code: p.invite_code });
+    } else if (action === "add_site") {
+      r = await rpc("app_add_site", { p_token: SB_TOKEN, p_name: p.name });
+    } else if (action === "delete_site") {
+      r = await rpc("app_delete_site", { p_token: SB_TOKEN, p_site_id: p.site_id });
+    } else if (action === "create_invite") {
+      r = await rpc("app_create_invite", { p_token: SB_TOKEN });
+    } else if (action === "change_pin") {
+      r = await rpc("app_change_pin", { p_token: SB_TOKEN, p_new_pin: p.new_pin });
+    } else if (action === "get_chat_overview") {
+      r = await rpc("app_chat_overview", { p_token: SB_TOKEN });
+    } else if (action === "get_messages") {
+      r = await rpc("app_messages", { p_token: SB_TOKEN, p_room_id: p.room_id });
+    } else if (action === "send_message") {
+      r = await rpc("app_send_message", {
+        p_token: SB_TOKEN, p_room_id: p.room_id, p_text: p.text || "",
+        p_file_url: p.file_url || null, p_file_name: p.file_name || null,
+        p_file_type: p.file_type || null, p_file_size: p.file_size || null
       });
-      return { ok: true, user: { user_id: newUserId, name, phone, role: "admin", default_wage: 180000, team_id: newTeamId, team_name: teamName, job_type: "", career_years: null, assigned_site: "" } };
+    } else if (action === "admin_overview") {
+      r = await rpc("app_admin_overview", { p_token: SB_TOKEN });
+    } else if (action === "delete_account") {
+      r = await rpc("app_delete_account", { p_token: SB_TOKEN, p_target_id: p.target_user_id });
+    } else if (action === "reset_user_pin") {
+      r = await rpc("app_reset_pin", { p_token: SB_TOKEN, p_target_id: p.target_user_id });
+    } else {
+      return { ok: false, error: "알 수 없는 요청" };
     }
-    if (action === "register_worker") {
-      const code = String(p.invite_code || "").trim().toUpperCase();
-      const phone = String(p.phone || "").replace(/[^0-9]/g, "");
-      const name = String(p.name || "").trim();
-      const pin = String(p.pin || "").trim();
-      if (!phone || !name || !pin) return { ok: false, error: "이름, 전화번호, 비밀번호를 입력해 주세요." };
-      if (pin.length < 4) return { ok: false, error: "비밀번호는 4자리 이상 입력하세요." };
-      const dup = await sb("/users?phone=eq." + encodeURIComponent(phone) + "&select=user_id");
-      if (dup.length) return { ok: false, error: "이미 가입된 전화번호입니다." };
-      const newId = "w_" + Date.now();
-      let tid = "";
-      let teamName = "개인 공수 캘린더";
-      if (code) {
-        const invs = await sb("/invites?code=eq." + encodeURIComponent(code) + "&select=*");
-        if (!invs.length) return { ok: false, error: "유효하지 않은 초대코드입니다." };
-        if (invs[0].used === "Y") return { ok: false, error: "이미 사용된 초대코드입니다." };
-        tid = invs[0].team_id || "team_smile";
-        const tRows = await sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => []);
-        teamName = tRows.length ? tRows[0].name : "스마일산업";
-        await sb("/users", {
-          method: "POST",
-          body: JSON.stringify({ user_id: newId, name, phone, role: "worker", default_wage: 180000, invite_code: code, status: "active", pin, team_id: tid })
-        });
-        await sb("/invites?code=eq." + encodeURIComponent(code), {
-          method: "PATCH",
-          body: JSON.stringify({ used: "Y", used_by: newId })
-        });
-      } else {
-        tid = "solo_" + newId;
-        await sb("/teams", {
-          method: "POST",
-          body: JSON.stringify({ team_id: tid, name: "개인 공수 캘린더", owner_id: newId })
-        });
-        await sb("/users", {
-          method: "POST",
-          body: JSON.stringify({ user_id: newId, name, phone, role: "worker", default_wage: 180000, invite_code: "", status: "active", pin, team_id: tid })
-        });
-      }
-      return { ok: true, user: { user_id: newId, name, phone, role: "worker", default_wage: 180000, team_id: tid, team_name: teamName, job_type: "", career_years: null, assigned_site: "" } };
+    if (r && r.token) setSessionToken(r.token);
+    if (isAuthError(r)) {
+      forceLogout(r.error);
+      return r;
     }
-    if (action === "get_dashboard") {
-      const month = p.month || getCurMonth();
-      const meRows = await sb("/users?user_id=eq." + encodeURIComponent(p.user_id) + "&select=user_id,name,phone,role,default_wage,team_id,job_type,career_years,assigned_site");
-      if (!meRows.length) return { ok: false, error: "사용자를 찾을 수 없습니다." };
-      const me = meRows[0];
-      const tid = me.team_id || "team_smile";
-      const recFilter = month === "ALL" ? "" : ("&date=like." + encodeURIComponent(month + "*"));
-      const isAdm = me.role === "admin";
-      const recQuery = isAdm
-        ? ("/records?team_id=eq." + encodeURIComponent(tid) + recFilter + "&select=*&order=date.desc,updated_at.desc")
-        : ("/records?worker_id=eq." + encodeURIComponent(me.user_id) + recFilter + "&select=*&order=date.desc,updated_at.desc");
-      const [users, records, sites, tRows] = await Promise.all([
-        sb("/users?team_id=eq." + encodeURIComponent(tid) + "&select=user_id,name,phone,role,default_wage,team_id,job_type,career_years,assigned_site"),
-        sb(recQuery),
-        sb("/sites?team_id=eq." + encodeURIComponent(tid) + "&select=*&order=created_at.asc"),
-        sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => [])
-      ]);
-      const teamName = tRows.length ? tRows[0].name : (tid.startsWith("solo_") ? "개인 공수 캘린더" : "스마일산업");
-      const filteredRecs = records;
-      const workers = isAdm ? users.filter(u => String(u.user_id) !== String(me.user_id)) : [];
-      return {
-        ok: true,
-        today: todayKST(),
-        user: { user_id: me.user_id, name: me.name, phone: me.phone, role: me.role, default_wage: Number(me.default_wage || 180000), team_id: tid, team_name: teamName, job_type: me.job_type || "", career_years: me.career_years, assigned_site: me.assigned_site || "" },
-        records: filteredRecs,
-        sites,
-        workers
-      };
-    }
-    if (action === "save_record") {
-      const targetId = p.worker_id || p.user_id;
-      const uRows = await sb("/users?user_id=eq." + encodeURIComponent(targetId) + "&select=user_id,name,default_wage,team_id");
-      if (!uRows.length) return { ok: false, error: "대상 직원을 찾을 수 없습니다." };
-      const tu = uRows[0];
-      const gongsu = Number(p.gongsu || 1.0);
-      const wage = Number(p.wage || tu.default_wage || 180000);
-      const amount = Math.round(gongsu * wage);
-      const row = {
-        date: String(p.date || todayKST()),
-        site: String(p.site || "").trim(),
-        worker_id: tu.user_id,
-        worker_name: tu.name,
-        gongsu,
-        wage,
-        amount,
-        memo: String(p.memo || ""),
-        team_id: tu.team_id || (currentUser && currentUser.team_id) || "team_smile",
-        updated_at: new Date().toISOString()
-      };
-      if (p.record_id) {
-        await sb("/records?record_id=eq." + encodeURIComponent(p.record_id), { method: "PATCH", body: JSON.stringify(row) });
-        return { ok: true, record_id: p.record_id };
-      } else {
-        const record_id = "r_" + Date.now();
-        await sb("/records", { method: "POST", body: JSON.stringify({ record_id, ...row }) });
-        return { ok: true, record_id };
-      }
-    }
-    if (action === "delete_record") {
-      await sb("/records?record_id=eq." + encodeURIComponent(p.record_id), { method: "DELETE" });
-      return { ok: true };
-    }
-    if (action === "update_worker_wage") {
-      const targetId = p.worker_id || p.user_id;
-      const wage = Number(p.default_wage || 0);
-      await sb("/users?user_id=eq." + encodeURIComponent(targetId), { method: "PATCH", body: JSON.stringify({ default_wage: wage }) });
-      return { ok: true, default_wage: wage };
-    }
-    if (action === "update_worker_role") {
-      const targetId = p.worker_id;
-      const nextRole = p.role === "admin" ? "admin" : "worker";
-      await sb("/users?user_id=eq." + encodeURIComponent(targetId), { method: "PATCH", body: JSON.stringify({ role: nextRole }) });
-      return { ok: true, role: nextRole };
-    }
-    if (action === "update_profile") {
-      const patch = {
-        job_type: p.job_type ? String(p.job_type) : null,
-        career_years: (p.career_years !== "" && p.career_years !== null && p.career_years !== undefined) ? Number(p.career_years) : null
-      };
-      await sb("/users?user_id=eq." + encodeURIComponent(p.user_id), { method: "PATCH", body: JSON.stringify(patch) });
-      return { ok: true, ...patch };
-    }
-    if (action === "update_worker_site") {
-      const targetId = p.worker_id || p.user_id;
-      const site = String(p.assigned_site || "").trim();
-      await sb("/users?user_id=eq." + encodeURIComponent(targetId), { method: "PATCH", body: JSON.stringify({ assigned_site: site }) });
-      return { ok: true, assigned_site: site };
-    }
-    if (action === "leave_team") {
-      const uid = String(p.target_user_id || p.user_id);
-      const soloTid = "solo_" + uid;
-      const existTeam = await sb("/teams?team_id=eq." + encodeURIComponent(soloTid) + "&select=team_id").catch(() => []);
-      if (!existTeam.length) {
-        await sb("/teams", { method: "POST", body: JSON.stringify({ team_id: soloTid, name: "개인 공수 캘린더", owner_id: uid }) });
-      }
-      await sb("/users?user_id=eq." + encodeURIComponent(uid), { method: "PATCH", body: JSON.stringify({ team_id: soloTid, role: "worker" }) });
-      return { ok: true, team_id: soloTid, team_name: "개인 공수 캘린더" };
-    }
-    if (action === "join_team_by_code") {
-      const code = String(p.invite_code || "").trim().toUpperCase();
-      if (!code) return { ok: false, error: "초대코드를 입력해 주세요." };
-      const invs = await sb("/invites?code=eq." + encodeURIComponent(code) + "&select=*");
-      if (!invs.length) return { ok: false, error: "유효하지 않은 초대코드입니다." };
-      if (invs[0].used === "Y") return { ok: false, error: "이미 사용된 초대코드입니다." };
-      const tid = invs[0].team_id || "team_smile";
-      const tRows = await sb("/teams?team_id=eq." + encodeURIComponent(tid) + "&select=name").catch(() => []);
-      const teamName = tRows.length ? tRows[0].name : "스마일산업";
-      await sb("/users?user_id=eq." + encodeURIComponent(p.user_id), { method: "PATCH", body: JSON.stringify({ team_id: tid, role: "worker", invite_code: code }) });
-      await sb("/invites?code=eq." + encodeURIComponent(code), { method: "PATCH", body: JSON.stringify({ used: "Y", used_by: p.user_id }) });
-      return { ok: true, team_id: tid, team_name: teamName };
-    }
-    if (action === "add_site") {
-      const site_id = "s_" + Date.now();
-      const tid = (currentUser && currentUser.team_id) || "team_smile";
-      await sb("/sites", { method: "POST", body: JSON.stringify({ site_id, name: String(p.name || "").trim(), status: "진행중", team_id: tid }) });
-      return { ok: true, site_id, name: p.name };
-    }
-    if (action === "delete_site") {
-      await sb("/sites?site_id=eq." + encodeURIComponent(p.site_id), { method: "DELETE" });
-      return { ok: true };
-    }
-    if (action === "create_invite") {
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      let code = "SM";
-      for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
-      const tid = (currentUser && currentUser.team_id) || "team_smile";
-      await sb("/invites", { method: "POST", body: JSON.stringify({ code, created_by: p.user_id, used: "N", used_by: "", team_id: tid }) });
-      return { ok: true, invite_code: code };
-    }
-    if (action === "change_pin") {
-      await sb("/users?user_id=eq." + encodeURIComponent(p.user_id), { method: "PATCH", body: JSON.stringify({ pin: String(p.new_pin) }) });
-      return { ok: true };
-    }
-    if (action === "get_chat_overview") {
-      const tid = (currentUser && currentUser.team_id) || "team_smile";
-      const tName = (currentUser && currentUser.team_name) || "우리 팀";
-      const [users, msgs] = await Promise.all([
-        sb("/users?team_id=eq." + encodeURIComponent(tid) + "&select=user_id,name,role"),
-        sb("/messages?team_id=eq." + encodeURIComponent(tid) + "&select=*&order=created_at.desc&limit=200")
-      ]);
-      const lastByRoom = {};
-      msgs.forEach(m => { if (!lastByRoom[m.room_id]) lastByRoom[m.room_id] = m; });
-      const rooms = [{
-        room_id: "all",
-        type: "channel",
-        title: tName + " 전체 채널",
-        last_text: lastByRoom["all"] ? (lastByRoom["all"].sender_name + ": " + (lastByRoom["all"].text || (lastByRoom["all"].file_name ? "📎 " + lastByRoom["all"].file_name : ""))) : "공지 및 현장 소통방",
-        last_time: lastByRoom["all"] ? lastByRoom["all"].created_at : ""
-      }];
-      users.filter(u => String(u.user_id) !== String(p.user_id)).forEach(u => {
-        const rid = "dm_" + [String(p.user_id), String(u.user_id)].sort().join("__");
-        rooms.push({
-          room_id: rid,
-          type: "dm",
-          peer_id: u.user_id,
-          peer_name: u.name,
-          title: u.name,
-          last_text: lastByRoom[rid] ? (lastByRoom[rid].text || (lastByRoom[rid].file_name ? "📎 " + lastByRoom[rid].file_name : "")) : "1:1 대화 시작하기",
-          last_time: lastByRoom[rid] ? lastByRoom[rid].created_at : ""
-        });
-      });
-      return { ok: true, rooms };
-    }
-    if (action === "get_messages") {
-      const tid = (currentUser && currentUser.team_id) || "team_smile";
-      const msgs = await sb("/messages?team_id=eq." + encodeURIComponent(tid) + "&room_id=eq." + encodeURIComponent(p.room_id) + "&order=created_at.asc&limit=200");
-      return { ok: true, messages: msgs };
-    }
-    if (action === "send_message") {
-      const msg_id = "m_" + Date.now();
-      const tid = (currentUser && currentUser.team_id) || "team_smile";
-      const row = { msg_id, room_id: p.room_id, sender_id: p.user_id, sender_name: currentUser.name, text: p.text || "", team_id: tid };
-      if (p.file_url) {
-        row.file_url = p.file_url;
-        row.file_name = p.file_name || "첨부파일";
-        row.file_type = p.file_type || "";
-        row.file_size = Number(p.file_size || 0);
-      }
-      await sb("/messages", {
-        method: "POST",
-        body: JSON.stringify(row)
-      });
-      return { ok: true, msg_id };
-    }
-    if (action === "admin_overview") {
-      const [teams, users, records, posts, reports] = await Promise.all([
-        sb("/teams?select=*&order=created_at.asc"),
-        sb("/users?select=user_id,name,phone,role,team_id,job_type,career_years,default_wage,assigned_site,created_at&order=created_at.asc"),
-        sb("/records?select=record_id"),
-        sb("/community_posts?select=post_id"),
-        sb("/community_reports?select=report_id")
-      ]);
-      return { ok: true, teams, users, recordCount: records.length, postCount: posts.length, reportCount: reports.length };
-    }
-    if (action === "delete_account") {
-      const targetId = String(p.target_user_id || "");
-      if (!targetId) return { ok: false, error: "대상 계정이 없습니다." };
-      if (targetId === "admin_01") return { ok: false, error: "운영자(admin_01) 계정은 삭제할 수 없습니다." };
-      await sb("/records?worker_id=eq." + encodeURIComponent(targetId), { method: "DELETE" });
-      await sb("/users?user_id=eq." + encodeURIComponent(targetId), { method: "DELETE" });
-      return { ok: true };
-    }
-    return { ok: false, error: "알 수 없는 요청" };
+    return r || { ok: false, error: "응답이 없습니다." };
   } catch (e) {
-    return { ok: false, error: e.message || "오류 발생" };
+    return { ok: false, error: (e && e.message) ? String(e.message).slice(0, 300) : "오류 발생" };
   }
 }
 
@@ -1691,11 +1669,33 @@ function init() {
     document.getElementById("joinCode").value = inviteParam.trim().toUpperCase();
     switchAuthTab("join");
   }
+  migrateReminderDefault();
   const saved = localStorage.getItem("smile_user_v2");
   if (saved) {
-    currentUser = JSON.parse(saved);
-    enterApp();
+    if (!SB_TOKEN) {
+      try { localStorage.removeItem("smile_user_v2"); } catch (e) {}
+      toast("보안 업데이트 후에는 다시 로그인해 주세요.");
+    } else {
+      currentUser = JSON.parse(saved);
+      enterApp();
+    }
   }
+}
+
+/* v5.3: 자동 알림 기본 시각을 오후 6시(18:00)로 (아침엔 당일 공수를 알 수 없어서) */
+function migrateReminderDefault() {
+  try {
+    if (localStorage.getItem("gongsu_reminder_v53") === "1") return;
+    const cur = localStorage.getItem("gongsu_daily_time");
+    if (!cur || cur === "08:00") {
+      localStorage.setItem("gongsu_daily_time", "18:00");
+      const enabled = localStorage.getItem("gongsu_daily_enabled") !== "0";
+      if (window.AndroidBridge && window.AndroidBridge.setDailyReminder) {
+        window.AndroidBridge.setDailyReminder(enabled, 18, 0);
+      }
+    }
+    localStorage.setItem("gongsu_reminder_v53", "1");
+  } catch (e) {}
 }
 
 async function pasteJoinCode() {
@@ -1732,6 +1732,9 @@ async function doRegisterAdmin() {
   const phone = document.getElementById("adminJoinPhone").value.trim();
   const pin = document.getElementById("adminJoinPin").value.trim();
   if (!team_name || !name || !phone || !pin) return toast("모든 항목을 입력해 주세요.");
+  if (!document.getElementById("adminAgree1").checked || !document.getElementById("adminAgree2").checked) {
+    return appAlert("가입하려면 아래 두 가지 필수 동의에 모두 체크해 주세요.\n· 개인정보 수집·이용 및 이용약관 동의\n· 인력 매칭을 위한 경력·직종·연락처 운영자 열람 동의", { title: "필수 동의가 필요합니다", icon: "shield", okText: "확인" });
+  }
   toast("업체 등록 중...");
   try {
     const r = await api("register_admin", { team_name, name, phone, pin });
@@ -1766,6 +1769,9 @@ async function doRegister() {
   const phone = document.getElementById("joinPhone").value.trim();
   const pin = document.getElementById("joinPin").value.trim();
   if (!name || !phone || !pin) return toast("이름, 전화번호, 비밀번호를 입력해 주세요.");
+  if (!document.getElementById("joinAgree1").checked || !document.getElementById("joinAgree2").checked) {
+    return appAlert("가입하려면 아래 두 가지 필수 동의에 모두 체크해 주세요.\n· 개인정보 수집·이용 및 이용약관 동의\n· 인력 매칭을 위한 경력·직종·연락처 운영자 열람 동의", { title: "필수 동의가 필요합니다", icon: "shield", okText: "확인" });
+  }
   toast("가입 처리 중...");
   try {
     const r = await api("register_worker", { invite_code, name, phone, pin });
@@ -1779,6 +1785,7 @@ async function doRegister() {
 
 function logout() {
   closeSettingsModal();
+  setSessionToken("");
   localStorage.removeItem("smile_user_v2");
   currentUser = null;
   document.getElementById("topbarRight").classList.add("hidden");
@@ -2646,7 +2653,7 @@ function openSettingsModal(onboarding = false) {
   document.getElementById("settingsLaterBtn").classList.toggle("hidden", !onboarding);
   document.getElementById("adminOverviewBtn").classList.toggle("hidden", !isOperator());
   const enabled = localStorage.getItem("gongsu_daily_enabled") !== "0";
-  const timeVal = localStorage.getItem("gongsu_daily_time") || "08:00";
+  const timeVal = localStorage.getItem("gongsu_daily_time") || "18:00";
   document.getElementById("dailyNotifCheck").checked = enabled;
   document.getElementById("dailyNotifTime").value = timeVal;
   document.getElementById("settingsModal").classList.remove("hidden");
@@ -2695,12 +2702,12 @@ async function joinTeamByCode() {
 
 function saveReminderSetting() {
   const enabled = document.getElementById("dailyNotifCheck").checked;
-  const timeVal = document.getElementById("dailyNotifTime").value || "08:00";
+  const timeVal = document.getElementById("dailyNotifTime").value || "18:00";
   localStorage.setItem("gongsu_daily_enabled", enabled ? "1" : "0");
   localStorage.setItem("gongsu_daily_time", timeVal);
   const [hh, mm] = timeVal.split(":").map(Number);
   if (window.AndroidBridge && window.AndroidBridge.setDailyReminder) {
-    window.AndroidBridge.setDailyReminder(enabled, hh || 8, mm || 0);
+    window.AndroidBridge.setDailyReminder(enabled, hh || 18, mm || 0);
   }
   toast(enabled ? `매일 ${timeVal} 알림이 설정되었습니다.` : "매일 알림이 꺼졌습니다.");
 }
@@ -2738,8 +2745,8 @@ function applyCustomTax() {
 async function pollNewChatForNotification() {
   if (!currentUser) return;
   try {
-    const tid = currentUser.team_id || "team_smile";
-    const msgs = await sb("/messages?team_id=eq." + encodeURIComponent(tid) + "&select=*&order=created_at.desc&limit=5");
+    const r = await rpc("app_recent_messages", { p_token: SB_TOKEN, p_limit: 5 });
+    const msgs = (r && r.ok) ? (r.messages || []) : [];
     if (!msgs || !msgs.length) return;
     const latest = msgs[0];
     if (!lastNotifiedMsgId) {
@@ -2922,7 +2929,7 @@ function renderHrList() {
         <span class="hr-tag">일당 ${fmtMoney(u.default_wage)}</span>
         <span class="hr-tag">가입 ${fmtDateKST(u.created_at)}</span>
       </div>
-      ${isMain ? "" : `<div class="hr-actions"><button class="btn btn-outline btn-sm" style="margin:0;color:var(--red);border-color:rgba(220,38,38,0.35);" onclick="deleteAccountFromOverview('${escHtml(u.user_id)}')">테스트 계정 삭제</button></div>`}
+      ${isMain ? "" : `<div class="hr-actions" style="display:flex;flex-wrap:wrap;gap:6px;"><button class="btn btn-soft btn-sm" style="margin:0;" onclick="resetUserPin('${escHtml(u.user_id)}','${escHtml(u.name || "")}')">비밀번호 초기화 (0000)</button><button class="btn btn-outline btn-sm" style="margin:0;color:var(--red);border-color:rgba(220,38,38,0.35);" onclick="deleteAccountFromOverview('${escHtml(u.user_id)}')">테스트 계정 삭제</button></div>`}
     </div>`;
   }).join("");
 }
@@ -2959,8 +2966,8 @@ async function loadOpPosts() {
   if (opData.posts) return renderOpPosts();
   el.innerHTML = '<div class="op-empty">불러오는 중...</div>';
   try {
-    const rows = await sb("/community_posts?select=*&order=created_at.desc&limit=100");
-    opData.posts = rows || [];
+    const r = await rpc("app_community_posts", { p_token: SB_TOKEN });
+    opData.posts = (r && r.ok) ? (r.posts || []) : [];
     renderOpPosts();
   } catch (e) {
     el.innerHTML = '<div class="op-empty">광장 글을 불러오지 못했습니다.</div>';
@@ -2983,8 +2990,8 @@ async function loadOpReports() {
   if (opData.reports) return renderOpReports();
   el.innerHTML = '<div class="op-empty">불러오는 중...</div>';
   try {
-    const rows = await sb("/community_reports?select=*&order=created_at.desc&limit=100");
-    opData.reports = rows || [];
+    const r = await rpc("app_admin_reports", { p_token: SB_TOKEN });
+    opData.reports = (r && r.ok) ? (r.reports || []) : [];
     renderOpReports();
   } catch (e) {
     el.innerHTML = '<div class="op-empty">신고 내역을 불러오지 못했습니다.</div>';
@@ -3033,6 +3040,22 @@ async function openAdminOverview() {
   renderHrChips();
   renderHrList();
   renderOpTeams();
+}
+
+async function resetUserPin(uid, name) {
+  if (!isOperator()) return;
+  const ok = await appConfirm("", {
+    title: "비밀번호 초기화 (0000)",
+    sub: `${name} 님의 비밀번호를 0000으로 초기화할까요?\n본인에게 새 비밀번호를 알려 주세요. 초기화하면 기존 비밀번호로는 로그인할 수 없습니다.`,
+    okText: "초기화 (0000)",
+    icon: "shield",
+    danger: true
+  });
+  if (!ok) return;
+  toast("비밀번호 초기화 중...");
+  const r = await api("reset_user_pin", { user_id: currentUser.user_id, target_user_id: uid });
+  if (!r.ok) return toast(r.error || "초기화 실패");
+  toast((name || "사용자") + " 님의 비밀번호가 0000으로 초기화되었습니다.");
 }
 
 async function deleteAccountFromOverview(uid) {
@@ -3134,13 +3157,9 @@ function pickCommCat(cat, btn) {
 
 async function loadCommunityPosts() {
   try {
-    const [posts, comments] = await Promise.all([
-      sb("/community_posts?select=*&order=created_at.desc&limit=100"),
-      sb("/community_comments?select=post_id")
-    ]);
-    const cMap = {};
-    comments.forEach(c => { cMap[c.post_id] = (cMap[c.post_id] || 0) + 1; });
-    commPostsCache = posts.map(p => ({ ...p, comment_count: cMap[p.post_id] || 0 }));
+    const r = await rpc("app_community_posts", { p_token: SB_TOKEN });
+    if (!r || !r.ok) throw new Error((r && r.error) || "불러오기 실패");
+    commPostsCache = (r.posts || []).map(p => ({ ...p, comment_count: Number(p.comment_count || 0) }));
     renderCommunityPosts();
   } catch (e) { toast("광장 불러오기 오류"); }
 }
@@ -3183,20 +3202,8 @@ async function submitCommunityPost() {
   if (!title || !body) return toast("제목과 내용을 입력해 주세요.");
   toast("게시 중...");
   try {
-    const post_id = "p_" + Date.now();
-    await sb("/community_posts", {
-      method: "POST",
-      body: JSON.stringify({
-        post_id,
-        author_id: currentUser.user_id,
-        author_name: currentUser.name,
-        author_team: currentUser.team_name || "스마일산업",
-        category,
-        title,
-        body,
-        likes: 0
-      })
-    });
+    const r = await rpc("app_create_post", { p_token: SB_TOKEN, p_category: category, p_title: title, p_body: body });
+    if (!r || !r.ok) throw new Error((r && r.error) || "게시 실패");
     closePostComposeModal();
     toast("광장에 글이 올라갔습니다!");
     loadCommunityPosts();
@@ -3219,7 +3226,8 @@ function closePostDetailModal() { document.getElementById("postDetailModal").cla
 
 async function loadPostComments(postId) {
   try {
-    const cmts = await sb("/community_comments?post_id=eq." + encodeURIComponent(postId) + "&order=created_at.asc");
+    const cr = await rpc("app_community_comments", { p_token: SB_TOKEN, p_post_id: postId });
+    const cmts = (cr && cr.ok) ? (cr.comments || []) : [];
     document.getElementById("pdCommentCount").textContent = `댓글 ${cmts.length}개`;
     const box = document.getElementById("pdCommentsList");
     box.innerHTML = "";
@@ -3239,17 +3247,8 @@ async function submitCommunityComment() {
   if (!body) return;
   document.getElementById("pdCommentInput").value = "";
   try {
-    await sb("/community_comments", {
-      method: "POST",
-      body: JSON.stringify({
-        comment_id: "c_" + Date.now(),
-        post_id: activePost.post_id,
-        author_id: currentUser.user_id,
-        author_name: currentUser.name,
-        author_team: currentUser.team_name || "스마일산업",
-        body
-      })
-    });
+    const r = await rpc("app_create_comment", { p_token: SB_TOKEN, p_post_id: activePost.post_id, p_body: body });
+    if (!r || !r.ok) throw new Error((r && r.error) || "댓글 실패");
     loadPostComments(activePost.post_id);
     loadCommunityPosts();
   } catch (e) { toast("댓글 오류"); }
@@ -3261,10 +3260,11 @@ async function likeCurrentPost() {
   activePost.likes = nextLikes;
   document.getElementById("pdLikeBtn").textContent = `♥ 좋아요 ${nextLikes}`;
   try {
-    await sb("/community_posts?post_id=eq." + encodeURIComponent(activePost.post_id), {
-      method: "PATCH",
-      body: JSON.stringify({ likes: nextLikes })
-    });
+    const r = await rpc("app_like_post", { p_token: SB_TOKEN, p_post_id: activePost.post_id });
+    if (r && r.ok && r.likes !== undefined && r.likes !== null) {
+      activePost.likes = Number(r.likes);
+      document.getElementById("pdLikeBtn").textContent = `♥ 좋아요 ${r.likes}`;
+    }
     loadCommunityPosts();
   } catch (e) {}
 }
@@ -3280,15 +3280,8 @@ async function reportCurrentPost() {
   });
   if (!reason) return;
   try {
-    await sb("/community_reports", {
-      method: "POST",
-      body: JSON.stringify({
-        report_id: "rep_" + Date.now(),
-        post_id: activePost.post_id,
-        reporter_id: currentUser.user_id,
-        reason: reason.trim()
-      })
-    });
+    const r = await rpc("app_report_post", { p_token: SB_TOKEN, p_post_id: activePost.post_id, p_reason: String(reason).trim() });
+    if (!r || !r.ok) throw new Error((r && r.error) || "신고 실패");
     toast("신고가 접수되었습니다.");
   } catch (e) { toast("신고 오류"); }
 }
@@ -3298,7 +3291,8 @@ async function deleteCurrentPost() {
   const ok = await appConfirm("", { title: "게시글 삭제", sub: "이 게시글을 삭제할까요?", okText: "삭제", icon: "trash", danger: true });
   if (!ok) return;
   try {
-    await sb("/community_posts?post_id=eq." + encodeURIComponent(activePost.post_id), { method: "DELETE" });
+    const r = await rpc("app_delete_post", { p_token: SB_TOKEN, p_post_id: activePost.post_id });
+    if (!r || !r.ok) throw new Error((r && r.error) || "삭제 실패");
     closePostDetailModal();
     toast("게시글이 삭제되었습니다.");
     loadCommunityPosts();
