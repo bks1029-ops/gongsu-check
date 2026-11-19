@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#F4F6FA" id="themeColorMeta" />
 <title>오늘몇공</title>
 <style>
-  /* ===== 오늘몇공 v5.3 — 기본 라이트 + 선택 다크(네이비·골드) / RPC 보안 · 가입 동의 ===== */
+  /* ===== 오늘몇공 v5.4 — 정산서 공유·현장별 합계·새 버전 안내 (v5.3: 라이트 기본 + 다크 토글 / RPC 보안) ===== */
   :root {
     /* 라이트 테마 (기본) */
     --primary: #EAB308;
@@ -572,6 +572,27 @@
   }
   .op-empty { font-size: 13px; color: var(--sub); padding: 10px 0; }
 
+  /* ===== v5.4 정산서 공유 · 현장별 합계 · 새 버전 안내 ===== */
+  .update-banner {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--accent-soft); border: 1px solid var(--hero-border);
+    border-radius: 14px; padding: 11px 13px; margin-bottom: 12px;
+  }
+  .update-banner .ub-title { font-size: 13.5px; font-weight: 800; color: var(--accent-ink); }
+  .update-banner .ub-sub { font-size: 12px; color: var(--sub); margin-top: 2px; }
+  .update-banner .ub-x { flex: 0 0 auto; background: transparent; border: none; color: var(--sub); font-size: 15px; font-weight: 900; padding: 2px 4px; cursor: pointer; }
+  .pay-sheet-pre {
+    white-space: pre-wrap; word-break: break-word; font-family: inherit;
+    font-size: 13px; line-height: 1.62; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 14px;
+    padding: 13px 14px; margin: 0; color: var(--text);
+  }
+  .site-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--sheet-line); }
+  .site-row:last-child { border-bottom: none; }
+  .site-row .sr-name { font-size: 13px; font-weight: 800; }
+  .site-row .sr-meta { font-size: 11.5px; color: var(--sub); font-weight: 600; margin-top: 1px; }
+  .site-row .sr-amt { font-size: 13px; font-weight: 800; white-space: nowrap; }
+
   /* ===== 커스텀 팝업 (alert / confirm / prompt 대체) ===== */
   .dlg-bg {
     position: fixed; inset: 0; background: var(--overlay);
@@ -760,6 +781,16 @@ try {
 
 <!-- MAIN APP -->
 <div id="appMain" class="container hidden">
+
+  <!-- v5.4 새 버전 안내 배너 (최신 버전이 있을 때만 표시) -->
+  <div id="updateBanner" class="update-banner hidden">
+    <div style="flex:1;min-width:0;">
+      <div class="ub-title" id="updateBannerTitle">새 버전이 나왔어요</div>
+      <div class="ub-sub" id="updateBannerSub">업데이트하면 새 기능을 바로 쓸 수 있어요.</div>
+    </div>
+    <button class="btn btn-primary btn-sm" style="margin:0;" onclick="openUpdatePage()">업데이트</button>
+    <button class="ub-x" title="닫기" onclick="dismissUpdateBanner()">✕</button>
+  </div>
 
   <!-- TAB 1: HOME (WORKER MODE) -->
   <div id="homeWorkerPanel" class="hidden">
@@ -953,6 +984,16 @@ try {
             <button type="button" class="btn btn-primary btn-sm" style="margin:0;flex:0 0 auto;" onclick="applyCustomTax()">적용</button>
           </div>
         </div>
+        <!-- v5.4 사장님용 현장별 공수 합계 -->
+        <div id="siteSummaryCard" class="hidden" style="background:var(--surface);border-radius:14px;padding:12px 14px;margin-bottom:12px;">
+          <div class="row" style="justify-content:space-between;margin-bottom:4px;">
+            <span style="font-size:13px;font-weight:800;">🏗️ 현장별 공수 합계</span>
+            <span id="siteSummaryMonth" style="font-size:11.5px;font-weight:700;color:var(--sub);"></span>
+          </div>
+          <div id="siteSummaryList"></div>
+          <div id="siteSummaryNet" style="font-size:11.5px;color:var(--sub);font-weight:600;margin-top:8px;"></div>
+        </div>
+
         <div id="teamPayList"></div>
         <div id="workerPayCalendarWrap" class="hidden" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
           <div style="font-size:14px;font-weight:800;margin-bottom:8px;">전체 달력</div>
@@ -1064,6 +1105,22 @@ try {
   </div>
 </div>
 
+<!-- v5.4 정산서 미리보기 · 공유/복사 MODAL -->
+<div id="paySheetModal" class="modal-bg hidden">
+  <div class="modal-card" style="max-height:88vh;overflow-y:auto;">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+      <h2 id="paySheetTitle" style="margin:0;font-size:16px;">월별 정산서</h2>
+      <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="closePaySheet()">닫기</button>
+    </div>
+    <div class="pay-sheet-pre" id="paySheetPreview"></div>
+    <div class="row" style="margin-top:12px;gap:8px;">
+      <button class="btn btn-primary" style="margin:0;" onclick="sharePaySheet()">💬 카톡·문자로 공유</button>
+      <button class="btn btn-outline" style="margin:0;flex:0 0 auto;" onclick="copyPaySheet()">복사</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--sub);margin-top:8px;line-height:1.5;">카톡에 붙여넣거나 문자로 보내면 그대로 정산서가 됩니다. 금액은 현재 세금 설정(내 정산 탭) 기준입니다.</div>
+  </div>
+</div>
+
 <!-- RECORD MODAL -->
 <div id="recordModal" class="modal-bg hidden">
   <div class="modal-card">
@@ -1167,6 +1224,15 @@ try {
         </label>
       </div>
     </div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
+      <div class="set-row" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div>
+          <div class="set-row-title">📦 앱 버전</div>
+          <div class="set-row-sub" id="setVersionSub">v5.4.0 · 최신 버전 확인</div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="checkAppUpdate(true)">업데이트 확인</button>
+      </div>
+    </div>
     <button id="adminOverviewBtn" class="btn btn-dark hidden" style="margin-top:12px;" onclick="closeSettingsModal(); openAdminOverview()">👑 전체 현황(운영자)</button>
     <button id="settingsLaterBtn" class="btn btn-outline hidden" style="margin-top:12px;" onclick="skipOnboarding()">나중에 하기</button>
     <button class="btn btn-outline" style="margin-top:18px;color:var(--red);border-color:rgba(248,113,113,0.45);" onclick="logout()">로그아웃</button>
@@ -1257,6 +1323,80 @@ let chatTimer = null;
 let workerActiveDate = "";
 let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
+
+/* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
+const APP_VERSION_CODE = 20;
+const APP_VERSION_NAME = "5.4.0";
+const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
+const APP_VERSION_URL = APP_PAGE_URL + "version.json";
+let latestVersion = null;
+let activePaySheet = null;
+
+function myVersionCode() {
+  try {
+    if (window.AndroidBridge && window.AndroidBridge.appVersionCode) {
+      const c = Number(window.AndroidBridge.appVersionCode());
+      if (c > 0) return c;
+    }
+  } catch (e) {}
+  return APP_VERSION_CODE;
+}
+
+function myVersionName() {
+  try {
+    if (window.AndroidBridge && window.AndroidBridge.appVersionName) {
+      const v = String(window.AndroidBridge.appVersionName() || "");
+      if (v) return v;
+    }
+  } catch (e) {}
+  return APP_VERSION_NAME;
+}
+
+async function checkAppUpdate(manual) {
+  try {
+    const res = await fetch(APP_VERSION_URL + "?t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const v = await res.json();
+    latestVersion = v;
+    const mine = myVersionCode();
+    const newer = Number(v.versionCode || 0) > mine;
+    const skipped = localStorage.getItem("gongsu_update_skip") || "";
+    const show = newer && skipped !== String(v.versionCode);
+    const banner = document.getElementById("updateBanner");
+    if (banner) {
+      banner.classList.toggle("hidden", !show);
+      if (show) {
+        document.getElementById("updateBannerTitle").textContent = "새 버전 v" + (v.versionName || "") + " 나왔어요";
+        document.getElementById("updateBannerSub").textContent = v.note || "업데이트하면 새 기능을 바로 쓸 수 있어요.";
+      }
+    }
+    const sub = document.getElementById("setVersionSub");
+    if (sub) {
+      sub.textContent = "v" + myVersionName() + (newer ? " · 새 버전 v" + (v.versionName || "") + " 있음" : " · 최신 버전입니다");
+    }
+    if (manual) {
+      toast(newer ? ("새 버전 v" + (v.versionName || "") + "이 있습니다. 업데이트해 주세요!") : ("지금이 최신 버전입니다 (v" + myVersionName() + ")"));
+    }
+  } catch (e) {
+    if (manual) toast("업데이트 확인에 실패했습니다. 인터넷 연결을 확인해 주세요.");
+  }
+}
+
+function openUpdatePage() {
+  const url = (latestVersion && latestVersion.pageUrl) || APP_PAGE_URL;
+  try {
+    if (window.AndroidBridge && window.AndroidBridge.openUrl) { window.AndroidBridge.openUrl(url); return; }
+  } catch (e) {}
+  window.open(url, "_blank");
+}
+
+function dismissUpdateBanner() {
+  if (latestVersion && latestVersion.versionCode) {
+    localStorage.setItem("gongsu_update_skip", String(latestVersion.versionCode));
+  }
+  const banner = document.getElementById("updateBanner");
+  if (banner) banner.classList.add("hidden");
+}
 
 function toast(msg) {
   const el = document.getElementById("toast");
@@ -1564,7 +1704,7 @@ function forceLogout(message) {
   currentUser = null;
   dashData = null;
   if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
-  ["settingsModal", "recordModal", "adminOverviewModal", "postComposeModal", "postDetailModal", "policyModal"].forEach(id => {
+  ["settingsModal", "recordModal", "adminOverviewModal", "postComposeModal", "postDetailModal", "policyModal", "paySheetModal"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add("hidden");
   });
@@ -1863,6 +2003,7 @@ async function loadDashboard() {
     }
     renderAll();
     maybeOnboard();
+    checkAppUpdate(false);
   } catch (e) { toast("불러오기 오류"); }
 }
 
@@ -2171,6 +2312,7 @@ function renderTeamTab() {
   }
   const [py, pm] = curMonth.split("-").map(Number);
   document.getElementById("payMonthLabel").textContent = py + "." + String(pm).padStart(2, "0");
+  renderSiteSummary(isAdm);
 
   const wEl = document.getElementById("teamWorkersList");
   wEl.innerHTML = "";
@@ -2219,7 +2361,7 @@ function renderTeamTab() {
   const map = {};
   const srcRecs = isAdm ? (dashData.records || []) : getMyRecords();
   srcRecs.forEach(r => {
-    if (!map[r.worker_id]) map[r.worker_id] = { name: r.worker_name, days: new Set(), g: 0, amt: 0 };
+    if (!map[r.worker_id]) map[r.worker_id] = { id: r.worker_id, name: r.worker_name, days: new Set(), g: 0, amt: 0 };
     map[r.worker_id].days.add(r.date);
     map[r.worker_id].g += Number(r.gongsu || 0);
     map[r.worker_id].amt += Number(r.amount || 0);
@@ -2241,7 +2383,10 @@ function renderTeamTab() {
           <span>${w.name}</span>
           <span class="pill pill-green">실수령 ${fmtMoney(net)}</span>
         </div>
-        <div class="list-sub">${curMonth} · ${w.days.size}일 · 총 ${w.g.toFixed(1)}공수 · 세전 ${fmtMoney(w.amt)}${taxRate > 0 ? ` · ${taxLabel} ${fmtMoney(tax)}` : ""}</div>`;
+        <div class="list-sub">${curMonth} · ${w.days.size}일 · 총 ${w.g.toFixed(1)}공수 · 세전 ${fmtMoney(w.amt)}${taxRate > 0 ? ` · ${taxLabel} ${fmtMoney(tax)}` : ""}</div>
+        <div class="row" style="margin-top:8px;gap:6px;">
+          <button class="btn btn-outline btn-sm" style="margin:0;flex:1;" onclick="openPaySheet('${w.id}')">📄 정산서 공유 / 복사</button>
+        </div>`;
       pEl.appendChild(d);
     });
     if (!Object.keys(map).length) pEl.innerHTML = '<div style="color:var(--sub);font-size:13px;text-align:center;padding:12px 0;">이번 달 정산 기록이 없습니다.</div>';
@@ -2272,6 +2417,7 @@ function renderTeamTab() {
           <span style="font-weight:800;">실수령 월급</span>
           <span style="font-weight:900;color:var(--primary);">${fmtMoney(net)}</span>
         </div>
+        <button class="btn btn-primary" style="margin-top:12px;" onclick="openPaySheet('${currentUser.user_id}')">📄 정산서 공유 / 복사</button>
       </div>`;
 
     document.getElementById("workerPayCalendarWrap").classList.remove("hidden");
@@ -2310,6 +2456,193 @@ function renderTeamTab() {
   sEl.innerHTML = (dashData.sites || []).map(s =>
     `<span class="pill pill-indigo" style="margin:3px;">${s.name}${isAdm ? ` <span style="cursor:pointer;margin-left:4px;color:#EF4444;font-weight:900;" onclick="deleteSite('${s.site_id}','${s.name}')">×</span>` : ""}</span>`
   ).join("") || '<div style="color:var(--sub);font-size:13px;">등록된 현장이 없습니다.</div>';
+}
+
+/* ===== v5.4 사장님용 현장별 공수 합계 ===== */
+function renderSiteSummary(isAdm) {
+  const card = document.getElementById("siteSummaryCard");
+  if (!card) return;
+  card.classList.toggle("hidden", !isAdm);
+  if (!isAdm || !dashData) return;
+  document.getElementById("siteSummaryMonth").textContent = monthLabelKR(curMonth);
+  const list = document.getElementById("siteSummaryList");
+  const recs = dashData.records || [];
+  const map = {};
+  recs.forEach(r => {
+    const name = String(r.site || "").trim() || "현장 미지정";
+    if (!map[name]) map[name] = { name, gongsu: 0, amount: 0, workers: new Set(), days: new Set() };
+    map[name].gongsu += Number(r.gongsu || 0);
+    map[name].amount += Number(r.amount || 0);
+    map[name].workers.add(r.worker_id);
+    map[name].days.add(r.date);
+  });
+  const rows = Object.values(map).sort((a, b) => b.amount - a.amount);
+  if (!rows.length) {
+    list.innerHTML = '<div style="color:var(--sub);font-size:12.5px;padding:6px 0;">이번 달 현장 기록이 없습니다.</div>';
+    document.getElementById("siteSummaryNet").textContent = "";
+    return;
+  }
+  const totG = rows.reduce((s, x) => s + x.gongsu, 0);
+  const totAmt = rows.reduce((s, x) => s + x.amount, 0);
+  const unassigned = map["현장 미지정"];
+  list.innerHTML = rows.map(x => `
+      <div class="site-row">
+        <div style="min-width:0;">
+          <div class="sr-name">${escHtml(x.name)}</div>
+          <div class="sr-meta">${x.workers.size}명 · ${x.days.size}일 · ${x.gongsu.toFixed(1)}공수</div>
+        </div>
+        <div class="sr-amt">${fmtMoney(x.amount)}</div>
+      </div>`).join("") + `
+      <div class="site-row" style="border-top:2px solid var(--line);border-bottom:none;margin-top:4px;padding-top:10px;">
+        <div>
+          <div class="sr-name">전체 합계</div>
+          <div class="sr-meta">${rows.length}개 현장 · ${totG.toFixed(1)}공수 · ${fmtMoney(totAmt)}</div>
+        </div>
+        <div class="sr-amt" style="color:var(--primary);">${fmtMoney(totAmt)}</div>
+      </div>`;
+  const rate = getTaxRate();
+  const netEl = document.getElementById("siteSummaryNet");
+  netEl.textContent = rate > 0
+    ? `세금 ${rate}% 공제 후 실지급 합계 ${fmtMoney(totAmt - Math.round(totAmt * rate / 100))}` + (unassigned ? ` · 현장 미지정 ${unassigned.gongsu.toFixed(1)}공수 포함` : "")
+    : (unassigned ? `현장 미지정 ${unassigned.gongsu.toFixed(1)}공수 포함` : "");
+}
+
+/* ===== v5.4 월별 정산서 (카톡 공유 · 복사) ===== */
+function monthLabelKR(m) {
+  const parts = String(m || curMonth).split("-");
+  return (parts[0] || "") + "년 " + Number(parts[1] || 0) + "월";
+}
+
+function buildPaySheetText(personName, defaultWage, recs) {
+  const taxRate = getTaxRate();
+  const days = new Set(recs.map(r => r.date));
+  let g = 0, gross = 0;
+  const wages = new Set();
+  const siteMap = {};
+  recs.forEach(r => {
+    const rg = Number(r.gongsu || 0);
+    g += rg;
+    gross += Number(r.amount || 0);
+    if (Number(r.wage || 0) > 0) wages.add(Number(r.wage));
+    const s = String(r.site || "").trim() || "현장 미지정";
+    if (!siteMap[s]) siteMap[s] = { gongsu: 0, amount: 0, days: new Set() };
+    siteMap[s].gongsu += rg;
+    siteMap[s].amount += Number(r.amount || 0);
+    siteMap[s].days.add(r.date);
+  });
+  const tax = Math.round(gross * taxRate / 100);
+  const net = gross - tax;
+  const wage = wages.size === 1 ? Number(Array.from(wages)[0]) : Number(defaultWage || 180000);
+  const siteParts = Object.keys(siteMap)
+    .sort((a, b) => siteMap[b].amount - siteMap[a].amount)
+    .map(s => `${s} ${siteMap[s].days.size}일(${siteMap[s].gongsu.toFixed(1)}공수)`);
+  const siteLine = siteParts.length
+    ? siteParts.slice(0, 4).join(", ") + (siteParts.length > 4 ? ` 외 ${siteParts.length - 4}곳` : "")
+    : "기록 없음";
+  const dates = recs.map(r => r.date).sort();
+  const fmtD = d => {
+    const p = String(d || "").split("-");
+    return p.length === 3 ? Number(p[1]) + "/" + Number(p[2]) : String(d || "");
+  };
+  const dateLine = dates.slice(0, 18).map(fmtD).join(", ") + (dates.length > 18 ? ` 외 ${dates.length - 18}일` : "");
+  return [
+    "[오늘몇공] " + monthLabelKR(curMonth) + " 정산서",
+    "──────────────────",
+    "· 이름: " + personName,
+    "· 기준 월: " + monthLabelKR(curMonth),
+    "· 출근: " + days.size + "일 / 총 " + g.toFixed(1) + "공수",
+    "· 일당: " + fmtMoney(wage),
+    "· 세전 금액: " + fmtMoney(gross),
+    "· 세금 공제" + (taxRate > 0 ? " (" + taxRate + "%)" : "") + ": " + (taxRate > 0 ? "-" + fmtMoney(tax) : "0원"),
+    "· 실수령액: " + fmtMoney(net),
+    "──────────────────",
+    "· 주요 현장: " + siteLine,
+    "· 출근일: " + (dateLine || "기록 없음"),
+    "",
+    (currentUser.team_name || "스마일산업") + " · 오늘몇공"
+  ].join("\n");
+}
+
+function openPaySheet(workerId) {
+  if (!dashData || !currentUser) return;
+  const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  const uid = String(workerId || currentUser.user_id);
+  if (!isAdm && uid !== String(currentUser.user_id)) return toast("본인 정산서만 볼 수 있습니다.");
+  const recs = (dashData.records || []).filter(r => String(r.worker_id) === uid);
+  if (!recs.length) return toast("이번 달 정산 기록이 없습니다.");
+  let name = recs[0].worker_name || "직원";
+  let wage = 180000;
+  if (uid === String(currentUser.user_id)) {
+    name = currentUser.name;
+    wage = currentUser.default_wage || 180000;
+  } else {
+    const w = (dashData.workers || []).find(x => String(x.user_id) === uid);
+    if (w) { name = w.name || name; wage = Number(w.default_wage || 180000); }
+  }
+  const text = buildPaySheetText(name, wage, recs);
+  activePaySheet = { text, name };
+  document.getElementById("paySheetTitle").textContent = name + " 님 " + monthLabelKR(curMonth) + " 정산서";
+  document.getElementById("paySheetPreview").textContent = text;
+  document.getElementById("paySheetModal").classList.remove("hidden");
+}
+
+function closePaySheet() {
+  const el = document.getElementById("paySheetModal");
+  if (el) el.classList.add("hidden");
+  activePaySheet = null;
+}
+
+function shareTextAny(text, title) {
+  if (window.AndroidBridge && window.AndroidBridge.shareTextWithTitle) {
+    try { window.AndroidBridge.shareTextWithTitle(text, title || "공유하기"); return; } catch (e) {}
+  }
+  if (window.AndroidBridge && window.AndroidBridge.shareText) {
+    try { window.AndroidBridge.shareText(text); return; } catch (e) {}
+  }
+  if (navigator.share) {
+    try {
+      navigator.share({ title: title || "오늘몇공", text }).catch(() => copyTextToClipboard(text, "정산서가 복사되었습니다. 카톡에 붙여넣기 하세요!"));
+      return;
+    } catch (e) {}
+  }
+  copyTextToClipboard(text, "정산서가 복사되었습니다. 카톡에 붙여넣기 하세요!");
+}
+
+function copyTextToClipboard(text, okMsg) {
+  const done = () => toast(okMsg || "복사되었습니다.");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => legacyCopy(text, done));
+    return;
+  }
+  legacyCopy(text, done);
+}
+
+function legacyCopy(text, done) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    if (done) done(); else toast("복사되었습니다.");
+  } catch (e) {
+    toast("복사에 실패했습니다. 화면의 글을 길게 눌러 복사해 주세요.");
+  }
+}
+
+function sharePaySheet() {
+  if (!activePaySheet) return;
+  shareTextAny(activePaySheet.text, activePaySheet.name + " 정산서");
+}
+
+function copyPaySheet() {
+  if (!activePaySheet) return;
+  copyTextToClipboard(activePaySheet.text, "정산서가 복사되었습니다. 카톡에 붙여넣기 하세요!");
 }
 
 async function issueInvite() {
@@ -2654,6 +2987,8 @@ function openSettingsModal(onboarding = false) {
   document.getElementById("adminOverviewBtn").classList.toggle("hidden", !isOperator());
   const enabled = localStorage.getItem("gongsu_daily_enabled") !== "0";
   const timeVal = localStorage.getItem("gongsu_daily_time") || "18:00";
+  const verSub = document.getElementById("setVersionSub");
+  if (verSub) verSub.textContent = "v" + myVersionName() + (latestVersion && Number(latestVersion.versionCode || 0) > myVersionCode() ? " · 새 버전 v" + latestVersion.versionName + " 있음" : " · 최신 버전 확인");
   document.getElementById("dailyNotifCheck").checked = enabled;
   document.getElementById("dailyNotifTime").value = timeVal;
   document.getElementById("settingsModal").classList.remove("hidden");
