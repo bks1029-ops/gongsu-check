@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F6FA" id="themeColorMeta" />
 <title>오늘몇공</title>
 <style>
-  /* ===== 오늘몇공 v5.4.3 — 뒤로가기로 열린 창 닫기 · 키보드 이동으로 로그인 · 인력 DB 카드 정리 ===== */
+  /* ===== 오늘몇공 v5.4.4 — 홈 화면 위젯이 추가되지 않던 오류 수정 (안전모 아이콘 pathData) ===== */
   :root {
     /* 라이트 테마 (기본) */
     --primary: #EAB308;
@@ -1275,7 +1275,7 @@ try {
       <div class="set-row" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div>
           <div class="set-row-title">📦 앱 버전</div>
-          <div class="set-row-sub" id="setVersionSub">v5.4.3 · 최신 버전 확인</div>
+          <div class="set-row-sub" id="setVersionSub">v5.4.4 · 최신 버전 확인</div>
         </div>
         <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="checkAppUpdate(true)">업데이트 확인</button>
       </div>
@@ -1391,8 +1391,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 23;
-const APP_VERSION_NAME = "5.4.3";
+const APP_VERSION_CODE = 24;
+const APP_VERSION_NAME = "5.4.4";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;

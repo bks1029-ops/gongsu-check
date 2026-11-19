@@ -1,8 +1,8 @@
 {
-  "versionCode": 23,
-  "versionName": "5.4.3",
+  "versionCode": 24,
+  "versionName": "5.4.4",
   "releasedAt": "2026-11-20",
   "apkUrl": "https://bks1029-ops.github.io/gongsu-check/gongsu-check.apk",
   "pageUrl": "https://bks1029-ops.github.io/gongsu-check/",
-  "note": "비밀번호 입력 후 키보드 이동을 누르면 바로 로그인되고, 뒤로가기는 열린 창만 닫습니다. 운영자 인력 DB 카드도 깔끔해졌어요."
+  "note": "홈 화면 위젯이 '위젯을 추가할 수 없습니다'로 안 되던 문제를 고쳤습니다. 이제 위젯으로 이번 달 공수와 예상 금액을 바로 볼 수 있어요."
 }
