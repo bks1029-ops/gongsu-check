@@ -3,14 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="오늘몇공" />
-  <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="icon" type="image/png" href="icon.png" />
 <meta name="theme-color" content="#F4F6FA" id="themeColorMeta" />
 <title>오늘몇공</title>
 <style>
-  /* ===== 오늘몇공 v5.4.1 — 현장별 합계 기본 접힘 아코디언 (v5.4: 정산서 공유·현장별 합계·새 버전 안내) ===== */
+  /* ===== 오늘몇공 v5.4.2 — 급여 정산서 이미지 공유 (v5.4.1: 현장별 합계 기본 접힘) ===== */
   :root {
     /* 라이트 테마 (기본) */
     --primary: #EAB308;
@@ -587,6 +583,10 @@
     border: 1px solid var(--line); border-radius: 14px;
     padding: 13px 14px; margin: 0; color: var(--text);
   }
+  .pay-sheet-img { display: block; width: 100%; height: auto; border-radius: 12px; background: #EEF2F7; }
+  .pay-sheet-img.hidden { display: none !important; }
+  .pay-sheet-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .pay-sheet-actions .btn { margin: 0; }
   .site-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--sheet-line); }
   .site-row:last-child { border-bottom: none; }
   .site-row .sr-name { font-size: 13px; font-weight: 800; }
@@ -1128,19 +1128,23 @@ try {
   </div>
 </div>
 
-<!-- v5.4 정산서 미리보기 · 공유/복사 MODAL -->
+<!-- v5.4.2 급여 정산서 이미지 미리보기 · 공유 MODAL -->
 <div id="paySheetModal" class="modal-bg hidden">
-  <div class="modal-card" style="max-height:88vh;overflow-y:auto;">
+  <div class="modal-card" style="max-height:90vh;overflow-y:auto;">
     <div class="row" style="justify-content:space-between;margin-bottom:10px;">
-      <h2 id="paySheetTitle" style="margin:0;font-size:16px;">월별 정산서</h2>
+      <h2 id="paySheetTitle" style="margin:0;font-size:16px;">급여 정산서</h2>
       <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="closePaySheet()">닫기</button>
     </div>
-    <div class="pay-sheet-pre" id="paySheetPreview"></div>
-    <div class="row" style="margin-top:12px;gap:8px;">
-      <button class="btn btn-primary" style="margin:0;" onclick="sharePaySheet()">💬 카톡·문자로 공유</button>
-      <button class="btn btn-outline" style="margin:0;flex:0 0 88px;" onclick="copyPaySheet()">복사</button>
+    <img id="paySheetImg" class="pay-sheet-img" alt="급여 정산서" />
+    <div class="pay-sheet-actions">
+      <button class="btn btn-primary" style="margin:0;flex:1;" onclick="sharePaySheet()">💬 카톡·문자로 공유</button>
     </div>
-    <div style="font-size:11.5px;color:var(--sub);margin-top:8px;line-height:1.5;">카톡에 붙여넣거나 문자로 보내면 그대로 정산서가 됩니다. 금액은 현재 세금 설정(내 정산 탭) 기준입니다.</div>
+    <div class="pay-sheet-actions">
+      <button class="btn btn-outline" style="margin:0;flex:1;" onclick="downloadPaySheet()">🖼 이미지 저장</button>
+      <button class="btn btn-outline" style="margin:0;flex:1;" onclick="copyPaySheet()">📋 텍스트 복사</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--sub);margin-top:8px;line-height:1.5;">이미지로 바로 보내면 카톡·문자에서 사진으로 표시됩니다. 금액은 현재 세금 설정(내 정산 탭) 기준입니다.</div>
+    <div id="paySheetPreview" class="hidden" aria-hidden="true"></div>
   </div>
 </div>
 
@@ -1251,7 +1255,7 @@ try {
       <div class="set-row" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div>
           <div class="set-row-title">📦 앱 버전</div>
-          <div class="set-row-sub" id="setVersionSub">v5.4.1 · 최신 버전 확인</div>
+          <div class="set-row-sub" id="setVersionSub">v5.4.2 · 최신 버전 확인</div>
         </div>
         <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="checkAppUpdate(true)">업데이트 확인</button>
       </div>
@@ -1348,8 +1352,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 21;
-const APP_VERSION_NAME = "5.4.1";
+const APP_VERSION_CODE = 22;
+const APP_VERSION_NAME = "5.4.2";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -2561,13 +2565,138 @@ function renderSiteSummary(isAdm) {
     : (unassigned ? `현장 미지정 ${unassigned.gongsu.toFixed(1)}공수 포함` : "");
 }
 
-/* ===== v5.4 월별 정산서 (카톡 공유 · 복사) ===== */
+/* ===== v5.4.2 월별 급여 정산서 — Canvas 이미지 생성 · 카톡/문자 이미지 공유 ===== */
 function monthLabelKR(m) {
   const parts = String(m || curMonth).split("-");
   return (parts[0] || "") + "년 " + Number(parts[1] || 0) + "월";
 }
 
-function buildPaySheetText(personName, defaultWage, recs) {
+const PAY_FONT_STACK = "'Pretendard','Noto Sans KR','Noto SansKr','Apple SD Gothic Neo','Malgun Gothic','NanumGothic',sans-serif";
+
+function payFont(size, weight) {
+  return (weight || 700) + " " + size + "px " + PAY_FONT_STACK;
+}
+
+function payFmt(n) {
+  return Number(n || 0).toLocaleString("ko-KR");
+}
+
+let _payMeasureCtx = null;
+function payMeasure() {
+  if (!_payMeasureCtx) _payMeasureCtx = document.createElement("canvas").getContext("2d");
+  return _payMeasureCtx;
+}
+
+function payFitSize(ctx, text, maxW, size, weight, minSize) {
+  let s = size;
+  const floor = minSize || 18;
+  ctx.font = payFont(s, weight);
+  while (s > floor && ctx.measureText(String(text)).width > maxW) {
+    s -= 2;
+    ctx.font = payFont(s, weight);
+  }
+  return s;
+}
+
+function payWrapLines(ctx, text, maxW, fontStr) {
+  ctx.font = fontStr;
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const raw = [];
+  let cur = "";
+  words.forEach(w => {
+    const t = cur ? cur + " " + w : w;
+    if (!cur || ctx.measureText(t).width <= maxW) cur = t;
+    else { raw.push(cur); cur = w; }
+  });
+  if (cur) raw.push(cur);
+  const out = [];
+  raw.forEach(ln => {
+    if (ctx.measureText(ln).width <= maxW) { out.push(ln); return; }
+    let buf = "";
+    for (const ch of ln) {
+      if (buf && ctx.measureText(buf + ch).width > maxW) { out.push(buf); buf = ch; }
+      else buf += ch;
+    }
+    if (buf) out.push(buf);
+  });
+  return out.length ? out : [""];
+}
+
+function payRoundRectPath(ctx, x, y, w, h, r) {
+  const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.arcTo(x + w, y, x + w, y + rr, rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.arcTo(x + w, y + h, x + w - rr, y + h, rr);
+  ctx.lineTo(x + rr, y + h);
+  ctx.arcTo(x, y + h, x, y + h - rr, rr);
+  ctx.lineTo(x, y + rr);
+  ctx.arcTo(x, y, x + rr, y, rr);
+  ctx.closePath();
+}
+
+/* 영수증 카드: 위 모서리만 둥글고 아래는 톱니(zigzag)로 마감 */
+function payCardPath(ctx, x, y, w, h, rc, toothH) {
+  const yb = y + h - toothH;
+  ctx.beginPath();
+  ctx.moveTo(x, y + rc);
+  ctx.arcTo(x, y, x + rc, y, rc);
+  ctx.lineTo(x + w - rc, y);
+  ctx.arcTo(x + w, y, x + w, y + rc, rc);
+  ctx.lineTo(x + w, yb);
+  const n = Math.max(6, Math.round(w / 34));
+  const tw = w / n;
+  for (let i = 0; i < n; i++) {
+    const right = x + w - i * tw;
+    const left = right - tw;
+    ctx.lineTo((right + left) / 2, yb + toothH);
+    ctx.lineTo(left, yb);
+  }
+  ctx.lineTo(x, y + rc);
+  ctx.closePath();
+}
+
+function payDrawCrane(ctx, cx, cy) {
+  ctx.save();
+  ctx.strokeStyle = "#1D4ED8";
+  ctx.fillStyle = "#1D4ED8";
+  ctx.lineWidth = 3.4;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  // 기둥
+  ctx.beginPath();
+  ctx.moveTo(cx - 9, cy + 25);
+  ctx.lineTo(cx - 9, cy - 25);
+  ctx.stroke();
+  // 가로 붐대
+  ctx.beginPath();
+  ctx.moveTo(cx - 25, cy - 25);
+  ctx.lineTo(cx + 23, cy - 25);
+  ctx.stroke();
+  // 뒤쪽 균형추
+  ctx.beginPath();
+  ctx.moveTo(cx - 25, cy - 25);
+  ctx.lineTo(cx - 25, cy - 13);
+  ctx.stroke();
+  ctx.fillRect(cx - 30, cy - 14, 11, 9);
+  // 와이어 + 고리
+  ctx.beginPath();
+  ctx.moveTo(cx + 15, cy - 25);
+  ctx.lineTo(cx + 15, cy - 3);
+  ctx.stroke();
+  // 매달린 자재함
+  ctx.fillRect(cx + 1, cy - 1, 27, 19);
+  ctx.save();
+  ctx.fillStyle = "#DCEBFF";
+  ctx.fillRect(cx + 5, cy + 4, 19, 3);
+  ctx.fillRect(cx + 5, cy + 10, 19, 3);
+  ctx.restore();
+  ctx.restore();
+}
+
+function buildPaySheetModel(personName, defaultWage, recs) {
   const taxRate = getTaxRate();
   const days = new Set(recs.map(r => r.date));
   let g = 0, gross = 0;
@@ -2579,87 +2708,288 @@ function buildPaySheetText(personName, defaultWage, recs) {
     gross += Number(r.amount || 0);
     if (Number(r.wage || 0) > 0) wages.add(Number(r.wage));
     const s = String(r.site || "").trim() || "현장 미지정";
-    if (!siteMap[s]) siteMap[s] = { gongsu: 0, amount: 0, days: new Set() };
+    if (!siteMap[s]) siteMap[s] = { name: s, gongsu: 0, amount: 0, days: new Set() };
     siteMap[s].gongsu += rg;
     siteMap[s].amount += Number(r.amount || 0);
     siteMap[s].days.add(r.date);
   });
   const tax = Math.round(gross * taxRate / 100);
-  const net = gross - tax;
   const wage = wages.size === 1 ? Number(Array.from(wages)[0]) : Number(defaultWage || 180000);
-  const siteParts = Object.keys(siteMap)
-    .sort((a, b) => siteMap[b].amount - siteMap[a].amount)
-    .map(s => `${s} ${siteMap[s].days.size}일(${siteMap[s].gongsu.toFixed(1)}공수)`);
-  const siteLine = siteParts.length
-    ? siteParts.slice(0, 4).join(", ") + (siteParts.length > 4 ? ` 외 ${siteParts.length - 4}곳` : "")
-    : "기록 없음";
-  const dates = recs.map(r => r.date).sort();
-  const fmtD = d => {
-    const p = String(d || "").split("-");
-    return p.length === 3 ? Number(p[1]) + "/" + Number(p[2]) : String(d || "");
+  const sites = Object.keys(siteMap)
+    .sort((a, b) => siteMap[b].amount - siteMap[a].amount || siteMap[b].gongsu - siteMap[a].gongsu)
+    .map(s => ({ name: s, days: siteMap[s].days.size, gongsu: siteMap[s].gongsu, amount: siteMap[s].amount }));
+  const dates = Array.from(days).sort();
+  const teamName = String((currentUser && currentUser.team_name) || "").trim();
+  return {
+    teamName,
+    title: teamName ? teamName + " 급여 정산서" : "급여 정산서",
+    monthText: monthLabelKR(curMonth),
+    name: String(personName || "직원"),
+    days: days.size,
+    gongsu: g,
+    wage,
+    gross,
+    taxRate,
+    tax,
+    net: gross - tax,
+    sites,
+    dates
   };
-  const dateLine = dates.slice(0, 18).map(fmtD).join(", ") + (dates.length > 18 ? ` 외 ${dates.length - 18}일` : "");
+}
+
+function payShortDate(d) {
+  const p = String(d || "").split("-");
+  return p.length === 3 ? Number(p[1]) + "/" + Number(p[2]) : String(d || "");
+}
+
+function buildPaySheetText(m) {
+  const siteLine = m.sites.length
+    ? m.sites.slice(0, 4).map(s => s.name + " " + s.days + "일(" + s.gongsu.toFixed(1) + "공수)").join(", ") +
+      (m.sites.length > 4 ? " 외 " + (m.sites.length - 4) + "곳" : "")
+    : "기록 없음";
+  const dateLine = m.dates.length
+    ? m.dates.slice(0, 18).map(payShortDate).join(", ") + (m.dates.length > 18 ? " 외 " + (m.dates.length - 18) + "일" : "")
+    : "기록 없음";
   return [
-    "[오늘몇공] " + monthLabelKR(curMonth) + " 정산서",
+    m.title,
+    m.monthText,
     "──────────────────",
-    "· 이름: " + personName,
-    "· 기준 월: " + monthLabelKR(curMonth),
-    "· 출근: " + days.size + "일 / 총 " + g.toFixed(1) + "공수",
-    "· 일당: " + fmtMoney(wage),
-    "· 세전 금액: " + fmtMoney(gross),
-    "· 세금 공제" + (taxRate > 0 ? " (" + taxRate + "%)" : "") + ": " + (taxRate > 0 ? "-" + fmtMoney(tax) : "0원"),
-    "· 실수령액: " + fmtMoney(net),
+    "· 성명: " + m.name,
+    "· 출근: " + m.days + "일 (" + m.gongsu.toFixed(1) + "공수)",
+    "· 일당: " + payFmt(m.wage) + "원",
+    "· 세전 금액: " + payFmt(m.gross) + "원",
+    "· 세금 공제" + (m.taxRate > 0 ? " (" + m.taxRate + "%)" : "") + ": " + (m.tax > 0 ? "-" + payFmt(m.tax) + "원" : "없음"),
+    "· 실수령액: " + payFmt(m.net) + "원",
     "──────────────────",
     "· 주요 현장: " + siteLine,
-    "· 출근일: " + (dateLine || "기록 없음"),
-    "",
-    (currentUser.team_name || "스마일산업") + " · 오늘몇공"
+    "· 출근일: " + dateLine
   ].join("\n");
 }
 
-function openPaySheet(workerId) {
-  if (!dashData || !currentUser) return;
-  const isAdm = (currentUser.role === "admin" && viewMode === "admin");
-  const uid = String(workerId || currentUser.user_id);
-  if (!isAdm && uid !== String(currentUser.user_id)) return toast("본인 정산서만 볼 수 있습니다.");
-  const recs = (dashData.records || []).filter(r => String(r.worker_id) === uid);
-  if (!recs.length) return toast("이번 달 정산 기록이 없습니다.");
-  let name = recs[0].worker_name || "직원";
-  let wage = 180000;
-  if (uid === String(currentUser.user_id)) {
-    name = currentUser.name;
-    wage = currentUser.default_wage || 180000;
-  } else {
-    const w = (dashData.workers || []).find(x => String(x.user_id) === uid);
-    if (w) { name = w.name || name; wage = Number(w.default_wage || 180000); }
-  }
-  const text = buildPaySheetText(name, wage, recs);
-  activePaySheet = { text, name };
-  document.getElementById("paySheetTitle").textContent = name + " 님 " + monthLabelKR(curMonth) + " 정산서";
-  document.getElementById("paySheetPreview").textContent = text;
-  document.getElementById("paySheetModal").classList.remove("hidden");
-}
+/* 정산서 이미지 그리기 — 가로 900px 기준, 2배 해상도 */
+function renderPaySheetImage(m) {
+  const SCALE = 2;
+  const W = 900;
+  const MARGIN = 28;
+  const CARD_X = MARGIN;
+  const CARD_W = W - MARGIN * 2;
+  const CARD_Y = MARGIN;
+  const PAD = 30;
+  const BOX_X = CARD_X + PAD;
+  const BOX_W = CARD_W - PAD * 2;
+  const HEADER_H = 270;
+  const TOOTH_H = 22;
 
-function closePaySheet() {
-  const el = document.getElementById("paySheetModal");
-  if (el) el.classList.add("hidden");
-  activePaySheet = null;
-}
+  const mc = payMeasure();
+  const fmt = payFmt;
 
-function shareTextAny(text, title) {
-  if (window.AndroidBridge && window.AndroidBridge.shareTextWithTitle) {
-    try { window.AndroidBridge.shareTextWithTitle(text, title || "공유하기"); return; } catch (e) {}
+  // 주요 현장 문구 (최대 3곳 + 외 N곳)
+  const siteText = m.sites.length
+    ? m.sites.slice(0, 3).map(s => s.name + " " + s.days + "일 (" + s.gongsu.toFixed(1) + "공수)").join("  ·  ") +
+      (m.sites.length > 3 ? "  ·  외 " + (m.sites.length - 3) + "곳" : "")
+    : "기록 없음";
+  const dateText = m.dates.length
+    ? "출근일  " + m.dates.slice(0, 18).map(payShortDate).join(", ") + (m.dates.length > 18 ? " 외 " + (m.dates.length - 18) + "일" : "")
+    : "";
+
+  const siteTextX = BOX_X + 24 + 76 + 20;
+  const siteTextMaxW = (CARD_X + CARD_W - PAD) - siteTextX - 22;
+  const siteLines = payWrapLines(mc, siteText, siteTextMaxW, payFont(32, 700));
+  const dateLines = dateText ? payWrapLines(mc, dateText, BOX_W - 8, payFont(21, 600)) : [];
+
+  const HEADER_BOTTOM = CARD_Y + HEADER_H;
+  const NET_TOP = HEADER_BOTTOM + 38;
+  const NET_H = 218;
+  const ROW_H = 90;
+  const ROW_N = 5;
+  const TABLE_TOP = NET_TOP + NET_H + 34;
+  const TABLE_H = ROW_H * ROW_N;
+  const SITE_TOP = TABLE_TOP + TABLE_H + 34;
+  const SITE_H = 96 + (siteLines.length - 1) * 46 + 38;
+  let cursor = SITE_TOP + SITE_H;
+  const DATE_TOP = cursor + 24;
+  if (dateLines.length) cursor = DATE_TOP + dateLines.length * 30;
+  const BODY_BOTTOM = cursor + 34;
+  const H = BODY_BOTTOM + TOOTH_H + MARGIN;
+  const CARD_H = H - MARGIN * 2;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(W * SCALE);
+  canvas.height = Math.round(H * SCALE);
+  const ctx = canvas.getContext("2d");
+  ctx.scale(SCALE, SCALE);
+  ctx.textBaseline = "alphabetic";
+
+  // 배경
+  ctx.fillStyle = "#EEF2F7";
+  ctx.fillRect(0, 0, W, H);
+
+  // 카드 + 그림자
+  ctx.save();
+  ctx.shadowColor = "rgba(18,38,72,0.18)";
+  ctx.shadowBlur = 26;
+  ctx.shadowOffsetY = 10;
+  ctx.fillStyle = "#FFFFFF";
+  payCardPath(ctx, CARD_X, CARD_Y, CARD_W, CARD_H, 40, TOOTH_H);
+  ctx.fill();
+  ctx.restore();
+
+  // 헤더 그라데이션
+  ctx.save();
+  payCardPath(ctx, CARD_X, CARD_Y, CARD_W, CARD_H, 40, TOOTH_H);
+  ctx.clip();
+  const grad = ctx.createLinearGradient(CARD_X, 0, CARD_X + CARD_W, 0);
+  grad.addColorStop(0, "#5CB8F4");
+  grad.addColorStop(0.55, "#2C8DEE");
+  grad.addColorStop(1, "#1565E0");
+  ctx.fillStyle = grad;
+  ctx.fillRect(CARD_X, CARD_Y, CARD_W, HEADER_H);
+  ctx.restore();
+
+  // 헤더 — 업체명 + 급여 정산서
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#FFFFFF";
+  const titleSize = payFitSize(ctx, m.title, CARD_W - 70, 66, 800, 26);
+  ctx.font = payFont(titleSize, 800);
+  ctx.fillText(m.title, W / 2, CARD_Y + 137);
+
+  // 헤더 — 연월 + 양옆 대시
+  ctx.font = payFont(33, 700);
+  const monthW = ctx.measureText(m.monthText).width;
+  ctx.fillStyle = "rgba(255,255,255,0.97)";
+  ctx.fillText(m.monthText, W / 2, CARD_Y + 216);
+  ctx.strokeStyle = "rgba(255,255,255,0.55)";
+  ctx.lineWidth = 2.4;
+  ctx.lineCap = "round";
+  const gap = 22, dash = 78;
+  ctx.beginPath();
+  ctx.moveTo(W / 2 - monthW / 2 - gap - dash, CARD_Y + 205);
+  ctx.lineTo(W / 2 - monthW / 2 - gap, CARD_Y + 205);
+  ctx.moveTo(W / 2 + monthW / 2 + gap, CARD_Y + 205);
+  ctx.lineTo(W / 2 + monthW / 2 + gap + dash, CARD_Y + 205);
+  ctx.stroke();
+
+  // 실수령액 박스
+  payRoundRectPath(ctx, BOX_X, NET_TOP, BOX_W, NET_H, 28);
+  ctx.fillStyle = "#F5FAFF";
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#A8CDF4";
+  ctx.stroke();
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#1D4ED8";
+  ctx.font = payFont(31, 800);
+  ctx.fillText("실수령액", W / 2, NET_TOP + 64);
+
+  const amtStr = fmt(m.net);
+  let amtSize = 84;
+  ctx.font = payFont(amtSize, 800);
+  while (amtSize > 40 && ctx.measureText(amtStr).width + 70 > BOX_W - 60) {
+    amtSize -= 2;
+    ctx.font = payFont(amtSize, 800);
   }
-  if (window.AndroidBridge && window.AndroidBridge.shareText) {
-    try { window.AndroidBridge.shareText(text); return; } catch (e) {}
+  const numW = ctx.measureText(amtStr).width;
+  const wonSize = 36;
+  ctx.font = payFont(wonSize, 800);
+  const wonW = ctx.measureText("원").width;
+  const amtX = W / 2 - (numW + 8 + wonW) / 2;
+  const amtBase = NET_TOP + 178;
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#0F52D9";
+  ctx.font = payFont(amtSize, 800);
+  ctx.fillText(amtStr, amtX, amtBase);
+  ctx.font = payFont(wonSize, 800);
+  ctx.fillText("원", amtX + numW + 8, amtBase);
+
+  // 2열 표
+  const LABEL_W = Math.round(BOX_W * 0.32);
+  payRoundRectPath(ctx, BOX_X, TABLE_TOP, BOX_W, TABLE_H, 22);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fill();
+
+  ctx.save();
+  payRoundRectPath(ctx, BOX_X, TABLE_TOP, BOX_W, TABLE_H, 22);
+  ctx.clip();
+  ctx.fillStyle = "#F6F8FC";
+  ctx.fillRect(BOX_X, TABLE_TOP, LABEL_W, TABLE_H);
+  ctx.strokeStyle = "#E6EBF3";
+  ctx.lineWidth = 1.5;
+  for (let i = 1; i < ROW_N; i++) {
+    const yy = TABLE_TOP + ROW_H * i;
+    ctx.beginPath();
+    ctx.moveTo(BOX_X, yy);
+    ctx.lineTo(BOX_X + BOX_W, yy);
+    ctx.stroke();
   }
-  if (navigator.share) {
-    try {
-      navigator.share({ title: title || "오늘몇공", text }).catch(() => copyTextToClipboard(text, "정산서가 복사되었습니다. 카톡에 붙여넣기 하세요!"));
-      return;
-    } catch (e) {}
+  ctx.beginPath();
+  ctx.moveTo(BOX_X + LABEL_W, TABLE_TOP);
+  ctx.lineTo(BOX_X + LABEL_W, TABLE_TOP + TABLE_H);
+  ctx.stroke();
+  ctx.restore();
+
+  payRoundRectPath(ctx, BOX_X + 0.8, TABLE_TOP + 0.8, BOX_W - 1.6, TABLE_H - 1.6, 21);
+  ctx.strokeStyle = "#E2E8F2";
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+
+  const rows = [
+    ["성명", m.name, "#0B1220"],
+    ["출근", m.days + "일 (" + m.gongsu.toFixed(1) + "공수)", "#0B1220"],
+    ["일당", fmt(m.wage) + "원", "#0B1220"],
+    ["세전 금액", fmt(m.gross) + "원", "#0B1220"],
+    ["세금 공제", m.tax > 0 ? "-" + fmt(m.tax) + "원" : "없음", m.tax > 0 ? "#DC2626" : "#64748B"]
+  ];
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  rows.forEach((r, i) => {
+    const cy = TABLE_TOP + ROW_H * i + ROW_H / 2;
+    ctx.font = payFont(30, 700);
+    ctx.fillStyle = "#111827";
+    ctx.fillText(r[0], BOX_X + 34, cy);
+    const vs = payFitSize(ctx, r[1], BOX_W - LABEL_W - 68, 30, 700, 18);
+    ctx.font = payFont(vs, 700);
+    ctx.fillStyle = r[2];
+    ctx.fillText(r[1], BOX_X + LABEL_W + 34, cy + 1);
+  });
+  ctx.textBaseline = "alphabetic";
+
+  // 주요 현장 박스
+  payRoundRectPath(ctx, BOX_X, SITE_TOP, BOX_W, SITE_H, 24);
+  ctx.fillStyle = "#F3F9FF";
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#BFDBFE";
+  ctx.stroke();
+
+  const iconCx = BOX_X + 24 + 38;
+  const iconCy = SITE_TOP + SITE_H / 2;
+  ctx.beginPath();
+  ctx.arc(iconCx, iconCy, 38, 0, Math.PI * 2);
+  ctx.fillStyle = "#DCEBFF";
+  ctx.fill();
+  payDrawCrane(ctx, iconCx, iconCy);
+
+  ctx.textAlign = "left";
+  ctx.font = payFont(23, 800);
+  ctx.fillStyle = "#1D4ED8";
+  ctx.fillText("주요 현장", siteTextX, SITE_TOP + 54);
+  ctx.font = payFont(32, 700);
+  ctx.fillStyle = "#0F172A";
+  siteLines.forEach((ln, i) => {
+    ctx.fillText(ln, siteTextX, SITE_TOP + 102 + i * 46);
+  });
+
+  // 출근일 (작은 글씨)
+  if (dateLines.length) {
+    ctx.font = payFont(21, 600);
+    ctx.fillStyle = "#8B96A8";
+    dateLines.forEach((ln, i) => {
+      ctx.fillText(ln, BOX_X + 2, DATE_TOP + 20 + i * 30);
+    });
   }
-  copyTextToClipboard(text, "정산서가 복사되었습니다. 카톡에 붙여넣기 하세요!");
+
+  return { canvas, dataUrl: canvas.toDataURL("image/png") };
 }
 
 function copyTextToClipboard(text, okMsg) {
@@ -2689,9 +3019,102 @@ function legacyCopy(text, done) {
   }
 }
 
+function paySheetFileName() {
+  const nm = String((activePaySheet && activePaySheet.model && activePaySheet.model.name) || "정산서");
+  const safe = nm.replace(/[\\/:*?"<>|]/g, "").replace(/\s+/g, "");
+  return "payslip_" + (safe || "정산서") + "_" + String(curMonth || "").replace("-", "") + ".png";
+}
+
+function openPaySheet(workerId) {
+  if (!dashData || !currentUser) return;
+  const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  const uid = String(workerId || currentUser.user_id);
+  if (!isAdm && uid !== String(currentUser.user_id)) return toast("본인 정산서만 볼 수 있습니다.");
+  const recs = (dashData.records || []).filter(r => String(r.worker_id) === uid);
+  if (!recs.length) return toast("이번 달 정산 기록이 없습니다.");
+  let name = recs[0].worker_name || "직원";
+  let wage = 180000;
+  if (uid === String(currentUser.user_id)) {
+    name = currentUser.name;
+    wage = currentUser.default_wage || 180000;
+  } else {
+    const w = (dashData.workers || []).find(x => String(x.user_id) === uid);
+    if (w) { name = w.name || name; wage = Number(w.default_wage || 180000); }
+  }
+  const model = buildPaySheetModel(name, wage, recs);
+  let dataUrl = "";
+  try {
+    dataUrl = renderPaySheetImage(model).dataUrl;
+  } catch (e) {
+    console.error("payslip render failed", e);
+  }
+  activePaySheet = { model, text: buildPaySheetText(model), dataUrl, name };
+  document.getElementById("paySheetTitle").textContent = name + " 님 " + monthLabelKR(curMonth) + " 급여 정산서";
+  const imgEl = document.getElementById("paySheetImg");
+  imgEl.classList.toggle("hidden", !dataUrl);
+  if (dataUrl) imgEl.src = dataUrl;
+  document.getElementById("paySheetPreview").textContent = activePaySheet.text;
+  document.getElementById("paySheetModal").classList.remove("hidden");
+}
+
+function closePaySheet() {
+  const el = document.getElementById("paySheetModal");
+  if (el) el.classList.add("hidden");
+  activePaySheet = null;
+}
+
+function payBase64() {
+  if (!activePaySheet || !activePaySheet.dataUrl) return "";
+  return activePaySheet.dataUrl.split(",")[1] || "";
+}
+
 function sharePaySheet() {
   if (!activePaySheet) return;
-  shareTextAny(activePaySheet.text, activePaySheet.name + " 정산서");
+  const b64 = payBase64();
+  const fname = paySheetFileName();
+  if (window.AndroidBridge && window.AndroidBridge.shareImageBase64 && b64) {
+    try { window.AndroidBridge.shareImageBase64(b64, fname); return; } catch (e) {}
+  }
+  if (b64 && typeof File !== "undefined" && navigator.share) {
+    try {
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      const file = new File([arr], fname, { type: "image/png" });
+      if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: activePaySheet.model.title }).catch(() => {});
+        return;
+      }
+    } catch (e) {}
+  }
+  if (navigator.share) {
+    try {
+      navigator.share({ title: activePaySheet.model.title, text: activePaySheet.text }).catch(() => {});
+      return;
+    } catch (e) {}
+  }
+  downloadPaySheet();
+  copyTextToClipboard(activePaySheet.text, "정산서 이미지를 저장했습니다. 카톡에 사진으로 첨부하세요.");
+}
+
+function downloadPaySheet() {
+  if (!activePaySheet) return;
+  const b64 = payBase64();
+  const fname = paySheetFileName();
+  if (b64 && window.AndroidBridge && window.AndroidBridge.saveImageBase64) {
+    try {
+      const ok = window.AndroidBridge.saveImageBase64(b64, fname);
+      return toast(ok ? "갤러리(사진)에 저장했습니다." : "저장에 실패했습니다. 공유 버튼을 이용해 주세요.");
+    } catch (e) {}
+  }
+  if (!activePaySheet.dataUrl) return toast("이미지를 만들지 못했습니다. 텍스트 복사를 이용해 주세요.");
+  const a = document.createElement("a");
+  a.href = activePaySheet.dataUrl;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => a.remove(), 400);
+  toast("정산서 이미지를 저장했습니다.");
 }
 
 function copyPaySheet() {
