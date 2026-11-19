@@ -561,6 +561,24 @@
   }
   .hr-tag.job { color: var(--accent-ink); background: var(--primary-soft); border-color: transparent; }
   .hr-actions { margin-top: 8px; display: flex; justify-content: flex-end; }
+  .hr-card.tap { cursor: pointer; }
+  .hr-card.tap:active { opacity: .78; }
+  /* ===== v5.4.2 운영자 회원 출근달력 ===== */
+  .mc-profile { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px; }
+  .mc-profile .k { font-size: 11px; color: var(--sub); font-weight: 700; }
+  .mc-profile .v { font-size: 12.5px; color: var(--text); font-weight: 800; word-break: keep-all; }
+  .mc-grid { gap: 4px; }
+  .mc-cell { min-height: 62px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 3px 2px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+  .mc-cell.blank { background: transparent; border: none; }
+  .mc-cell.today { border-color: var(--primary); }
+  .mc-cell.hasrec { background: var(--primary-soft); border-color: transparent; cursor: pointer; }
+  .mc-day { font-size: 12px; font-weight: 800; color: var(--text); line-height: 1.1; }
+  .mc-g { font-size: 9.5px; font-weight: 800; color: var(--accent-ink); line-height: 1.1; }
+  .mc-site { font-size: 8.5px; font-weight: 700; color: var(--sub); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; }
+  .mc-dayinfo { margin-top: 10px; font-size: 12px; color: var(--sub); line-height: 1.5; }
+  .mc-sum { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; font-size: 12.5px; font-weight: 700; }
+  .mc-sum b { color: var(--text); font-weight: 900; }
+  .mc-dayinfo b { color: var(--text); font-weight: 800; }
   .op-more {
     width: 100%; background: transparent; border: 1px dashed var(--line); color: var(--sub);
     border-radius: 12px; padding: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer;
@@ -1306,6 +1324,25 @@ try {
   </div>
 </div>
 
+<!-- v5.4.2 운영자 회원 출근달력 MODAL -->
+<div id="memberCalModal" class="modal-bg hidden">
+  <div class="modal-card" style="max-height:92vh;overflow-y:auto;">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+      <h2 id="memberCalTitle" style="margin:0;font-size:17px;">회원 출근달력</h2>
+      <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="closeMemberCalendar()">닫기</button>
+    </div>
+    <div id="memberCalProfile" class="mc-profile"></div>
+    <div class="cal-head" style="margin:14px 0 8px;">
+      <button class="btn btn-outline btn-sm" style="margin:0;width:42px;flex:0 0 42px;" onclick="moveMemberCal(-1)">◀</button>
+      <span id="memberCalMonth" class="cal-month" style="font-size:17px;">2026.11</span>
+      <button class="btn btn-outline btn-sm" style="margin:0;width:42px;flex:0 0 42px;" onclick="moveMemberCal(1)">▶</button>
+    </div>
+    <div id="memberCalGrid" class="cal-grid mc-grid"></div>
+    <div id="memberCalDayInfo" class="mc-dayinfo"></div>
+    <div id="memberCalActions" class="row" style="margin-top:12px;gap:8px;"></div>
+  </div>
+</div>
+
 <!-- v5.1 커스텀 팝업 (alert / confirm / prompt 대체) -->
 <div id="appDlg" class="dlg-bg hidden">
   <div class="dlg-card" role="dialog" aria-modal="true">
@@ -1731,7 +1768,7 @@ function forceLogout(message) {
   currentUser = null;
   dashData = null;
   if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
-  ["settingsModal", "recordModal", "adminOverviewModal", "postComposeModal", "postDetailModal", "policyModal", "paySheetModal"].forEach(id => {
+  ["settingsModal", "recordModal", "adminOverviewModal", "postComposeModal", "postDetailModal", "policyModal", "paySheetModal", "memberCalModal"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add("hidden");
   });
@@ -1800,6 +1837,12 @@ async function api(action, p = {}) {
       r = await rpc("app_delete_account", { p_token: SB_TOKEN, p_target_id: p.target_user_id });
     } else if (action === "reset_user_pin") {
       r = await rpc("app_reset_pin", { p_token: SB_TOKEN, p_target_id: p.target_user_id });
+    } else if (action === "admin_member_records") {
+      r = await rpc("app_admin_member_records", { p_token: SB_TOKEN, p_target_user_id: p.target_user_id, p_month: p.month });
+    } else if (action === "admin_delete_user") {
+      r = await rpc("app_admin_delete_user", { p_token: SB_TOKEN, p_target_user_id: p.target_user_id });
+    } else if (action === "admin_delete_team") {
+      r = await rpc("app_admin_delete_team", { p_token: SB_TOKEN, p_team_id: p.team_id });
     } else {
       return { ok: false, error: "알 수 없는 요청" };
     }
@@ -3711,7 +3754,7 @@ function renderHrList() {
     const hay = [u.name, u.phone, fmtPhone(u.phone), opTeamName(u)].join(" ").toLowerCase();
     return hay.indexOf(q) >= 0;
   });
-  document.getElementById("opHrCount").textContent = `${opJobFilter} · ${users.length}명`;
+  document.getElementById("opHrCount").textContent = `${opJobFilter} · ${users.length}명 · 카드를 누르면 출근달력`;
   const el = document.getElementById("opHrList");
   if (!users.length) {
     el.innerHTML = '<div class="op-empty">조건에 맞는 인력이 없습니다.</div>';
@@ -3722,7 +3765,8 @@ function renderHrList() {
     const digits = String(u.phone || "").replace(/[^0-9]/g, "");
     const job = String(u.job_type || "").trim();
     const career = (u.career_years !== null && u.career_years !== undefined && u.career_years !== "") ? (u.career_years + "년") : "";
-    return `<div class="hr-card">
+    const uid = escHtml(u.user_id);
+    return `<div class="hr-card tap" onclick="openMemberCalendar('${uid}')">
       <div class="hr-top">
         <div class="hr-avatar">${escHtml(String(u.name || "?").slice(0, 1))}</div>
         <div class="hr-main">
@@ -3732,16 +3776,17 @@ function renderHrList() {
           </div>
           <div class="hr-phone">${escHtml(fmtPhone(u.phone) || "전화번호 없음")}</div>
         </div>
-        ${digits ? `<a class="hr-call" href="tel:${digits}">📞 전화</a>` : ""}
+        ${digits ? `<a class="hr-call" href="tel:${digits}" onclick="event.stopPropagation()">📞 전화</a>` : ""}
       </div>
       <div class="hr-meta">
         <span class="hr-tag">🏢 ${escHtml(opTeamName(u))}</span>
         <span class="hr-tag job">🔧 ${escHtml(job || "직종 미설정")}</span>
         <span class="hr-tag">경력 ${escHtml(career || "미설정")}</span>
         <span class="hr-tag">일당 ${fmtMoney(u.default_wage)}</span>
-        <span class="hr-tag">가입 ${fmtDateKST(u.created_at)}</span>
+        <span class="hr-tag">🕒 ${escHtml(opLastSeen(u))}</span>
+        <span class="hr-tag">📅 ${escHtml(opLastWork(u))}</span>
       </div>
-      ${isMain ? "" : `<div class="hr-actions" style="display:flex;flex-wrap:wrap;gap:6px;"><button class="btn btn-soft btn-sm" style="margin:0;" onclick="resetUserPin('${escHtml(u.user_id)}','${escHtml(u.name || "")}')">비밀번호 초기화 (0000)</button><button class="btn btn-outline btn-sm" style="margin:0;color:var(--red);border-color:rgba(220,38,38,0.35);" onclick="deleteAccountFromOverview('${escHtml(u.user_id)}')">테스트 계정 삭제</button></div>`}
+      ${isMain ? `<div class="hr-actions" style="justify-content:flex-start;"><span class="hr-tag" style="border-style:dashed;">카드를 누르면 실시간 출근달력</span></div>` : `<div class="hr-actions" style="display:flex;flex-wrap:wrap;gap:6px;"><button class="btn btn-soft btn-sm" style="margin:0;" onclick="event.stopPropagation();resetUserPin('${uid}','${escHtml(u.name || "")}')">비밀번호 초기화 (0000)</button><button class="btn btn-outline btn-sm" style="margin:0;color:var(--red);border-color:rgba(220,38,38,0.35);" onclick="event.stopPropagation();deleteAccountFromOverview('${uid}')">회원 탈퇴(삭제)</button></div>`}
     </div>`;
   }).join("");
 }
@@ -3766,12 +3811,210 @@ function renderOpTeams() {
 function opTeamRow(t) {
   const solo = String(t.team_id).startsWith("solo_");
   const label = solo ? "개인 캘린더" : (t.name || t.team_id);
+  const canDelete = !t.n && String(t.team_id) !== "team_smile";
   return `<div class="list-item"><div class="list-top"><span>${escHtml(label)}${solo ? ' <span class="pill" style="font-size:10.5px;padding:3px 8px;">개인</span>' : ""}</span>` +
     `<span class="pill ${t.n ? "pill-indigo" : ""}">${t.n}명</span></div>` +
-    `<div class="list-sub">${escHtml(t.team_id)} · 생성 ${fmtDateKST(t.created_at)}</div></div>`;
+    `<div class="list-sub">${escHtml(t.team_id)} · 생성 ${fmtDateKST(t.created_at)}</div>` +
+    (canDelete ? `<div class="hr-actions" style="justify-content:flex-end;margin-top:6px;"><button class="btn btn-outline btn-sm" style="margin:0;color:var(--red);border-color:rgba(220,38,38,0.35);" onclick="deleteEmptyTeam('${escHtml(t.team_id)}','${escHtml(label)}')">빈 팀 삭제</button></div>` : "") +
+    `</div>`;
 }
 
 function toggleEmptyTeams() { opEmptyOpen = !opEmptyOpen; renderOpTeams(); }
+
+/* ===== v5.4.2 운영자용 회원 출근달력 (실시간) · 유령 회원/빈 팀 정리 ===== */
+let memberCal = null;
+
+function fmtActiveKST(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  if (isNaN(d)) return "";
+  return String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0") + " " +
+    String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+
+function opLastSeen(u) {
+  const a = fmtActiveKST(u.last_active_at);
+  if (a) return "최근 접속 " + a;
+  return "미접속 · 가입 " + fmtDateKST(u.created_at);
+}
+
+function opLastWork(u) {
+  if (u.last_record_date) return "최근 공수 " + String(u.last_record_date).replace(/-/g, ".");
+  return "공수 기록 없음";
+}
+
+async function openMemberCalendar(uid) {
+  if (!isOperator()) return;
+  const u = (opData.users || []).find(x => String(x.user_id) === String(uid)) || { user_id: uid, name: uid };
+  memberCal = {
+    uid: String(uid),
+    month: (/^\d{4}-\d{2}$/.test(String(curMonth || "")) ? curMonth : todayKST().slice(0, 7)),
+    user: u,
+    records: [],
+    loading: true,
+    error: ""
+  };
+  document.getElementById("memberCalModal").classList.remove("hidden");
+  document.getElementById("memberCalTitle").textContent = (u.name || uid) + " 님 출근달력";
+  renderMemberCal();
+  await loadMemberCal();
+}
+
+async function loadMemberCal() {
+  if (!memberCal) return;
+  const target = memberCal.uid, month = memberCal.month;
+  memberCal.loading = true;
+  renderMemberCal();
+  const r = await api("admin_member_records", { target_user_id: target, month });
+  if (!memberCal || memberCal.uid !== target || memberCal.month !== month) return;
+  memberCal.loading = false;
+  if (!r.ok) {
+    memberCal.error = r.error || "불러오기 실패";
+    renderMemberCal();
+    return toast(memberCal.error);
+  }
+  memberCal.user = Object.assign({}, memberCal.user, r.user || {});
+  memberCal.records = r.records || [];
+  memberCal.error = "";
+  renderMemberCal();
+}
+
+function renderMemberCal() {
+  if (!memberCal) return;
+  const m = memberCal, u = m.user || {};
+  const [yy, mm] = String(m.month).split("-").map(Number);
+  document.getElementById("memberCalMonth").textContent = yy + "." + String(mm).padStart(2, "0");
+
+  const activeTxt = fmtActiveKST(u.last_active_at);
+  const prof = [
+    ["이름", escHtml(u.name || "-")],
+    ["연락처", escHtml(fmtPhone(u.phone) || "-")],
+    ["소속", escHtml(u.team_name || (u.user_id ? opTeamName(u) : "-") || "-")],
+    ["직종·경력", escHtml((u.job_type || "미설정") + (u.career_years ? " · " + u.career_years + "년" : ""))],
+    ["배정 현장", escHtml(u.assigned_site || "미지정")],
+    ["최근 접속", activeTxt ? escHtml(activeTxt) : "미접속"]
+  ];
+  document.getElementById("memberCalProfile").innerHTML = prof.map(p =>
+    `<div><div class="k">${p[0]}</div><div class="v">${p[1]}</div></div>`
+  ).join("");
+
+  const grid = document.getElementById("memberCalGrid");
+  grid.innerHTML = "";
+  ["일", "월", "화", "수", "목", "금", "토"].forEach((d, idx) => {
+    const el = document.createElement("div");
+    el.className = "cal-dow" + (idx === 0 ? " sun" : idx === 6 ? " sat" : "");
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const byDate = {};
+  (m.records || []).forEach(r => {
+    const key = String(r.date || "");
+    if (!byDate[key]) byDate[key] = { g: 0, pay: 0, sites: [] };
+    byDate[key].g += Number(r.gongsu || 0);
+    byDate[key].pay += Number(r.amount || 0);
+    if (r.site) byDate[key].sites.push(String(r.site));
+  });
+
+  const firstDay = new Date(yy, mm - 1, 1).getDay();
+  const lastDate = new Date(yy, mm, 0).getDate();
+  const today = todayKST();
+  for (let i = 0; i < firstDay; i++) {
+    const b = document.createElement("div");
+    b.className = "mc-cell blank";
+    grid.appendChild(b);
+  }
+  for (let day = 1; day <= lastDate; day++) {
+    const dateStr = m.month + "-" + String(day).padStart(2, "0");
+    const info = byDate[dateStr];
+    const siteTxt = info ? Array.from(new Set(info.sites)).join(", ") : "";
+    const cell = document.createElement("div");
+    cell.className = "mc-cell" + (info ? " hasrec" : "") + (dateStr === today ? " today" : "");
+    cell.innerHTML = `<div class="mc-day">${day}</div>` +
+      (info ? `<div class="mc-g">${info.g.toFixed(1)}공수</div>` : "") +
+      (siteTxt ? `<div class="mc-site">${escHtml(siteTxt)}</div>` : "");
+    if (info && siteTxt) cell.title = siteTxt;
+    if (info) {
+      cell.onclick = () => {
+        document.getElementById("memberCalDayInfo").innerHTML =
+          `<b>${mm}/${day}</b> · ${escHtml(siteTxt || "현장 미지정")} · ${info.g.toFixed(1)}공수 · ${fmtMoney(info.pay)}`;
+      };
+    }
+    grid.appendChild(cell);
+  }
+
+  const none = Object.keys(byDate).length === 0;
+  const totDays = Object.keys(byDate).length;
+  const totG = Object.values(byDate).reduce((a, b) => a + b.g, 0);
+  const totPay = Object.values(byDate).reduce((a, b) => a + b.pay, 0);
+  const infoEl = document.getElementById("memberCalDayInfo");
+  if (m.loading) {
+    infoEl.innerHTML = "불러오는 중...";
+  } else if (m.error) {
+    infoEl.innerHTML = escHtml(m.error);
+  } else if (none) {
+    infoEl.innerHTML = "이 달에는 출근 기록이 없습니다.";
+  } else {
+    infoEl.innerHTML = `<div class="mc-sum"><span>이번 달 <b>${totDays}일 · ${totG.toFixed(1)}공수</b></span><span>${fmtMoney(totPay)}</span></div>`;
+  }
+
+  const isMain = String(u.user_id) === "admin_01" || String(u.phone || "").replace(/[^0-9]/g, "") === "01031357779";
+  const act = document.getElementById("memberCalActions");
+  act.innerHTML = (isMain ? "" : `<button class="btn btn-outline btn-sm" style="margin:0;flex:1;color:var(--red);border-color:rgba(220,38,38,0.35);" onclick="deleteMemberFromCalendar()">회원 탈퇴(삭제)</button>`) +
+    `<button class="btn btn-outline btn-sm" style="margin:0;flex:1;" onclick="closeMemberCalendar()">닫기</button>`;
+}
+
+function moveMemberCal(delta) {
+  if (!memberCal) return;
+  const [y, mo] = String(memberCal.month).split("-").map(Number);
+  const dt = new Date(y, mo - 1 + delta, 1);
+  memberCal.month = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0");
+  memberCal.records = [];
+  loadMemberCal();
+}
+
+function closeMemberCalendar() {
+  const el = document.getElementById("memberCalModal");
+  if (el) el.classList.add("hidden");
+  memberCal = null;
+}
+
+async function deleteMemberFromCalendar() {
+  if (!isOperator() || !memberCal) return;
+  const u = memberCal.user || {};
+  const name = u.name || memberCal.uid;
+  const ok = await appConfirm("", {
+    title: "회원 탈퇴(삭제)",
+    sub: `${name} 회원을 삭제할까요?\n공수 기록·채팅·광장 글·초대코드가 함께 삭제되며 되돌릴 수 없습니다.`,
+    okText: "삭제",
+    icon: "trash",
+    danger: true
+  });
+  if (!ok) return;
+  toast("삭제 중...");
+  const r = await api("admin_delete_user", { target_user_id: memberCal.uid });
+  if (!r.ok) return toast(r.error || "삭제 실패");
+  toast(name + " 회원을 삭제했습니다.");
+  closeMemberCalendar();
+  await openAdminOverview();
+}
+
+async function deleteEmptyTeam(teamId, teamName) {
+  if (!isOperator()) return;
+  const ok = await appConfirm("", {
+    title: "빈 팀 삭제",
+    sub: `${teamName || teamId} 팀을 삭제할까요?\n소속 인원이 없는 팀만 삭제됩니다. 팀의 현장·초대코드·팀 채팅도 함께 정리됩니다.`,
+    okText: "삭제",
+    icon: "trash",
+    danger: true
+  });
+  if (!ok) return;
+  toast("팀 삭제 중...");
+  const r = await api("admin_delete_team", { team_id: teamId });
+  if (!r.ok) return toast(r.error || "삭제 실패");
+  toast((teamName || "팀") + " 삭제 완료");
+  await openAdminOverview();
+}
 
 async function loadOpPosts() {
   const el = document.getElementById("opPostsList");
@@ -3874,12 +4117,12 @@ async function deleteAccountFromOverview(uid) {
   if (!isOperator()) return;
   const target = (opData.users || []).find(u => String(u.user_id) === String(uid)) || {};
   const name = target.name || uid;
-  const ok = await appConfirm("", { title: "계정 삭제", sub: `${name} 계정을 삭제할까요?\n그 계정의 공수 기록도 함께 삭제되며 되돌릴 수 없습니다.`, okText: "삭제", icon: "trash", danger: true });
+  const ok = await appConfirm("", { title: "회원 탈퇴(삭제)", sub: `${name} 회원을 삭제할까요?\n공수 기록·채팅·광장 글·초대코드가 함께 삭제되며 되돌릴 수 없습니다.`, okText: "삭제", icon: "trash", danger: true });
   if (!ok) return;
-  toast("계정 삭제 중...");
-  const r = await api("delete_account", { user_id: currentUser.user_id, target_user_id: uid });
+  toast("삭제 중...");
+  const r = await api("admin_delete_user", { target_user_id: uid });
   if (!r.ok) return toast(r.error || "삭제 실패");
-  toast(name + " 계정이 삭제되었습니다.");
+  toast(name + " 회원을 삭제했습니다.");
   await openAdminOverview();
 }
 

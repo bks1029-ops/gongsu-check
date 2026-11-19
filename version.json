@@ -1,8 +1,8 @@
 {
-  "versionCode": 21,
-  "versionName": "5.4.1",
+  "versionCode": 22,
+  "versionName": "5.4.2",
   "releasedAt": "2026-11-19",
   "apkUrl": "https://bks1029-ops.github.io/gongsu-check/gongsu-check.apk",
   "pageUrl": "https://bks1029-ops.github.io/gongsu-check/",
-  "note": "현장별 공수 합계가 기본으로 접혀 있어 한결 깔끔해졌어요. 누르면 펼쳐집니다."
+  "note": "정산서가 영수증 모양 이미지로 카톡에 바로 공유됩니다. 운영자는 회원별 실시간 출근달력과 최근 접속을 볼 수 있어요."
 }
