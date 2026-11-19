@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#F4F6FA" id="themeColorMeta" />
 <title>오늘몇공</title>
 <style>
-  /* ===== 오늘몇공 v5.4 — 정산서 공유·현장별 합계·새 버전 안내 (v5.3: 라이트 기본 + 다크 토글 / RPC 보안) ===== */
+  /* ===== 오늘몇공 v5.4.1 — 현장별 합계 기본 접힘 아코디언 (v5.4: 정산서 공유·현장별 합계·새 버전 안내) ===== */
   :root {
     /* 라이트 테마 (기본) */
     --primary: #EAB308;
@@ -593,6 +593,19 @@
   .site-row .sr-meta { font-size: 11.5px; color: var(--sub); font-weight: 600; margin-top: 1px; }
   .site-row .sr-amt { font-size: 13px; font-weight: 800; white-space: nowrap; }
 
+  /* ===== v5.4.1 현장별 공수 합계 아코디언 (기본 접힘) ===== */
+  .site-sum-head { cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .site-sum-head:active { opacity: .72; }
+  .site-sum-head:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 8px; }
+  .site-sum-line { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .site-sum-line + .site-sum-line { margin-top: 3px; }
+  .site-sum-title { font-size: 13px; font-weight: 800; }
+  .site-sum-toggle { font-size: 11.5px; font-weight: 800; color: var(--primary); white-space: nowrap; flex: 0 0 auto; }
+  .site-sum-brief { font-size: 12px; font-weight: 700; color: var(--sub); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .site-sum-brief b { color: var(--text); font-weight: 800; }
+  .site-sum-month { font-size: 11.5px; font-weight: 700; color: var(--sub); white-space: nowrap; flex: 0 0 auto; }
+  #siteSummaryBody { border-top: 1px solid var(--line); margin-top: 10px; }
+
   /* ===== 커스텀 팝업 (alert / confirm / prompt 대체) ===== */
   .dlg-bg {
     position: fixed; inset: 0; background: var(--overlay);
@@ -984,14 +997,22 @@ try {
             <button type="button" class="btn btn-primary btn-sm" style="margin:0;flex:0 0 auto;" onclick="applyCustomTax()">적용</button>
           </div>
         </div>
-        <!-- v5.4 사장님용 현장별 공수 합계 -->
+        <!-- v5.4.1 사장님용 현장별 공수 합계 (기본 접힘 · 헤더를 누르면 펼침) -->
         <div id="siteSummaryCard" class="hidden" style="background:var(--surface);border-radius:14px;padding:12px 14px;margin-bottom:12px;">
-          <div class="row" style="justify-content:space-between;margin-bottom:4px;">
-            <span style="font-size:13px;font-weight:800;">🏗️ 현장별 공수 합계</span>
-            <span id="siteSummaryMonth" style="font-size:11.5px;font-weight:700;color:var(--sub);"></span>
+          <div id="siteSummaryHead" class="site-sum-head" role="button" tabindex="0" aria-expanded="false" aria-controls="siteSummaryBody" onclick="toggleSiteSummary()" onkeydown="siteSummaryKey(event)">
+            <div class="site-sum-line">
+              <span class="site-sum-title">🏗️ 현장별 공수 합계</span>
+              <span id="siteSummaryToggle" class="site-sum-toggle">펼치기 ▾</span>
+            </div>
+            <div class="site-sum-line">
+              <span id="siteSummaryBrief" class="site-sum-brief">불러오는 중…</span>
+              <span id="siteSummaryMonth" class="site-sum-month"></span>
+            </div>
           </div>
-          <div id="siteSummaryList"></div>
-          <div id="siteSummaryNet" style="font-size:11.5px;color:var(--sub);font-weight:600;margin-top:8px;"></div>
+          <div id="siteSummaryBody" class="hidden">
+            <div id="siteSummaryList" style="margin-top:8px;"></div>
+            <div id="siteSummaryNet" style="font-size:11.5px;color:var(--sub);font-weight:600;margin-top:8px;"></div>
+          </div>
         </div>
 
         <div id="teamPayList"></div>
@@ -1228,7 +1249,7 @@ try {
       <div class="set-row" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div>
           <div class="set-row-title">📦 앱 버전</div>
-          <div class="set-row-sub" id="setVersionSub">v5.4.0 · 최신 버전 확인</div>
+          <div class="set-row-sub" id="setVersionSub">v5.4.1 · 최신 버전 확인</div>
         </div>
         <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="checkAppUpdate(true)">업데이트 확인</button>
       </div>
@@ -1325,8 +1346,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 20;
-const APP_VERSION_NAME = "5.4.0";
+const APP_VERSION_CODE = 21;
+const APP_VERSION_NAME = "5.4.1";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -2458,13 +2479,38 @@ function renderTeamTab() {
   ).join("") || '<div style="color:var(--sub);font-size:13px;">등록된 현장이 없습니다.</div>';
 }
 
-/* ===== v5.4 사장님용 현장별 공수 합계 ===== */
+/* ===== v5.4 사장님용 현장별 공수 합계 (v5.4.1 기본 접힘 아코디언) ===== */
+let siteSummaryOpen = false;
+
+function applySiteSummaryOpen() {
+  const head = document.getElementById("siteSummaryHead");
+  const body = document.getElementById("siteSummaryBody");
+  const toggle = document.getElementById("siteSummaryToggle");
+  if (!head || !body) return;
+  body.classList.toggle("hidden", !siteSummaryOpen);
+  head.setAttribute("aria-expanded", siteSummaryOpen ? "true" : "false");
+  if (toggle) toggle.textContent = siteSummaryOpen ? "접기 ▴" : "펼치기 ▾";
+}
+
+function toggleSiteSummary() {
+  siteSummaryOpen = !siteSummaryOpen;
+  applySiteSummaryOpen();
+}
+
+function siteSummaryKey(e) {
+  if (e && (e.key === "Enter" || e.key === " " || e.key === "Spacebar")) {
+    e.preventDefault();
+    toggleSiteSummary();
+  }
+}
+
 function renderSiteSummary(isAdm) {
   const card = document.getElementById("siteSummaryCard");
   if (!card) return;
   card.classList.toggle("hidden", !isAdm);
   if (!isAdm || !dashData) return;
   document.getElementById("siteSummaryMonth").textContent = monthLabelKR(curMonth);
+  applySiteSummaryOpen();
   const list = document.getElementById("siteSummaryList");
   const recs = dashData.records || [];
   const map = {};
@@ -2477,14 +2523,17 @@ function renderSiteSummary(isAdm) {
     map[name].days.add(r.date);
   });
   const rows = Object.values(map).sort((a, b) => b.amount - a.amount);
+  const briefEl = document.getElementById("siteSummaryBrief");
   if (!rows.length) {
     list.innerHTML = '<div style="color:var(--sub);font-size:12.5px;padding:6px 0;">이번 달 현장 기록이 없습니다.</div>';
     document.getElementById("siteSummaryNet").textContent = "";
+    if (briefEl) briefEl.textContent = "이번 달 기록 없음";
     return;
   }
   const totG = rows.reduce((s, x) => s + x.gongsu, 0);
   const totAmt = rows.reduce((s, x) => s + x.amount, 0);
   const unassigned = map["현장 미지정"];
+  if (briefEl) briefEl.innerHTML = `${rows.length}개 현장 · ${totG.toFixed(1)}공수 · <b>${fmtMoney(totAmt)}</b>`;
   list.innerHTML = rows.map(x => `
       <div class="site-row">
         <div style="min-width:0;">

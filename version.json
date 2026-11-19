@@ -1,8 +1,8 @@
 {
-  "versionCode": 20,
-  "versionName": "5.4.0",
+  "versionCode": 21,
+  "versionName": "5.4.1",
   "releasedAt": "2026-11-19",
   "apkUrl": "https://bks1029-ops.github.io/gongsu-check/gongsu-check.apk",
   "pageUrl": "https://bks1029-ops.github.io/gongsu-check/",
-  "note": "정산서 공유·현장별 합계가 추가됐어요."
+  "note": "현장별 공수 합계가 기본으로 접혀 있어 한결 깔끔해졌어요. 누르면 펼쳐집니다."
 }
