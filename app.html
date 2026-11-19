@@ -599,11 +599,12 @@
   .site-sum-head:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 8px; }
   .site-sum-line { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .site-sum-line + .site-sum-line { margin-top: 3px; }
-  .site-sum-title { font-size: 13px; font-weight: 800; }
+  .site-sum-title { font-size: 13px; font-weight: 800; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .site-sum-toggle { font-size: 11.5px; font-weight: 800; color: var(--primary); white-space: nowrap; flex: 0 0 auto; }
-  .site-sum-brief { font-size: 12px; font-weight: 700; color: var(--sub); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .site-sum-brief { font-size: 12px; font-weight: 700; color: var(--sub); min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .site-sum-brief b { color: var(--text); font-weight: 800; }
-  .site-sum-month { font-size: 11.5px; font-weight: 700; color: var(--sub); white-space: nowrap; flex: 0 0 auto; }
+  .site-sum-amount { font-size: 12.5px; font-weight: 800; color: var(--text); white-space: nowrap; flex: 0 0 auto; }
+  .site-sum-month { font-size: 11px; font-weight: 700; color: var(--sub); white-space: nowrap; flex: 0 0 auto; }
   #siteSummaryBody { border-top: 1px solid var(--line); margin-top: 10px; }
 
   /* ===== 커스텀 팝업 (alert / confirm / prompt 대체) ===== */
@@ -1002,11 +1003,12 @@ try {
           <div id="siteSummaryHead" class="site-sum-head" role="button" tabindex="0" aria-expanded="false" aria-controls="siteSummaryBody" onclick="toggleSiteSummary()" onkeydown="siteSummaryKey(event)">
             <div class="site-sum-line">
               <span class="site-sum-title">🏗️ 현장별 공수 합계</span>
+              <span id="siteSummaryMonth" class="site-sum-month"></span>
               <span id="siteSummaryToggle" class="site-sum-toggle">펼치기 ▾</span>
             </div>
             <div class="site-sum-line">
               <span id="siteSummaryBrief" class="site-sum-brief">불러오는 중…</span>
-              <span id="siteSummaryMonth" class="site-sum-month"></span>
+              <span id="siteSummaryAmount" class="site-sum-amount"></span>
             </div>
           </div>
           <div id="siteSummaryBody" class="hidden">
@@ -2524,16 +2526,19 @@ function renderSiteSummary(isAdm) {
   });
   const rows = Object.values(map).sort((a, b) => b.amount - a.amount);
   const briefEl = document.getElementById("siteSummaryBrief");
+  const amountEl = document.getElementById("siteSummaryAmount");
   if (!rows.length) {
     list.innerHTML = '<div style="color:var(--sub);font-size:12.5px;padding:6px 0;">이번 달 현장 기록이 없습니다.</div>';
     document.getElementById("siteSummaryNet").textContent = "";
     if (briefEl) briefEl.textContent = "이번 달 기록 없음";
+    if (amountEl) amountEl.textContent = "";
     return;
   }
   const totG = rows.reduce((s, x) => s + x.gongsu, 0);
   const totAmt = rows.reduce((s, x) => s + x.amount, 0);
   const unassigned = map["현장 미지정"];
-  if (briefEl) briefEl.innerHTML = `${rows.length}개 현장 · ${totG.toFixed(1)}공수 · <b>${fmtMoney(totAmt)}</b>`;
+  if (briefEl) briefEl.textContent = `${rows.length}개 현장 · ${totG.toFixed(1)}공수`;
+  if (amountEl) amountEl.textContent = fmtMoney(totAmt);
   list.innerHTML = rows.map(x => `
       <div class="site-row">
         <div style="min-width:0;">
