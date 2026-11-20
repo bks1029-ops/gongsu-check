@@ -1,8 +1,8 @@
 {
-  "versionCode": 24,
-  "versionName": "5.4.4",
+  "versionCode": 25,
+  "versionName": "5.4.5",
   "releasedAt": "2026-11-20",
   "apkUrl": "https://bks1029-ops.github.io/gongsu-check/gongsu-check.apk",
   "pageUrl": "https://bks1029-ops.github.io/gongsu-check/",
-  "note": "홈 화면 위젯이 '위젯을 추가할 수 없습니다'로 안 되던 문제를 고쳤습니다. 이제 위젯으로 이번 달 공수와 예상 금액을 바로 볼 수 있어요."
+  "note": "공수와 현장을 한 줄에 나란히 놓아 입력이 빨라졌습니다. 공수는 0.5~5.0 중에 고르거나 직접 입력하고, 현장은 눌러서 바꾸면 됩니다. 다른 탭에서 뒤로가기를 누르면 앱이 꺼지지 않고 홈으로 돌아옵니다."
 }

@@ -341,6 +341,44 @@
   .chip.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
   .chip b { font-weight: 800; opacity: 0.75; font-size: 12px; margin-left: 2px; }
 
+  /* ===== v5.4.5 공수·현장 나란히 2열 선택 ===== */
+  .pick-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 2px; }
+  .pick-label { font-size: 12px; font-weight: 700; color: var(--sub); margin-bottom: 5px; }
+  .pick-field {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    width: 100%; padding: 12px 12px; border: 1.5px solid var(--line); border-radius: 12px;
+    background: var(--input); color: var(--text); font-size: 15px; font-weight: 800;
+    font-family: inherit; cursor: pointer; text-align: left; line-height: 1.2;
+  }
+  .pick-field:active { transform: scale(0.985); }
+  .pick-field .pick-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pick-field .pick-val.empty { color: var(--placeholder); font-weight: 700; font-size: 14px; }
+  .pick-caret { flex: 0 0 auto; font-size: 11px; color: var(--sub); }
+  .pick-bg {
+    position: fixed; inset: 0; background: var(--overlay); backdrop-filter: blur(3px);
+    display: flex; align-items: flex-end; justify-content: center; z-index: 110;
+  }
+  .pick-card {
+    width: 100%; max-width: 540px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 22px 22px 0 0; padding: 18px 16px 24px;
+    box-shadow: var(--bar-shadow); animation: pickUp .18s ease-out;
+  }
+  .pick-head { text-align: center; margin-bottom: 14px; }
+  .pick-title { font-size: 16px; font-weight: 900; color: var(--text); }
+  .pick-sub { font-size: 12px; color: var(--sub); margin-top: 4px; }
+  .pick-opt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pick-opt-grid.one-col { grid-template-columns: 1fr; }
+  .pick-opt {
+    padding: 14px 6px; border-radius: 13px; border: 1.5px solid var(--line);
+    background: var(--surface); color: var(--text); font-size: 15px; font-weight: 800;
+    font-family: inherit; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pick-opt.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .pick-custom-row { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .pick-custom-row input { flex: 1 1 auto; min-width: 0; }
+  .pick-custom-row .btn { flex: 0 0 auto; width: auto; margin: 0; padding: 0 18px; height: 46px; }
+  @keyframes pickUp { from { transform: translateY(18px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+
   /* STATS */
   .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .stat-box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 6px; text-align: center; }
@@ -849,14 +887,20 @@ try {
         </div>
       </div>
 
-      <div id="workerSiteNotice" style="font-size:12px;font-weight:700;color:var(--sub);margin:2px 0 0;"></div>
-
-      <label style="margin-top:8px;">공수 선택</label>
-      <div class="chip-group" id="workerGongsuChips">
-        <button class="chip" onclick="pickGongsu(0.5, this)">0.5공수</button>
-        <button class="chip active" onclick="pickGongsu(1.0, this)">1.0공수</button>
-        <button class="chip" onclick="pickGongsu(1.5, this)">1.5공수</button>
-        <button class="chip" onclick="pickGongsu(2.0, this)">2.0공수</button>
+      <!-- v5.4.5: 공수 선택(왼쪽) + 현장(오른쪽) 나란히 2열 -->
+      <div class="pick-grid2" style="margin-top:10px;">
+        <div>
+          <div class="pick-label">공수 선택</div>
+          <button id="workerGongsuBtn" type="button" class="pick-field" onclick="openGongsuPicker()">
+            <span id="workerGongsuVal" class="pick-val">1.0공수</span><span class="pick-caret">▾</span>
+          </button>
+        </div>
+        <div>
+          <div class="pick-label">현장</div>
+          <button id="workerSiteBtn" type="button" class="pick-field" onclick="openSitePicker()">
+            <span id="workerSiteVal" class="pick-val empty">현장 입력</span><span class="pick-caret">▾</span>
+          </button>
+        </div>
       </div>
       <label>메모</label>
       <input id="workerMemo" type="text" placeholder="야간·특근 등 메모 (선택)" />
@@ -1359,6 +1403,22 @@ try {
   </div>
 </div>
 
+<!-- v5.4.5 공수·현장 선택 시트 (터치하기 좋게 아래에서 올라오는 시트) -->
+<div id="pickSheet" class="pick-bg hidden">
+  <div class="pick-card" role="dialog" aria-modal="true">
+    <div class="pick-head">
+      <div id="pickTitle" class="pick-title">공수 선택</div>
+      <div id="pickSub" class="pick-sub"></div>
+    </div>
+    <div id="pickOpts" class="pick-opt-grid"></div>
+    <div id="pickCustomRow" class="pick-custom-row hidden">
+      <input id="pickCustomInput" type="text" inputmode="decimal" placeholder="예: 0.7" />
+      <button class="btn btn-primary" type="button" onclick="applyPickCustom()">확인</button>
+    </div>
+    <button class="btn btn-outline" type="button" style="margin-top:14px;" onclick="closePickSheet()">닫기</button>
+  </div>
+</div>
+
 <div id="policyModal" class="modal-bg hidden">
   <div class="modal-card" style="max-height:88vh;overflow-y:auto;">
     <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -1383,6 +1443,10 @@ let curMonth = "";
 let selectedDate = "";
 let dashData = null;
 let selectedGongsu = 1.0;
+let selectedSite = "";            /* v5.4.5: 이번 기록에 저장할 현장(기본은 관리자가 정한 내 현장) */
+let selectedSiteTouched = false;  /* 사용자가 현장을 직접 고쳤으면 대시보드 재렌더에 덮어쓰지 않는다 */
+let pickKind = "";
+let pickNames = [];
 let activeRecordId = null;
 let activeChatRoomId = null;
 let chatTimer = null;
@@ -1391,8 +1455,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 24;
-const APP_VERSION_NAME = "5.4.4";
+const APP_VERSION_CODE = 25;
+const APP_VERSION_NAME = "5.4.5";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -2134,7 +2198,8 @@ function renderWorkerHome() {
   document.getElementById("workerWagePill").textContent = "기본일당 " + fmtMoney(currentUser.default_wage || 180000) + " ✎";
 
   const myRecs = getMyRecords();
-  document.getElementById("workerSiteNotice").textContent = "현장 자동 입력: " + (String(currentUser.assigned_site || "").trim() || "미지정");
+  if (!selectedSiteTouched) selectedSite = String(currentUser.assigned_site || "").trim();
+  updateWorkerPickFields();
 
   let days = new Set(), sumG = 0, sumPay = 0;
   myRecs.forEach(r => {
@@ -2145,10 +2210,151 @@ function renderWorkerHome() {
   document.getElementById("wPay").textContent = fmtMoney(sumPay);
 }
 
-function pickGongsu(val, btn) {
-  selectedGongsu = val;
-  document.querySelectorAll("#workerGongsuChips .chip").forEach(c => c.classList.remove("active"));
-  btn.classList.add("active");
+/* ===== v5.4.5 공수·현장 선택 시트 ===== */
+const GONGSU_OPTIONS = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0];
+
+function fmtGongsu(v) {
+  const n = Number(v);
+  if (!isFinite(n)) return "1.0공수";
+  let s = String(Math.round(n * 100) / 100);
+  if (s.indexOf(".") < 0) s += ".0";
+  return s + "공수";
+}
+
+function updateWorkerPickFields() {
+  const gEl = document.getElementById("workerGongsuVal");
+  if (gEl) gEl.textContent = fmtGongsu(selectedGongsu);
+  const sEl = document.getElementById("workerSiteVal");
+  if (sEl) {
+    const s = String(selectedSite || "").trim();
+    sEl.textContent = s || "현장 입력";
+    sEl.classList.toggle("empty", !s);
+  }
+}
+
+function openPickSheet(title, sub) {
+  document.getElementById("pickTitle").textContent = title;
+  document.getElementById("pickSub").textContent = sub || "";
+  document.getElementById("pickCustomRow").classList.add("hidden");
+  document.getElementById("pickSheet").classList.remove("hidden");
+}
+
+function closePickSheet() {
+  const el = document.getElementById("pickSheet");
+  if (el) el.classList.add("hidden");
+  pickKind = "";
+}
+
+/* 왼쪽: 공수 선택 */
+function openGongsuPicker() {
+  pickKind = "gongsu";
+  openPickSheet("공수 선택", "하루 일한 공수를 골라 주세요");
+  const box = document.getElementById("pickOpts");
+  box.className = "pick-opt-grid";
+  box.innerHTML = "";
+  const cur = Math.round(Number(selectedGongsu) * 100) / 100;
+  const inList = GONGSU_OPTIONS.indexOf(cur) >= 0;
+  GONGSU_OPTIONS.forEach(v => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pick-opt" + ((inList && v === cur) ? " active" : "");
+    b.textContent = v.toFixed(1);
+    b.onclick = function () {
+      selectedGongsu = v;
+      closePickSheet();
+      updateWorkerPickFields();
+    };
+    box.appendChild(b);
+  });
+  const cbtn = document.createElement("button");
+  cbtn.type = "button";
+  cbtn.className = "pick-opt" + (inList ? "" : " active");
+  cbtn.textContent = "직접입력";
+  cbtn.onclick = function () { openPickCustom(); };
+  box.appendChild(cbtn);
+  const inp = document.getElementById("pickCustomInput");
+  inp.value = inList ? "" : String(cur);
+}
+
+/* 오른쪽: 현장(기본 = 관리자가 정한 내 현장) */
+function openSitePicker() {
+  pickKind = "site";
+  openPickSheet("현장 선택", "단기 출장 등 다른 현장은 직접 입력할 수 있어요");
+  const box = document.getElementById("pickOpts");
+  box.className = "pick-opt-grid one-col";
+  box.innerHTML = "";
+  const cur = String(selectedSite || "").trim();
+  const names = [];
+  const add = function (n) {
+    const v = String(n || "").trim();
+    if (v && names.indexOf(v) < 0) names.push(v);
+  };
+  add(currentUser && currentUser.assigned_site);
+  ((dashData && dashData.sites) || []).forEach(function (s) { add(s && s.name); });
+  pickNames = names;
+  names.forEach(function (n) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pick-opt" + (n === cur ? " active" : "");
+    b.textContent = n;
+    b.onclick = function () {
+      selectedSite = n;
+      selectedSiteTouched = true;
+      closePickSheet();
+      updateWorkerPickFields();
+    };
+    box.appendChild(b);
+  });
+  const cbtn = document.createElement("button");
+  cbtn.type = "button";
+  cbtn.className = "pick-opt" + (cur && names.indexOf(cur) < 0 ? " active" : "");
+  cbtn.textContent = "직접입력";
+  cbtn.onclick = function () { openPickCustom(); };
+  box.appendChild(cbtn);
+  const inp = document.getElementById("pickCustomInput");
+  inp.value = (cur && names.indexOf(cur) < 0) ? cur : "";
+}
+
+function openPickCustom() {
+  const isGongsu = pickKind === "gongsu";
+  const inp = document.getElementById("pickCustomInput");
+  inp.inputMode = isGongsu ? "decimal" : "text";
+  inp.placeholder = isGongsu ? "예: 0.7" : "예: 강릉";
+  if (!inp.value) {
+    if (isGongsu) {
+      const cur = Math.round(Number(selectedGongsu) * 100) / 100;
+      if (cur && GONGSU_OPTIONS.indexOf(cur) < 0) inp.value = String(cur);
+    } else {
+      const cur = String(selectedSite || "").trim();
+      if (cur && pickNames.indexOf(cur) < 0) inp.value = cur;
+    }
+  }
+  document.getElementById("pickCustomRow").classList.remove("hidden");
+  setTimeout(function () { try { inp.focus(); inp.select(); } catch (e) {} }, 60);
+}
+
+function applyPickCustom() {
+  const inp = document.getElementById("pickCustomInput");
+  const raw = String(inp.value || "").replace(/,/g, ".").trim();
+  if (pickKind === "gongsu") {
+    if (!raw) return toast("공수를 입력해 주세요.");
+    if (!/^\d+(\.\d+)?$/.test(raw)) return toast("숫자만 입력해 주세요. (예: 0.7)");
+    const n = Number(raw);
+    if (!isFinite(n) || n <= 0) return toast("0보다 큰 공수를 입력해 주세요.");
+    if (n > 24) return toast("공수는 24 이하로 입력해 주세요.");
+    selectedGongsu = Math.round(n * 100) / 100;
+    closePickSheet();
+    updateWorkerPickFields();
+    toast(fmtGongsu(selectedGongsu) + " 선택됨");
+  } else if (pickKind === "site") {
+    if (!raw) return toast("현장명을 입력해 주세요.");
+    if (raw.length > 30) return toast("현장명은 30자까지 입력할 수 있어요.");
+    selectedSite = raw;
+    selectedSiteTouched = true;
+    closePickSheet();
+    updateWorkerPickFields();
+    toast("현장: " + raw);
+  }
 }
 
 function openWorkerDatePicker() {
@@ -2166,7 +2372,7 @@ function onWorkerDateChange() {
 }
 
 async function workerSaveGongsu() {
-  const site = String(currentUser.assigned_site || "").trim();
+  const site = String(selectedSite || "").trim();
   const memo = document.getElementById("workerMemo").value.trim();
   const date = workerActiveDate || dashData.today;
   toast("공수 저장 중...");
@@ -4385,6 +4591,7 @@ async function deleteCurrentPost() {
 
 /* ===== v5.4.3: 안드로이드 뒤로가기 — 열린 창이 있으면 앱을 끄지 않고 그 창만 닫는다 ===== */
 const ANDROID_BACK_OVERLAYS = [
+  { id: "pickSheet", close: closePickSheet },
   { id: "appDlg", close: function () { if (dlgState) closeAppDialog(dlgCancelValue()); } },
   { id: "policyModal", close: closePolicyModal },
   { id: "memberCalModal", close: closeMemberCalendar },
@@ -4413,6 +4620,13 @@ window.handleAndroidBack = function () {
       }
     }
     if (isOverlayOpen("chatThread")) { closeChatRoom(); return true; }
+  } catch (e) {}
+  /* v5.4.5: 홈이 아닌 탭(출근달력·채팅·광장·인력관리)에 있으면 앱을 끄지 않고 '홈' 탭으로 돌아간다 */
+  try {
+    if (typeof curNav === "string" && curNav !== "home") {
+      switchNav("home");
+      return true;
+    }
   } catch (e) {}
   return false;
 };
