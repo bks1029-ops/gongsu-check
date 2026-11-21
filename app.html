@@ -62,6 +62,18 @@
     --toast-bg: #0F172A;
     --toast-text: #FFFFFF;
     --scrollbar: #CBD5E1;
+    /* v5.4.9 카톡 스타일 채팅방 */
+    --chat-bg: #BACEE0;
+    --chat-bar: rgba(255,255,255,0.78);
+    --chat-bar-line: rgba(15,23,42,0.10);
+    --chat-bubble-mine: #FEE500;
+    --chat-on-mine: #191919;
+    --chat-bubble-other: #FFFFFF;
+    --chat-on-other: #191919;
+    --chat-meta: rgba(25,25,25,0.52);
+    --chat-sender: rgba(25,25,25,0.66);
+    --chat-date-bg: rgba(0,0,0,0.16);
+    --chat-input-bg: #FFFFFF;
     --radius: 18px;
     color-scheme: light;
   }
@@ -120,6 +132,18 @@
     --toast-bg: #1E293B;
     --toast-text: #F8FAFC;
     --scrollbar: #334155;
+    /* v5.4.9 카톡 스타일 채팅방 (다크) */
+    --chat-bg: #101B2E;
+    --chat-bar: rgba(10,16,29,0.86);
+    --chat-bar-line: rgba(39,53,77,0.72);
+    --chat-bubble-mine: #FEE500;
+    --chat-on-mine: #191919;
+    --chat-bubble-other: #26344B;
+    --chat-on-other: #F1F5F9;
+    --chat-meta: rgba(203,213,225,0.62);
+    --chat-sender: rgba(203,213,225,0.74);
+    --chat-date-bg: rgba(0,0,0,0.30);
+    --chat-input-bg: #16233A;
     color-scheme: dark;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -462,44 +486,65 @@
   .chat-room-title { font-weight: 700; font-size: 15px; color: var(--text); }
   .chat-room-preview { font-size: 13px; color: var(--sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
 
+  /* ===== v5.4.9 카톡 스타일 대화방 ===== */
   .chat-thread {
-    position: fixed; inset: 0; background: var(--bg); z-index: 60;
+    position: fixed; inset: 0; background: var(--chat-bg); z-index: 60;
     display: flex; flex-direction: column; max-width: 540px; margin: 0 auto;
   }
   .chat-header {
-    background: var(--bg-bar); padding: 13px 14px; display: flex; align-items: center; gap: 10px;
-    border-bottom: 1px solid var(--line); font-weight: 800; font-size: 16px; color: var(--text);
+    background: var(--chat-bar); backdrop-filter: saturate(140%) blur(8px);
+    padding: 13px 14px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--chat-bar-line); font-weight: 800; font-size: 16px; color: var(--text);
   }
   .chat-messages {
-    flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+    flex: 1; overflow-y: auto; padding: 14px 12px 20px; display: flex; flex-direction: column; gap: 8px;
+    overscroll-behavior: contain;
   }
-  .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
+  .msg-wrap { display: flex; flex-direction: column; max-width: 82%; }
   .msg-wrap.mine { align-self: flex-end; align-items: flex-end; }
   .msg-wrap.other { align-self: flex-start; align-items: flex-start; }
-  .msg-sender { font-size: 11px; color: var(--sub); margin-bottom: 3px; font-weight: 700; }
+  .msg-sender { font-size: 11px; color: var(--chat-sender); margin: 0 2px 4px; font-weight: 700; }
+  .msg-line { display: flex; align-items: flex-end; gap: 5px; max-width: 100%; }
   .msg-bubble {
-    padding: 10px 13px; border-radius: 16px; font-size: 14px; word-break: break-word;
+    padding: 9px 12px; border-radius: 16px; font-size: 14px; line-height: 1.42; word-break: break-word;
+    max-width: 100%;
   }
-  .mine .msg-bubble { background: var(--accent); color: var(--on-accent); border-bottom-right-radius: 4px; }
-  .other .msg-bubble { background: var(--card); color: var(--text); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
-  .msg-time { font-size: 10px; color: var(--sub); margin-top: 3px; }
+  .mine .msg-bubble { background: var(--chat-bubble-mine); color: var(--chat-on-mine); border-bottom-right-radius: 4px; }
+  .other .msg-bubble { background: var(--chat-bubble-other); color: var(--chat-on-other); border-bottom-left-radius: 4px; box-shadow: 0 1px 1px rgba(15,23,42,0.07); }
+  /* v5.4.9: 사진만 보낸 말풍선은 액자(배경·패딩·테두리)를 빼고 사진에만 둥근 모서리 */
+  .msg-bubble.no-bubble,
+  .mine .msg-bubble.no-bubble,
+  .other .msg-bubble.no-bubble {
+    background: transparent !important; padding: 0 !important; border: 0 !important;
+    border-radius: 0 !important; box-shadow: none !important; line-height: 0;
+  }
+  .msg-bubble.no-bubble .msg-img { border-radius: 14px; margin-bottom: 0; }
+  .msg-bubble.no-bubble .msg-file-card { margin-bottom: 0; }
+  .msg-time { font-size: 10px; color: var(--chat-meta); flex: 0 0 auto; padding-bottom: 1px; white-space: nowrap; }
+  /* v5.4.9: 날짜 구분선 — 반투명 회색 알약 배지 */
+  .chat-date-pill {
+    align-self: center; margin: 8px 0 4px; padding: 6px 14px; border-radius: 999px;
+    background: var(--chat-date-bg); color: #FFFFFF; font-size: 11.5px; font-weight: 600;
+    letter-spacing: -0.2px; max-width: 90%; text-align: center;
+  }
   .chat-inputbar {
-    background: var(--bg-bar); padding: 10px 12px; border-top: 1px solid var(--line);
+    background: var(--chat-bar); backdrop-filter: saturate(140%) blur(8px);
+    padding: 10px 12px; border-top: 1px solid var(--chat-bar-line);
     display: flex; gap: 8px; align-items: center;
   }
-  .chat-inputbar input { flex: 1; margin: 0; border-radius: 999px; padding: 10px 15px; }
+  .chat-inputbar input { flex: 1; margin: 0; border-radius: 999px; padding: 10px 15px; background: var(--chat-input-bg); }
   .chat-send-btn {
     background: var(--accent); color: var(--on-accent); border: none; border-radius: 999px;
     padding: 10px 16px; font-weight: 800; font-size: 14px; cursor: pointer;
     flex: 0 0 auto; white-space: nowrap;
   }
   .chat-attach-btn {
-    background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 999px;
+    background: var(--chat-input-bg); color: var(--text); border: 1px solid var(--chat-bar-line); border-radius: 999px;
     width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
     font-size: 18px; cursor: pointer; flex: 0 0 auto; padding: 0;
   }
   .msg-img {
-    max-width: 220px; max-height: 220px; border-radius: 10px; display: block;
+    max-width: 220px; max-height: 220px; border-radius: 12px; display: block;
     margin-bottom: 4px; cursor: pointer; object-fit: cover;
   }
   .msg-file-card {
@@ -1351,7 +1396,7 @@ try {
       <div class="set-row" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div>
           <div class="set-row-title">📦 앱 버전</div>
-          <div class="set-row-sub" id="setVersionSub">v5.4.8 · 최신 버전 확인</div>
+          <div class="set-row-sub" id="setVersionSub">v5.4.9 · 최신 버전 확인</div>
         </div>
         <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="checkAppUpdate(true)">업데이트 확인</button>
       </div>
@@ -1484,13 +1529,15 @@ let activeChatRoomId = null;
 let activeChatRoomObj = null;
 let chatRoomsCache = [];
 let chatTimer = null;
+let chatListSig = null;
+let chatForceBottom = false;
 let workerActiveDate = "";
 let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 28;
-const APP_VERSION_NAME = "5.4.8";
+const APP_VERSION_CODE = 29;
+const APP_VERSION_NAME = "5.4.9";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -3715,6 +3762,10 @@ function openChatRoom(roomId, title, roomObj) {
   if (leaveBtn) leaveBtn.classList.toggle("hidden", !(roomObj && roomObj.type === "dm"));
   document.getElementById("chatRoomTitle").textContent = title;
   document.getElementById("chatThread").classList.remove("hidden");
+  // v5.4.9: 방을 처음 열 때는 목록을 비우고 항상 맨 아래(최신)로 내린다
+  document.getElementById("chatMessages").innerHTML = "";
+  chatListSig = null;
+  chatForceBottom = true;
   loadMessages();
   if (chatTimer) clearInterval(chatTimer);
   chatTimer = setInterval(loadMessages, 2000);
@@ -3759,30 +3810,82 @@ function renderMsgInner(m) {
   return html || "<div></div>";
 }
 
+/* ===== v5.4.9: 카톡 스타일 시간·날짜 표기 ===== */
+const CHAT_WEEK = ["일", "월", "화", "수", "목", "금", "토"];
+function fmtChatTime(d) {
+  if (!(d instanceof Date) || isNaN(d)) return "";
+  const h24 = d.getHours();
+  const ap = h24 < 12 ? "오전" : "오후";
+  let h = h24 % 12;
+  if (h === 0) h = 12;
+  return ap + " " + h + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+function chatDateKey(d) {
+  return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+}
+function fmtChatDate(d) {
+  return "📅 " + d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " + d.getDate() + "일 " + CHAT_WEEK[d.getDay()] + "요일";
+}
+/* 메시지 하나 → 말풍선 한 개(내 쪽은 왼쪽에 시간, 상대는 오른쪽에 시간) */
+function buildMsgNode(m, mine) {
+  const wrap = document.createElement("div");
+  wrap.className = "msg-wrap " + (mine ? "mine" : "other");
+  const t = m.created_at ? new Date(m.created_at) : null;
+  const timeStr = fmtChatTime(t);
+  // 사진·파일만 보낸 메시지는 말풍선 액자를 만들지 않는다
+  const noBubble = !!(m.file_url && !m.text);
+  wrap.innerHTML = `
+    ${mine ? "" : `<div class="msg-sender">${escHtml(m.sender_name)}</div>`}
+    <div class="msg-line">
+      ${mine ? `<div class="msg-time">${timeStr}</div>` : ""}
+      <div class="msg-bubble${noBubble ? " no-bubble" : ""}">${renderMsgInner(m)}</div>
+      ${mine ? "" : `<div class="msg-time">${timeStr}</div>`}
+    </div>`;
+  return wrap;
+}
+/* 목록이 그대로인지 비교하는 지문 — 같으면 DOM을 갈아엎지 않는다 */
+function chatMsgSignature(msgs) {
+  return (msgs || []).map(m => [m.msg_id || "", m.created_at || "", m.text || "", m.file_url || "", m.sender_name || ""].join("¦")).join("§");
+}
+
 async function loadMessages() {
   if (!activeChatRoomId) return;
   try {
     const r = await api("get_messages", { user_id: currentUser.user_id, room_id: activeChatRoomId });
     if (!r.ok) return;
     const box = document.getElementById("chatMessages");
+    const msgs = r.messages || [];
+    const sig = chatMsgSignature(msgs);
     const wasBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
-    box.innerHTML = "";
-    (r.messages || []).forEach(m => {
-      const mine = String(m.sender_id) === String(currentUser.user_id);
-      const wrap = document.createElement("div");
-      wrap.className = "msg-wrap " + (mine ? "mine" : "other");
-      const t = m.created_at ? new Date(m.created_at) : null;
-      const timeStr = t && !isNaN(t) ? t.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }) : (m.created_at || "").slice(11, 16);
-      wrap.innerHTML = `
-        ${mine ? "" : `<div class="msg-sender">${escHtml(m.sender_name)}</div>`}
-        <div class="msg-bubble">${renderMsgInner(m)}</div>
-        <div class="msg-time">${timeStr}</div>`;
-      box.appendChild(wrap);
-    });
-    if (!(r.messages || []).length) {
-      box.innerHTML = '<div style="text-align:center;color:var(--sub);margin-top:40px;font-size:13px;">첫 메시지를 보내보세요!</div>';
+    const prevTop = box.scrollTop;
+    const forceBottom = chatForceBottom;
+    chatForceBottom = false;
+    // v5.4.9: 바뀐 게 없으면 다시 그리지 않는다(위로 올려 읽는 중 스크롤이 튀지 않게)
+    if (sig !== chatListSig) {
+      chatListSig = sig;
+      box.innerHTML = "";
+      let lastDay = "";
+      msgs.forEach(m => {
+        const t = m.created_at ? new Date(m.created_at) : null;
+        const day = t && !isNaN(t) ? chatDateKey(t) : "";
+        if (day && day !== lastDay) {
+          const pill = document.createElement("div");
+          pill.className = "chat-date-pill";
+          pill.dataset.day = day;
+          pill.textContent = fmtChatDate(t);
+          box.appendChild(pill);
+          lastDay = day;
+        }
+        box.appendChild(buildMsgNode(m, String(m.sender_id) === String(currentUser.user_id)));
+      });
+      if (!msgs.length) {
+        box.innerHTML = '<div style="text-align:center;color:var(--chat-meta);margin-top:40px;font-size:13px;">첫 메시지를 보내보세요!</div>';
+      }
+      if (forceBottom || wasBottom) box.scrollTop = box.scrollHeight;
+      else box.scrollTop = prevTop;
+    } else if (forceBottom) {
+      box.scrollTop = box.scrollHeight;
     }
-    if (wasBottom || true) box.scrollTop = box.scrollHeight;
   } catch (e) {}
 }
 
@@ -3840,11 +3943,19 @@ async function sendChatMsg() {
   input.value = "";
   const box = document.getElementById("chatMessages");
   if (box.textContent.includes("첫 메시지를 보내보세요")) box.innerHTML = "";
-  const wrap = document.createElement("div");
-  wrap.className = "msg-wrap mine";
-  const nowStr = new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
-  wrap.innerHTML = `<div class="msg-bubble">${text.replace(/</g, "&lt;")}</div><div class="msg-time">${nowStr}</div>`;
-  box.appendChild(wrap);
+  // v5.4.9: 그날 첫 메시지면 날짜 배지를 먼저 붙인다
+  const now = new Date();
+  const dayKey = chatDateKey(now);
+  const pills = box.querySelectorAll(".chat-date-pill");
+  const lastDay = pills.length ? pills[pills.length - 1].dataset.day : "";
+  if (dayKey !== lastDay) {
+    const pill = document.createElement("div");
+    pill.className = "chat-date-pill";
+    pill.dataset.day = dayKey;
+    pill.textContent = fmtChatDate(now);
+    box.appendChild(pill);
+  }
+  box.appendChild(buildMsgNode({ sender_id: currentUser.user_id, sender_name: currentUser.name, text, created_at: now.toISOString() }, true));
   box.scrollTop = box.scrollHeight;
   const r = await api("send_message", { user_id: currentUser.user_id, room_id: activeChatRoomId, text });
   if (!r.ok) toast(r.error);
