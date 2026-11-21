@@ -425,36 +425,36 @@
 
   /* ===== v5.5.1 인력관리 `직원·초대` — 관리자 왕관 배지 + 2줄 정렬 ===== */
   /* 윗줄: [👑]이름 · 직종 · 경력 …… 연락처 · 일당(✎) / 아랫줄: 관리자 지정·팀 종료·현장 (오른쪽) */
-  .hr-row { padding: 14px 0; }
-  .hr-row:first-child { padding-top: 10px; }
-  .hr-line1 { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; min-width: 0; }
-  .hr-who { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
-  .hr-name {
+  .hrw-row { padding: 14px 0; }
+  .hrw-row:first-child { padding-top: 10px; }
+  .hrw-line1 { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; min-width: 0; }
+  .hrw-who { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
+  .hrw-name {
     position: relative; display: inline-block; flex: 0 0 auto;
     font-weight: 800; font-size: 15.5px; color: var(--text); white-space: nowrap;
   }
-  .hr-crown {
+  .hrw-crown {
     position: absolute; top: -10px; left: -6px; transform: rotate(-20deg);
     font-size: 12px; line-height: 1; pointer-events: none;
     filter: drop-shadow(0 1px 1px rgba(15,23,42,0.10));
   }
-  .hr-job {
+  .hrw-job {
     font-size: 11px; font-weight: 700; color: var(--primary); white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; min-width: 0;
   }
-  .hr-contact { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; margin-left: auto; }
-  .hr-phone { font-size: 11.5px; font-weight: 500; color: var(--sub); white-space: nowrap; }
-  .hr-wage {
+  .hrw-contact { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; margin-left: auto; }
+  .hrw-phone { font-size: 11.5px; font-weight: 500; color: var(--sub); white-space: nowrap; }
+  .hrw-wage {
     margin: 0; padding: 4px 9px; font-size: 11px; line-height: 1.35;
     white-space: nowrap; border-radius: 999px;
   }
-  .hr-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-  .hr-btn { margin: 0; padding: 5px 9px; font-size: 11px; line-height: 1.35; white-space: nowrap; }
-  .hr-btn-sub { color: var(--sub); }
+  .hrw-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .hrw-btn { margin: 0; padding: 5px 9px; font-size: 11px; line-height: 1.35; white-space: nowrap; }
+  .hrw-btn-sub { color: var(--sub); }
   /* 좀은 화면(360px대)에서는 버튼·연락처를 살짝 조여 어떤 행도 3줄로 밀리지 않게 */
   @media (max-width: 380px) {
-    .hr-btn { padding: 5px 8px; font-size: 10.5px; }
-    .hr-phone { font-size: 11px; }
+    .hrw-btn { padding: 5px 8px; font-size: 10.5px; }
+    .hrw-phone { font-size: 11px; }
   }
   .list-sub { font-size: 13px; color: var(--sub); margin-top: 3px; }
 
@@ -2903,35 +2903,35 @@ function renderTeamTab() {
     allPeople.forEach(w => {
       const isAdminRow = w.role === "admin";
       const jobMeta = [w.job_type, (w.career_years !== null && w.career_years !== undefined && w.career_years !== "") ? (w.career_years + "년") : ""].filter(Boolean).join(" · ");
-      const jobBadge = jobMeta ? `<span class="hr-job">${escHtml(jobMeta)}</span>` : "";
+      const jobBadge = jobMeta ? `<span class="hrw-job">${escHtml(jobMeta)}</span>` : "";
       const roleBtn = w.isSelf
         ? ""
         : (isAdminRow
-          ? `<button class="btn btn-outline btn-sm hr-btn" onclick="toggleAdminRole('${w.user_id}', 'worker', '${w.name}')">관리자 해제</button>`
-          : `<button class="btn btn-soft btn-sm hr-btn" onclick="toggleAdminRole('${w.user_id}', 'admin', '${w.name}')">관리자 지정</button>`);
+          ? `<button class="btn btn-outline btn-sm hrw-btn" onclick="toggleAdminRole('${w.user_id}', 'worker', '${w.name}')">관리자 해제</button>`
+          : `<button class="btn btn-soft btn-sm hrw-btn" onclick="toggleAdminRole('${w.user_id}', 'admin', '${w.name}')">관리자 지정</button>`);
       const leaveBtn = w.isSelf
         ? ""
-        : `<button class="btn btn-outline btn-sm hr-btn hr-btn-sub" onclick="removeWorkerFromTeam('${w.user_id}', '${w.name}')">팀 종료</button>`;
+        : `<button class="btn btn-outline btn-sm hrw-btn hrw-btn-sub" onclick="removeWorkerFromTeam('${w.user_id}', '${w.name}')">팀 종료</button>`;
       const d = document.createElement("div");
-      d.className = "list-item hr-row";
+      d.className = "list-item hrw-row";
       d.setAttribute("data-user-id", w.user_id);
       d.setAttribute("data-admin", isAdminRow ? "1" : "0");
       d.setAttribute("data-self", w.isSelf ? "1" : "0");
       d.innerHTML = `
-        <div class="hr-line1">
-          <span class="hr-who">
-            <span class="hr-name">${isAdminRow ? '<span class="hr-crown" aria-hidden="true">👑</span>' : ""}${escHtml(w.name)}</span>
+        <div class="hrw-line1">
+          <span class="hrw-who">
+            <span class="hrw-name">${isAdminRow ? '<span class="hrw-crown" aria-hidden="true">👑</span>' : ""}${escHtml(w.name)}</span>
             ${jobBadge}
           </span>
-          <span class="hr-contact">
-            <span class="hr-phone">${escHtml(w.phone)}</span>
-            <button class="btn btn-soft btn-sm hr-wage" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
+          <span class="hrw-contact">
+            <span class="hrw-phone">${escHtml(w.phone)}</span>
+            <button class="btn btn-soft btn-sm hrw-wage" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
           </span>
         </div>
-        <div class="hr-actions">
+        <div class="hrw-actions">
           ${roleBtn}
           ${leaveBtn}
-          <button class="btn btn-outline btn-sm hr-btn" onclick="editWorkerSite('${w.user_id}')">현장: ${w.assigned_site ? escHtml(w.assigned_site) : "미지정"} ✎</button>
+          <button class="btn btn-outline btn-sm hrw-btn" onclick="editWorkerSite('${w.user_id}')">현장: ${w.assigned_site ? escHtml(w.assigned_site) : "미지정"} ✎</button>
         </div>`;
       wEl.appendChild(d);
     });
