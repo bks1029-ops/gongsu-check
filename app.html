@@ -457,25 +457,48 @@
   .home-cal-day { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
   .home-cal-day .list-item { padding: 9px 0; }
 
-  /* CHAT */
-  .avatar-row { display: flex; gap: 14px; overflow-x: auto; padding: 4px 0 8px; }
-  .avatar-chip { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 56px; cursor: pointer; color: var(--muted); }
-  .avatar-circle {
-    width: 48px; height: 48px; border-radius: 50%; background: var(--primary-soft);
-    color: var(--accent-ink); font-weight: 800; font-size: 17px;
-    display: flex; align-items: center; justify-content: center;
-    border: 1px solid rgba(234,179,8,0.24);
-  }
+  /* CHAT — v5.5.0 카톡 스타일 목록 */
+  .chat-list-card { padding: 4px 16px; }
   .chat-room-row {
-    display: flex; align-items: center; gap: 12px; padding: 12px 0;
-    border-bottom: 1px solid var(--line); cursor: pointer;
+    display: flex; align-items: center; gap: 12px; padding: 11px 0;
+    cursor: pointer; border-bottom: none;
   }
-  .chat-room-row:last-child { border-bottom: none; }
-  /* v5.4.7: 1:1 대화방 나가기 */
+  .chat-room-row:active { background: rgba(0,0,0,0.025); }
+  .chat-avatar {
+    width: 48px; height: 48px; border-radius: 16px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; font-weight: 800; letter-spacing: -0.5px;
+    color: #FFFFFF; background: #3B82F6; user-select: none;
+  }
+  .chat-room-body { flex: 1 1 auto; min-width: 0; }
+  .chat-room-title {
+    font-weight: 700; font-size: 15.5px; color: var(--text); line-height: 1.25;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chat-room-preview {
+    font-size: 13px; color: var(--sub); margin-top: 3px; line-height: 1.36;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; word-break: break-all;
+  }
+  .chat-room-side {
+    flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end;
+    gap: 3px; min-width: 46px; align-self: stretch; justify-content: flex-start;
+  }
+  .chat-room-time { font-size: 11px; color: var(--sub); font-weight: 500; white-space: nowrap; }
+  /* v5.5.0: 카톡 안읽음 숫자 배지 (주황/빨강 원형, 0이면 숨김) */
+  .chat-unread {
+    min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
+    background: #FA5227; color: #FFFFFF; font-size: 11px; font-weight: 800;
+    display: inline-flex; align-items: center; justify-content: center;
+    line-height: 1; letter-spacing: -0.2px; box-sizing: border-box;
+  }
+  .chat-unread.hidden { display: none; }
+  /* v5.4.7: 1:1 대화방 나가기 — 카톡 목록을 해치지 않게 작은 회색 글씨로 */
   .chat-leave-btn {
-    flex: 0 0 auto; margin: 0; padding: 7px 11px; border-radius: 10px;
-    border: 1.5px solid var(--line); background: var(--surface); color: var(--sub);
-    font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+    flex: 0 0 auto; margin: 0; padding: 2px 4px; border-radius: 6px;
+    border: none; background: transparent; color: var(--muted);
+    font-family: inherit; font-size: 10.5px; font-weight: 500; cursor: pointer;
+    opacity: 0.55; letter-spacing: -0.2px;
   }
   .chat-leave-btn:active { background: var(--line); }
   .chat-header-leave {
@@ -483,8 +506,7 @@
     border: 1.5px solid var(--line); background: var(--surface); color: var(--sub);
     font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
   }
-  .chat-room-title { font-weight: 700; font-size: 15px; color: var(--text); }
-  .chat-room-preview { font-size: 13px; color: var(--sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+  /* v5.5.0: .chat-room-title / .chat-room-preview 규칙은 위 CHAT 블록으로 통합(중복 정의 제거) */
 
   /* ===== v5.4.9 카톡 스타일 대화방 ===== */
   .chat-thread {
@@ -568,8 +590,17 @@
     color: var(--nav-idle); cursor: pointer; padding: 2px 10px;
     font-family: inherit;
   }
-  .nav-btn .ico { font-size: 20px; }
+  .nav-btn .ico { font-size: 20px; position: relative; display: inline-block; line-height: 1; }
   .nav-btn.active { color: var(--accent-text); }
+  /* v5.5.0: 하단 채팅 탭 총 안읽음 숫자 배지 */
+  .nav-badge {
+    position: absolute; top: -5px; right: -11px; min-width: 16px; height: 16px;
+    padding: 0 4px; border-radius: 999px; background: #FA5227; color: #FFFFFF;
+    font-size: 10px; font-weight: 800; line-height: 1; letter-spacing: -0.2px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 2px solid var(--bg-bar); box-sizing: content-box;
+  }
+  .nav-badge.hidden { display: none; }
 
   /* SUB TABS */
   .sub-tabs { display: flex; border-bottom: 1.5px solid var(--line); margin-bottom: 12px; overflow-x: auto; }
@@ -1049,9 +1080,8 @@ try {
 
   <!-- TAB 2: CHAT (가치업 2번 사진 스타일) -->
   <div id="chatPanel" class="hidden">
-    <div class="card" style="padding:14px 16px;">
-      <div id="chatAvatars" class="avatar-row"></div>
-      <div id="chatRoomsList"></div>
+    <div class="card chat-list-card">
+      <div id="chatRoomsList" class="kakao-list"></div>
     </div>
   </div>
 
@@ -1188,7 +1218,7 @@ try {
 <!-- BOTTOM NAVIGATION -->
 <div id="bottomNav" class="bottom-nav hidden">
   <button id="navHome" class="nav-btn active" onclick="switchNav('home')"><span class="ico">🏠</span><span>홈</span></button>
-  <button id="navChat" class="nav-btn" onclick="switchNav('chat')"><span class="ico">💬</span><span>채팅</span></button>
+  <button id="navChat" class="nav-btn" onclick="switchNav('chat')"><span class="ico">💬<span id="navChatBadge" class="nav-badge hidden">0</span></span><span>채팅</span></button>
   <button id="navCommunity" class="nav-btn" onclick="switchNav('community')"><span class="ico">🗣️</span><span>광장</span></button>
   <button id="navCal" class="nav-btn" onclick="switchNav('calendar')"><span class="ico">📅</span><span>출근달력</span></button>
   <button id="navTeam" class="nav-btn" onclick="switchNav('team')"><span class="ico">👥</span><span id="navTeamLabel">인력관리</span></button>
@@ -1530,14 +1560,15 @@ let activeChatRoomObj = null;
 let chatRoomsCache = [];
 let chatTimer = null;
 let chatListSig = null;
+let chatRoomsSig = null;
 let chatForceBottom = false;
 let workerActiveDate = "";
 let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 29;
-const APP_VERSION_NAME = "5.4.9";
+const APP_VERSION_CODE = 30;
+const APP_VERSION_NAME = "5.5.0";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -2003,6 +2034,8 @@ async function api(action, p = {}) {
       r = await rpc("app_messages", { p_token: SB_TOKEN, p_room_id: p.room_id });
     } else if (action === "hide_chat_room") {
       r = await rpc("app_hide_chat_room", { p_token: SB_TOKEN, p_room_id: p.room_id });
+    } else if (action === "mark_room_read") {
+      r = await rpc("app_mark_room_read", { p_token: SB_TOKEN, p_room_id: p.room_id });
     } else if (action === "set_notif_mode") {
       r = await rpc("app_set_notif_mode", { p_token: SB_TOKEN, p_mode: p.mode });
     } else if (action === "register_push_token") {
@@ -2231,6 +2264,8 @@ function enterApp() {
   loadDashboard();
   // v5.4.8: 로그인할 때마다 알림 모드·기기 토큰을 서버와 맞춘다
   ensurePushRegistered();
+  // v5.5.0: 채팅 탭 안읽음 배지를 로그인 직후에도 보여 준다
+  loadChatOverview(true);
 }
 
 function setViewMode(mode) {
@@ -2828,7 +2863,7 @@ function renderTeamTab() {
   wEl.innerHTML = "";
   if (isAdm) {
     const allPeople = [
-      { user_id: currentUser.user_id, name: currentUser.name + " (나)", phone: currentUser.phone || "", default_wage: currentUser.default_wage || 180000, role: currentUser.role || "admin", job_type: currentUser.job_type || "", career_years: currentUser.career_years, isSelf: true },
+      { user_id: currentUser.user_id, name: currentUser.name, phone: currentUser.phone || "", default_wage: currentUser.default_wage || 180000, role: currentUser.role || "admin", job_type: currentUser.job_type || "", career_years: currentUser.career_years, isSelf: true },
       ...(dashData.workers || [])
     ];
     allPeople.forEach(w => {
@@ -2847,13 +2882,16 @@ function renderTeamTab() {
       const d = document.createElement("div");
       d.className = "list-item";
       d.innerHTML = `
-        <div class="list-top" style="gap:8px;flex-wrap:wrap;">
-          <span>${escHtml(w.name)}${badge}${jobBadge} <span style="font-size:12px;color:var(--sub);font-weight:500;">${w.phone}</span></span>
-          <div class="row" style="flex:0 0 auto;gap:6px;flex-wrap:wrap;">
+        <div class="list-top" style="gap:6px 8px;flex-wrap:wrap;align-items:center;">
+          <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;">${escHtml(w.name)}${w.isSelf ? '<span style="font-size:11px;color:var(--sub);font-weight:600;">(나)</span>' : ""}${badge}${jobBadge}</span>
+          <span class="hr-contact" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-left:auto;">
+            <span style="font-size:11.5px;color:var(--sub);font-weight:500;white-space:nowrap;">${w.phone}</span>
+            <button class="btn btn-soft btn-sm" style="margin:0;padding:4px 8px;font-size:11px;white-space:nowrap;" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
+          </span>
+          <div class="row" style="flex:1 1 100%;justify-content:flex-end;gap:6px;flex-wrap:wrap;">
             ${roleBtn}
             ${leaveBtn}
             <button class="btn btn-outline btn-sm" style="margin:0;padding:5px 9px;font-size:11px;" onclick="editWorkerSite('${w.user_id}')">현장: ${w.assigned_site ? escHtml(w.assigned_site) : "미지정"} ✎</button>
-            <button class="btn btn-soft btn-sm" style="margin:0;" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
           </div>
         </div>`;
       wEl.appendChild(d);
@@ -3687,17 +3725,59 @@ async function deleteSite(siteId, name) {
 }
 
 /* CHAT */
-async function loadChatOverview() {
+/* ===== v5.5.0: 카톡 스타일 목록 — 시간 표기(AI 아님) · 안읽음 숫자 배지 ===== */
+const CHAT_AVATAR_COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#8B5CF6", "#EF4444", "#0EA5E9", "#EC4899", "#14B8A6", "#6366F1", "#84CC16"];
+function chatAvatarColor(key) {
+  const s = String(key || "");
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 9973;
+  return CHAT_AVATAR_COLORS[h % CHAT_AVATAR_COLORS.length];
+}
+/* 최근 대화 시간: 오늘 `오전/오후 H:MM`, 어제 `어제`, 그 이전 `M월 D일` (KST 기준) */
+function fmtKakaoWhen(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const k = new Date(d.getTime() + 9 * 3600000);
+  const n = new Date(Date.now() + 9 * 3600000);
+  const dayKey = x => x.getUTCFullYear() * 10000 + (x.getUTCMonth() + 1) * 100 + x.getUTCDate();
+  const kd = dayKey(k), nd = dayKey(n);
+  if (kd === nd) {
+    const h24 = k.getUTCHours();
+    let h = h24 % 12; if (h === 0) h = 12;
+    return (h24 < 12 ? "오전 " : "오후 ") + h + ":" + String(k.getUTCMinutes()).padStart(2, "0");
+  }
+  if (kd === dayKey(new Date(n.getTime() - 86400000))) return "어제";
+  if (k.getUTCFullYear() === n.getUTCFullYear()) return (k.getUTCMonth() + 1) + "월 " + k.getUTCDate() + "일";
+  return k.getUTCFullYear() + ". " + (k.getUTCMonth() + 1) + "월 " + k.getUTCDate() + "일";
+}
+function chatUnreadTotal() {
+  return (chatRoomsCache || []).reduce((s, r) => s + Number(r.unread_count || 0), 0);
+}
+function setChatTabBadge(n) {
+  const el = document.getElementById("navChatBadge");
+  if (!el) return;
+  const v = Math.max(0, Number(n || 0));
+  el.textContent = v > 99 ? "99+" : String(v);
+  el.classList.toggle("hidden", v === 0);
+}
+function chatRoomsSignature(rooms) {
+  return (rooms || []).map(r => [r.room_id, r.last_time || "", r.unread_count || 0, r.last_text || "", r.peer_site || ""].join("¦")).join("§");
+}
+
+async function loadChatOverview(silent) {
   try {
     const r = await api("get_chat_overview", { user_id: currentUser.user_id });
-    if (!r.ok) return toast(r.error);
-    const avEl = document.getElementById("chatAvatars");
+    if (!r.ok) { if (!silent) toast(r.error); return; }
     const listEl = document.getElementById("chatRoomsList");
-    avEl.innerHTML = "";
-    listEl.innerHTML = "";
-
+    if (!listEl) return;
     const rooms = r.rooms || [];
     chatRoomsCache = rooms;
+    setChatTabBadge(chatUnreadTotal());
+    const sig = chatRoomsSignature(rooms);
+    if (sig === chatRoomsSig) return;   // 바뀐 게 없으면 다시 그리지 않는다
+    chatRoomsSig = sig;
+    listEl.innerHTML = "";
     /* v5.4.7: 같은 이름이 둘 이상이면(동명이인) 담당 현장을 붙여 어느 방인지 구분한다 */
     const nameCount = {};
     rooms.forEach(x => { if (x.type === "dm") nameCount[x.peer_name] = (nameCount[x.peer_name] || 0) + 1; });
@@ -3709,28 +3789,52 @@ async function loadChatOverview() {
 
     rooms.forEach(room => {
       const label = roomLabel(room);
-      const initial = room.type === "channel" ? "#" : (room.peer_name || room.title).slice(0, 1);
-      const chip = document.createElement("div");
-      chip.className = "avatar-chip";
-      chip.innerHTML = `<div class="avatar-circle">${escHtml(initial)}</div><div style="font-size:12px;font-weight:600;">${room.type === "channel" ? "전체" : escHtml(label)}</div>`;
-      chip.onclick = () => openChatRoom(room.room_id, label, room);
-      avEl.appendChild(chip);
-
+      const initial = room.type === "channel" ? "#" : String(room.peer_name || room.title || "?").slice(0, 1);
+      const unread = Number(room.unread_count || 0);
+      const isChannel = room.type === "channel";
       const row = document.createElement("div");
       row.className = "chat-room-row";
+      row.dataset.roomId = room.room_id;
       row.innerHTML = `
-        <div class="avatar-circle" style="width:44px;height:44px;flex-shrink:0;">${escHtml(initial)}</div>
-        <div style="flex:1;min-width:0;">
+        <div class="chat-avatar"${isChannel ? ' style="background:var(--accent);color:var(--on-accent);"' : ` style="background:${chatAvatarColor(room.peer_id || label)};"`}>${escHtml(initial)}</div>
+        <div class="chat-room-body">
           <div class="chat-room-title">${escHtml(label)}</div>
           <div class="chat-room-preview">${escHtml(room.last_text)}</div>
         </div>
-        ${room.type === "dm" ? '<button type="button" class="chat-leave-btn">나가기</button>' : ""}`;
+        <div class="chat-room-side">
+          <div class="chat-room-time">${escHtml(fmtKakaoWhen(room.last_time))}</div>
+          <span class="chat-unread${unread > 0 ? "" : " hidden"}">${unread > 99 ? "99+" : unread}</span>
+          ${isChannel ? "" : '<button type="button" class="chat-leave-btn">나가기</button>'}
+        </div>`;
       row.onclick = () => openChatRoom(room.room_id, label, room);
       const leaveBtn = row.querySelector(".chat-leave-btn");
       if (leaveBtn) leaveBtn.onclick = ev => { ev.stopPropagation(); leaveChatRoom(room, label); };
       listEl.appendChild(row);
     });
-  } catch (e) { toast("채팅 목록 오류"); }
+    if (!rooms.length) {
+      listEl.innerHTML = '<div style="color:var(--sub);font-size:13px;text-align:center;padding:18px 0;">대화방이 없습니다.</div>';
+    }
+  } catch (e) { if (!silent) toast("채팅 목록 오류"); }
+}
+
+/* v5.5.0: 방을 열었거나 열린 방에 새 메시지가 오면 그 방을 읽음 처리 (3초에 한 번) */
+let chatReadMarks = {};
+async function markRoomRead(roomId) {
+  if (!roomId || !currentUser) return;
+  const now = Date.now();
+  if (chatReadMarks[roomId] && now - chatReadMarks[roomId] < 3000) return;
+  chatReadMarks[roomId] = now;
+  try {
+    const r = await api("mark_room_read", { room_id: roomId });
+    if (r && r.ok) {
+      const room = (chatRoomsCache || []).find(x => x.room_id === roomId);
+      if (room) room.unread_count = 0;
+      setChatTabBadge(chatUnreadTotal());
+      const row = Array.from(document.querySelectorAll("#chatRoomsList .chat-room-row")).find(el => el.dataset.roomId === roomId);
+      const badge = row && row.querySelector(".chat-unread");
+      if (badge) { badge.textContent = "0"; badge.classList.add("hidden"); }
+    }
+  } catch (e) {}
 }
 
 /* v5.4.7: 1:1 대화방 나가기 — 내 목록에서만 숨기고 상대의 방·지난 대화는 그대로 둔다 */
@@ -3758,6 +3862,7 @@ function openChatRoom(roomId, title, roomObj) {
   activeChatRoomId = roomId;
   activeChatRoomObj = roomObj || null;
   setNativeActiveRoom(roomId);
+  markRoomRead(roomId);   // v5.5.0: 방을 열면 바로 읽음 처리(안읽음 배지 0)
   const leaveBtn = document.getElementById("chatLeaveBtn");
   if (leaveBtn) leaveBtn.classList.toggle("hidden", !(roomObj && roomObj.type === "dm"));
   document.getElementById("chatRoomTitle").textContent = title;
@@ -3772,6 +3877,7 @@ function openChatRoom(roomId, title, roomObj) {
 }
 
 function closeChatRoom() {
+  if (activeChatRoomId) markRoomRead(activeChatRoomId);
   document.getElementById("chatThread").classList.add("hidden");
   activeChatRoomId = null;
   activeChatRoomObj = null;
@@ -3885,6 +3991,10 @@ async function loadMessages() {
       else box.scrollTop = prevTop;
     } else if (forceBottom) {
       box.scrollTop = box.scrollHeight;
+    }
+    // v5.5.0: 열린 방에 상대 메시지가 들어오면 그 방을 읽음 처리(배지·탭 숫자 갱신)
+    if (!document.hidden && msgs.some(m => String(m.sender_id) !== String(currentUser.user_id))) {
+      markRoomRead(activeChatRoomId);
     }
   } catch (e) {}
 }
@@ -4312,6 +4422,8 @@ async function pollNewChatForNotification() {
   } catch (e) {}
 }
 setInterval(pollNewChatForNotification, 5000);
+/* v5.5.0: 하단 채팅 탭의 총 안읽음 숫자를 20초마다 조용히 갱신 */
+setInterval(function () { if (currentUser && !document.hidden) loadChatOverview(true); }, 20000);
 function closeSettingsModal() { document.getElementById("settingsModal").classList.add("hidden"); }
 
 async function saveMySiteFromSettings() {
