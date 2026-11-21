@@ -1,8 +1,8 @@
 {
-  "versionCode": 25,
-  "versionName": "5.4.5",
-  "releasedAt": "2026-11-20",
+  "versionCode": 26,
+  "versionName": "5.4.6",
+  "releasedAt": "2026-11-21",
   "apkUrl": "https://bks1029-ops.github.io/gongsu-check/gongsu-check.apk",
   "pageUrl": "https://bks1029-ops.github.io/gongsu-check/",
-  "note": "공수와 현장을 한 줄에 나란히 놓아 입력이 빨라졌습니다. 공수는 0.5~5.0 중에 고르거나 직접 입력하고, 현장은 눌러서 바꾸면 됩니다. 다른 탭에서 뒤로가기를 누르면 앱이 꺼지지 않고 홈으로 돌아옵니다."
+  "note": "관리자 출근 기록 입력·수정 화면에서 현장명을 직접 타이핑하지 않고 등록된 현장과 최근 사용한 현장을 눌러서 고를 수 있습니다. 목록에 없는 새 현장은 그대로 입력하면 되고, 입력한 현장은 다음에 다시 나옵니다."
 }
