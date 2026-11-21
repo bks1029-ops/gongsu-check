@@ -422,6 +422,40 @@
   .list-item { padding: 12px 0; border-bottom: 1px solid var(--line); }
   .list-item:last-child { border-bottom: none; padding-bottom: 0; }
   .list-top { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 15px; color: var(--text); }
+
+  /* ===== v5.5.1 인력관리 `직원·초대` — 관리자 왕관 배지 + 2줄 정렬 ===== */
+  /* 윗줄: [👑]이름 · 직종 · 경력 …… 연락처 · 일당(✎) / 아랫줄: 관리자 지정·팀 종료·현장 (오른쪽) */
+  .hr-row { padding: 14px 0; }
+  .hr-row:first-child { padding-top: 10px; }
+  .hr-line1 { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; min-width: 0; }
+  .hr-who { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
+  .hr-name {
+    position: relative; display: inline-block; flex: 0 0 auto;
+    font-weight: 800; font-size: 15.5px; color: var(--text); white-space: nowrap;
+  }
+  .hr-crown {
+    position: absolute; top: -10px; left: -6px; transform: rotate(-20deg);
+    font-size: 12px; line-height: 1; pointer-events: none;
+    filter: drop-shadow(0 1px 1px rgba(15,23,42,0.10));
+  }
+  .hr-job {
+    font-size: 11px; font-weight: 700; color: var(--primary); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  }
+  .hr-contact { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; margin-left: auto; }
+  .hr-phone { font-size: 11.5px; font-weight: 500; color: var(--sub); white-space: nowrap; }
+  .hr-wage {
+    margin: 0; padding: 4px 9px; font-size: 11px; line-height: 1.35;
+    white-space: nowrap; border-radius: 999px;
+  }
+  .hr-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .hr-btn { margin: 0; padding: 5px 9px; font-size: 11px; line-height: 1.35; white-space: nowrap; }
+  .hr-btn-sub { color: var(--sub); }
+  /* 좀은 화면(360px대)에서는 버튼·연락처를 살짝 조여 어떤 행도 3줄로 밀리지 않게 */
+  @media (max-width: 380px) {
+    .hr-btn { padding: 5px 8px; font-size: 10.5px; }
+    .hr-phone { font-size: 11px; }
+  }
   .list-sub { font-size: 13px; color: var(--sub); margin-top: 3px; }
 
   /* CALENDAR */
@@ -1567,8 +1601,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 30;
-const APP_VERSION_NAME = "5.5.0";
+const APP_VERSION_CODE = 31;
+const APP_VERSION_NAME = "5.5.1";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -2867,32 +2901,37 @@ function renderTeamTab() {
       ...(dashData.workers || [])
     ];
     allPeople.forEach(w => {
-      const isCoAdmin = w.role === "admin";
-      const badge = isCoAdmin ? `<span class="pill pill-indigo" style="margin-left:6px;font-size:10px;padding:2px 7px;">관리자</span>` : "";
+      const isAdminRow = w.role === "admin";
       const jobMeta = [w.job_type, (w.career_years !== null && w.career_years !== undefined && w.career_years !== "") ? (w.career_years + "년") : ""].filter(Boolean).join(" · ");
-      const jobBadge = jobMeta ? `<span style="font-size:11px;color:var(--primary);margin-left:6px;font-weight:700;">${escHtml(jobMeta)}</span>` : "";
+      const jobBadge = jobMeta ? `<span class="hr-job">${escHtml(jobMeta)}</span>` : "";
       const roleBtn = w.isSelf
         ? ""
-        : (isCoAdmin
-          ? `<button class="btn btn-outline btn-sm" style="margin:0;padding:5px 9px;font-size:11px;" onclick="toggleAdminRole('${w.user_id}', 'worker', '${w.name}')">관리자 해제</button>`
-          : `<button class="btn btn-soft btn-sm" style="margin:0;padding:5px 9px;font-size:11px;" onclick="toggleAdminRole('${w.user_id}', 'admin', '${w.name}')">관리자 지정</button>`);
+        : (isAdminRow
+          ? `<button class="btn btn-outline btn-sm hr-btn" onclick="toggleAdminRole('${w.user_id}', 'worker', '${w.name}')">관리자 해제</button>`
+          : `<button class="btn btn-soft btn-sm hr-btn" onclick="toggleAdminRole('${w.user_id}', 'admin', '${w.name}')">관리자 지정</button>`);
       const leaveBtn = w.isSelf
         ? ""
-        : `<button class="btn btn-outline btn-sm" style="margin:0;padding:5px 8px;font-size:11px;color:var(--sub);" onclick="removeWorkerFromTeam('${w.user_id}', '${w.name}')">팀 종료</button>`;
+        : `<button class="btn btn-outline btn-sm hr-btn hr-btn-sub" onclick="removeWorkerFromTeam('${w.user_id}', '${w.name}')">팀 종료</button>`;
       const d = document.createElement("div");
-      d.className = "list-item";
+      d.className = "list-item hr-row";
+      d.setAttribute("data-user-id", w.user_id);
+      d.setAttribute("data-admin", isAdminRow ? "1" : "0");
+      d.setAttribute("data-self", w.isSelf ? "1" : "0");
       d.innerHTML = `
-        <div class="list-top" style="gap:6px 8px;flex-wrap:wrap;align-items:center;">
-          <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;">${escHtml(w.name)}${w.isSelf ? '<span style="font-size:11px;color:var(--sub);font-weight:600;">(나)</span>' : ""}${badge}${jobBadge}</span>
-          <span class="hr-contact" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-left:auto;">
-            <span style="font-size:11.5px;color:var(--sub);font-weight:500;white-space:nowrap;">${w.phone}</span>
-            <button class="btn btn-soft btn-sm" style="margin:0;padding:4px 8px;font-size:11px;white-space:nowrap;" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
+        <div class="hr-line1">
+          <span class="hr-who">
+            <span class="hr-name">${isAdminRow ? '<span class="hr-crown" aria-hidden="true">👑</span>' : ""}${escHtml(w.name)}</span>
+            ${jobBadge}
           </span>
-          <div class="row" style="flex:1 1 100%;justify-content:flex-end;gap:6px;flex-wrap:wrap;">
-            ${roleBtn}
-            ${leaveBtn}
-            <button class="btn btn-outline btn-sm" style="margin:0;padding:5px 9px;font-size:11px;" onclick="editWorkerSite('${w.user_id}')">현장: ${w.assigned_site ? escHtml(w.assigned_site) : "미지정"} ✎</button>
-          </div>
+          <span class="hr-contact">
+            <span class="hr-phone">${escHtml(w.phone)}</span>
+            <button class="btn btn-soft btn-sm hr-wage" onclick="editWage('${w.user_id}', ${w.default_wage}, '${w.name}')">${fmtMoney(w.default_wage)} ✎</button>
+          </span>
+        </div>
+        <div class="hr-actions">
+          ${roleBtn}
+          ${leaveBtn}
+          <button class="btn btn-outline btn-sm hr-btn" onclick="editWorkerSite('${w.user_id}')">현장: ${w.assigned_site ? escHtml(w.assigned_site) : "미지정"} ✎</button>
         </div>`;
       wEl.appendChild(d);
     });
