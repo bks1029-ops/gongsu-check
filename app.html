@@ -442,6 +442,18 @@
     border-bottom: 1px solid var(--line); cursor: pointer;
   }
   .chat-room-row:last-child { border-bottom: none; }
+  /* v5.4.7: 1:1 대화방 나가기 */
+  .chat-leave-btn {
+    flex: 0 0 auto; margin: 0; padding: 7px 11px; border-radius: 10px;
+    border: 1.5px solid var(--line); background: var(--surface); color: var(--sub);
+    font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .chat-leave-btn:active { background: var(--line); }
+  .chat-header-leave {
+    margin: 0 0 0 auto; padding: 7px 12px; border-radius: 10px; flex: 0 0 auto;
+    border: 1.5px solid var(--line); background: var(--surface); color: var(--sub);
+    font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
   .chat-room-title { font-weight: 700; font-size: 15px; color: var(--text); }
   .chat-room-preview { font-size: 13px; color: var(--sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
 
@@ -1186,6 +1198,7 @@ try {
   <div class="chat-header">
     <button class="icon-btn" onclick="closeChatRoom()">‹</button>
     <span id="chatRoomTitle">스마일산업 전체 채널</span>
+    <button type="button" id="chatLeaveBtn" class="chat-header-leave hidden" onclick="leaveActiveChatRoom()">나가기</button>
   </div>
   <div id="chatMessages" class="chat-messages"></div>
   <div class="chat-inputbar">
@@ -1324,7 +1337,7 @@ try {
       <div class="set-row" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div>
           <div class="set-row-title">📦 앱 버전</div>
-          <div class="set-row-sub" id="setVersionSub">v5.4.6 · 최신 버전 확인</div>
+          <div class="set-row-sub" id="setVersionSub">v5.4.7 · 최신 버전 확인</div>
         </div>
         <button class="btn btn-outline btn-sm" style="margin:0;flex:0 0 auto;" onclick="checkAppUpdate(true)">업데이트 확인</button>
       </div>
@@ -1454,14 +1467,15 @@ let pickKind = "";
 let pickNames = [];
 let activeRecordId = null;
 let activeChatRoomId = null;
+let activeChatRoomObj = null;
 let chatTimer = null;
 let workerActiveDate = "";
 let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 26;
-const APP_VERSION_NAME = "5.4.6";
+const APP_VERSION_CODE = 27;
+const APP_VERSION_NAME = "5.4.7";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -1510,11 +1524,40 @@ async function checkAppUpdate(manual) {
       sub.textContent = "v" + myVersionName() + (newer ? " · 새 버전 v" + (v.versionName || "") + " 있음" : " · 최신 버전입니다");
     }
     if (manual) {
-      toast(newer ? ("새 버전 v" + (v.versionName || "") + "이 있습니다. 업데이트해 주세요!") : ("지금이 최신 버전입니다 (v" + myVersionName() + ")"));
+      if (!newer) {
+        toast("지금이 최신 버전입니다 (v" + myVersionName() + ")");
+        return;
+      }
+      await askUpdate(v);
     }
   } catch (e) {
     if (manual) toast("업데이트 확인에 실패했습니다. 인터넷 연결을 확인해 주세요.");
   }
+}
+
+/* v5.4.7: 설정의 `업데이트 확인` — 새 버전이 있으면 변경 내역과 함께 바로 업데이트할지 묻는다 */
+async function askUpdate(v) {
+  const notes = (Array.isArray(v.notes) && v.notes.length)
+    ? v.notes.map(n => "· " + n).join("\n")
+    : (v.note ? "· " + v.note : "");
+  const msg = "새 버전(v" + (v.versionName || "") + ")이 있습니다. 업데이트하시겠습니까?"
+    + (notes ? "\n\n" + notes : "")
+    + "\n\n설치해도 지금까지의 공수 기록은 그대로 유지됩니다.";
+  const go = await appConfirm(msg, { title: "새 버전 안내", okText: "업데이트", cancelText: "나중에" });
+  if (!go) return;
+  openApkDownload(v);
+}
+
+/* 안드로이드 앱이면 최신 APK를 바로 받게 하고, 웹(아이폰)에서는 설치 페이지를 연다 */
+function openApkDownload(v) {
+  const apk = (v && v.apkUrl) || (APP_PAGE_URL + "gongsu-check.apk");
+  try {
+    if (window.AndroidBridge && window.AndroidBridge.openUrl) {
+      window.AndroidBridge.openUrl(apk);
+      return;
+    }
+  } catch (e) {}
+  window.open(APP_PAGE_URL, "_blank");
 }
 
 function openUpdatePage() {
@@ -1896,6 +1939,8 @@ async function api(action, p = {}) {
       r = await rpc("app_chat_overview", { p_token: SB_TOKEN });
     } else if (action === "get_messages") {
       r = await rpc("app_messages", { p_token: SB_TOKEN, p_room_id: p.room_id });
+    } else if (action === "hide_chat_room") {
+      r = await rpc("app_hide_chat_room", { p_token: SB_TOKEN, p_room_id: p.room_id });
     } else if (action === "send_message") {
       r = await rpc("app_send_message", {
         p_token: SB_TOKEN, p_room_id: p.room_id, p_text: p.text || "",
@@ -3583,30 +3628,68 @@ async function loadChatOverview() {
     avEl.innerHTML = "";
     listEl.innerHTML = "";
 
-    (r.rooms || []).forEach(room => {
+    const rooms = r.rooms || [];
+    /* v5.4.7: 같은 이름이 둘 이상이면(동명이인) 담당 현장을 붙여 어느 방인지 구분한다 */
+    const nameCount = {};
+    rooms.forEach(x => { if (x.type === "dm") nameCount[x.peer_name] = (nameCount[x.peer_name] || 0) + 1; });
+    const roomLabel = room => {
+      if (room.type !== "dm") return room.title;
+      if ((nameCount[room.peer_name] || 0) > 1 && room.peer_site) return room.peer_name + " · " + room.peer_site;
+      return room.title;
+    };
+
+    rooms.forEach(room => {
+      const label = roomLabel(room);
       const initial = room.type === "channel" ? "#" : (room.peer_name || room.title).slice(0, 1);
       const chip = document.createElement("div");
       chip.className = "avatar-chip";
-      chip.innerHTML = `<div class="avatar-circle">${initial}</div><div style="font-size:12px;font-weight:600;">${room.type === "channel" ? "전체" : room.peer_name}</div>`;
-      chip.onclick = () => openChatRoom(room.room_id, room.title);
+      chip.innerHTML = `<div class="avatar-circle">${escHtml(initial)}</div><div style="font-size:12px;font-weight:600;">${room.type === "channel" ? "전체" : escHtml(label)}</div>`;
+      chip.onclick = () => openChatRoom(room.room_id, label, room);
       avEl.appendChild(chip);
 
       const row = document.createElement("div");
       row.className = "chat-room-row";
       row.innerHTML = `
-        <div class="avatar-circle" style="width:44px;height:44px;flex-shrink:0;">${initial}</div>
+        <div class="avatar-circle" style="width:44px;height:44px;flex-shrink:0;">${escHtml(initial)}</div>
         <div style="flex:1;min-width:0;">
-          <div class="chat-room-title">${room.title}</div>
-          <div class="chat-room-preview">${room.last_text}</div>
-        </div>`;
-      row.onclick = () => openChatRoom(room.room_id, room.title);
+          <div class="chat-room-title">${escHtml(label)}</div>
+          <div class="chat-room-preview">${escHtml(room.last_text)}</div>
+        </div>
+        ${room.type === "dm" ? '<button type="button" class="chat-leave-btn">나가기</button>' : ""}`;
+      row.onclick = () => openChatRoom(room.room_id, label, room);
+      const leaveBtn = row.querySelector(".chat-leave-btn");
+      if (leaveBtn) leaveBtn.onclick = ev => { ev.stopPropagation(); leaveChatRoom(room, label); };
       listEl.appendChild(row);
     });
   } catch (e) { toast("채팅 목록 오류"); }
 }
 
-function openChatRoom(roomId, title) {
+/* v5.4.7: 1:1 대화방 나가기 — 내 목록에서만 숨기고 상대의 방·지난 대화는 그대로 둔다 */
+async function leaveChatRoom(room, label) {
+  const ok = await appConfirm(
+    "\"" + label + "\" 님과의 1:1 대화방에서 나갈까요?\n대화방 목록에서 사라지고, 지난 대화 내용은 그대로 남습니다.",
+    { title: "대화방 나가기", okText: "나가기", cancelText: "취소" }
+  );
+  if (!ok) return;
+  const r = await api("hide_chat_room", { room_id: room.room_id });
+  if (!r || !r.ok) return toast((r && r.error) || "나가기에 실패했습니다.");
+  if (activeChatRoomId === room.room_id) closeChatRoom();
+  else loadChatOverview();
+  toast("대화방에서 나갔습니다. 상대가 새 메시지를 보내면 다시 나타납니다.");
+}
+
+/* 대화방 헤더의 `나가기` — 열려 있는 1:1 방에서 바로 나가기 */
+function leaveActiveChatRoom() {
+  if (!activeChatRoomObj) return;
+  const label = document.getElementById("chatRoomTitle").textContent || activeChatRoomObj.title || "";
+  leaveChatRoom(activeChatRoomObj, label);
+}
+
+function openChatRoom(roomId, title, roomObj) {
   activeChatRoomId = roomId;
+  activeChatRoomObj = roomObj || null;
+  const leaveBtn = document.getElementById("chatLeaveBtn");
+  if (leaveBtn) leaveBtn.classList.toggle("hidden", !(roomObj && roomObj.type === "dm"));
   document.getElementById("chatRoomTitle").textContent = title;
   document.getElementById("chatThread").classList.remove("hidden");
   loadMessages();
@@ -3617,6 +3700,9 @@ function openChatRoom(roomId, title) {
 function closeChatRoom() {
   document.getElementById("chatThread").classList.add("hidden");
   activeChatRoomId = null;
+  activeChatRoomObj = null;
+  const lb = document.getElementById("chatLeaveBtn");
+  if (lb) lb.classList.add("hidden");
   if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
   loadChatOverview();
 }
