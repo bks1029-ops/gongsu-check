@@ -577,6 +577,11 @@
   .msg-bubble.no-bubble .msg-img { border-radius: 14px; margin-bottom: 0; }
   .msg-bubble.no-bubble .msg-file-card { margin-bottom: 0; }
   .msg-time { font-size: 10px; color: var(--chat-meta); flex: 0 0 auto; padding-bottom: 1px; white-space: nowrap; }
+  /* v5.6.0: 전송 즉시 말풍선 — 서버 저장 전에는 '전송 중', 실패하면 '전송 실패' */
+  .msg-state { color: var(--chat-meta); }
+  .msg-state.failed { color: #EF4444; font-weight: 700; }
+  .msg-wrap.pending .msg-bubble { opacity: 0.72; }
+  .msg-wrap.failed .msg-bubble { box-shadow: 0 0 0 1.5px rgba(239,68,68,0.6); }
   /* v5.4.9: 날짜 구분선 — 반투명 회색 알약 배지 */
   .chat-date-pill {
     align-self: center; margin: 8px 0 4px; padding: 6px 14px; border-radius: 999px;
@@ -1592,6 +1597,8 @@ let activeRecordId = null;
 let activeChatRoomId = null;
 let activeChatRoomObj = null;
 let chatRoomsCache = [];
+/* v5.6.0: 열린 방에 보이는 메시지(캐시 → 서버 순서로 갱신) */
+let chatMsgsState = [];
 let chatTimer = null;
 let chatListSig = null;
 let chatRoomsSig = null;
@@ -1601,8 +1608,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 31;
-const APP_VERSION_NAME = "5.5.1";
+const APP_VERSION_CODE = 32;
+const APP_VERSION_NAME = "5.6.0";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -2335,10 +2342,69 @@ function switchNav(nav) {
   if (nav === "community") loadCommunityPosts();
 }
 
-async function loadDashboard() {
+/* ===== v5.6.0: 낙관적 UI — 서버 응답·재조회를 기다리지 않고 화면부터 즉시 반영 =====
+   저장은 뒤에서 하고, 실패했을 때만 dashSnap()으로 되돌린다. */
+function dashSnap() {
+  try { return JSON.stringify({ d: dashData, u: currentUser }); } catch (e) { return ""; }
+}
+function dashRollback(snap, msg) {
+  if (snap) {
+    try { const s = JSON.parse(snap); dashData = s.d; currentUser = s.u; } catch (e) {}
+  }
+  try { if (currentUser) localStorage.setItem("smile_user_v2", JSON.stringify(currentUser)); } catch (e) {}
+  renderAll();
+  if (msg) toast(msg);
+}
+function findWorker(uid) {
+  return ((dashData && dashData.workers) || []).find(w => String(w.user_id) === String(uid)) || null;
+}
+function workerNameById(uid) {
+  if (currentUser && String(uid) === String(currentUser.user_id)) return currentUser.name;
+  const w = findWorker(uid);
+  return (w && w.name) || "";
+}
+/* 직원 정보(일당·현장·직종·권한)를 화면 데이터에 먼저 반영한다. 본인이면 currentUser도 함께. */
+function patchWorkerLocal(uid, patch) {
+  const w = findWorker(uid);
+  if (w) Object.assign(w, patch);
+  if (currentUser && String(uid) === String(currentUser.user_id)) {
+    if (patch.default_wage !== undefined) currentUser.default_wage = patch.default_wage;
+    if (patch.assigned_site !== undefined) currentUser.assigned_site = patch.assigned_site;
+    if (patch.job_type !== undefined) currentUser.job_type = patch.job_type;
+    if (patch.career_years !== undefined) currentUser.career_years = patch.career_years;
+  }
+  try { if (currentUser) localStorage.setItem("smile_user_v2", JSON.stringify(currentUser)); } catch (e) {}
+}
+function recordAmount(gongsu, wage) {
+  return Math.round(Number(gongsu || 0) * Number(wage || 0));
+}
+function upsertRecordLocal(rec) {
+  if (!dashData) return;
+  const list = (dashData.records || (dashData.records = []));
+  const i = list.findIndex(x => String(x.record_id) === String(rec.record_id));
+  if (i >= 0) list[i] = Object.assign({}, list[i], rec);
+  else list.push(rec);
+  list.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+}
+function removeRecordLocal(recordId) {
+  if (!dashData || !dashData.records) return;
+  dashData.records = dashData.records.filter(r => String(r.record_id) !== String(recordId));
+}
+function renameRecordLocal(oldId, newId) {
+  if (!dashData || !newId) return;
+  const r = (dashData.records || []).find(x => String(x.record_id) === String(oldId));
+  if (r) r.record_id = newId;
+}
+/* 서버 확정 뒤 조용히 최신 값과 맞춘다(실패해도 화면은 이미 반영된 상태 유지) */
+function syncDashboardQuietly() {
+  try { loadDashboard({ quiet: true }); } catch (e) {}
+}
+
+async function loadDashboard(opts) {
+  const quiet = !!(opts && opts.quiet);
   try {
     const r = await api("get_dashboard", { user_id: currentUser.user_id, month: curMonth });
-    if (!r.ok) return toast(r.error || "불러오기 실패");
+    if (!r.ok) { if (!quiet) toast(r.error || "불러오기 실패"); return; }
     dashData = r;
     seedRecentSites();
     if (r.user) {
@@ -2355,8 +2421,8 @@ async function loadDashboard() {
     }
     renderAll();
     maybeOnboard();
-    checkAppUpdate(false);
-  } catch (e) { toast("불러오기 오류"); }
+    if (!quiet) checkAppUpdate(false);
+  } catch (e) { if (!quiet) toast("불러오기 오류"); }
 }
 
 function renderAll() {
@@ -2648,20 +2714,30 @@ async function workerSaveGongsu() {
   const site = String(selectedSite || "").trim();
   const memo = document.getElementById("workerMemo").value.trim();
   const date = workerActiveDate || dashData.today;
-  toast("공수 저장 중...");
+  const gongsu = selectedGongsu;
+  const wage = currentUser.default_wage || 180000;
+  const snap = dashSnap();
+  const tempId = "tmp_" + Date.now();
+  // v5.6.0: 저장 버튼을 누른 순간 화면부터 바뀌게(서버는 뒤에서)
+  upsertRecordLocal({
+    record_id: tempId, date, site, worker_id: currentUser.user_id, worker_name: currentUser.name,
+    gongsu, wage, amount: recordAmount(gongsu, wage), memo
+  });
+  document.getElementById("workerMemo").value = "";
+  renderAll();
+  toast("공수 입력이 저장되었습니다!");
   const r = await api("save_record", {
     user_id: currentUser.user_id,
     worker_id: currentUser.user_id,
     date,
     site,
-    gongsu: selectedGongsu,
-    wage: currentUser.default_wage || 180000,
+    gongsu,
+    wage,
     memo
   });
-  if (!r.ok) return toast(r.error);
-  document.getElementById("workerMemo").value = "";
-  toast("공수 입력이 저장되었습니다!");
-  loadDashboard();
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "저장하지 못했습니다.");
+  if (r.record_id) renameRecordLocal(tempId, r.record_id);
+  syncDashboardQuietly();
 }
 
 function renderAdminHome() {
@@ -3720,15 +3796,14 @@ async function editWage(workerId, curWage, name) {
   if (val === null) return;
   const wage = Number(String(val).replace(/,/g, "").trim());
   if (isNaN(wage) || wage < 0) return toast("올바른 금액을 입력해 주세요.");
-  toast("일당 저장 중...");
-  const r = await api("update_worker_wage", { user_id: currentUser.user_id, worker_id: workerId, default_wage: wage });
-  if (!r.ok) return toast(r.error);
-  if (String(workerId) === String(currentUser.user_id)) {
-    currentUser.default_wage = wage;
-    localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
-  }
+  const snap = dashSnap();
+  // v5.6.0: 저장을 기다리지 않고 목록의 금액 글자부터 바로 바꿔 준다
+  patchWorkerLocal(workerId, { default_wage: wage });
+  renderTeamTab();
   toast("기본 일당이 수정되었습니다!");
-  loadDashboard();
+  const r = await api("update_worker_wage", { user_id: currentUser.user_id, worker_id: workerId, default_wage: wage });
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "저장하지 못했습니다.");
+  syncDashboardQuietly();
 }
 
 async function toggleAdminRole(workerId, nextRole, name) {
@@ -3736,31 +3811,41 @@ async function toggleAdminRole(workerId, nextRole, name) {
     ? { title: "공동 관리자 지정", sub: name + " 님을 공동 관리자로 지정할까요?\n모든 직원의 출근·공수·정산·현장을 함께 관리할 수 있습니다.", okText: "지정", icon: "shield" }
     : { title: "관리자 권한 해제", sub: name + " 님의 관리자 권한을 해제하고 일반 직원으로 바꿀까요?", okText: "해제", icon: "shield" });
   if (!ok) return;
-  toast("권한 변경 중...");
-  const r = await api("update_worker_role", { user_id: currentUser.user_id, worker_id: workerId, role: nextRole });
-  if (!r.ok) return toast(r.error || "변경 실패");
+  const snap = dashSnap();
+  // v5.6.0: 지정/해제를 누른 즉시 왕관·버튼부터 바뀐다(서버는 뒤에서)
+  patchWorkerLocal(workerId, { role: nextRole });
+  renderTeamTab();
   toast(nextRole === "admin" ? "공동 관리자로 지정되었습니다!" : "관리자 권한이 해제되었습니다.");
-  loadDashboard();
+  const r = await api("update_worker_role", { user_id: currentUser.user_id, worker_id: workerId, role: nextRole });
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "변경 실패");
+  syncDashboardQuietly();
 }
 
 async function addSite() {
   const name = document.getElementById("newSiteName").value.trim();
   if (!name) return toast("현장명을 입력해 주세요.");
-  const r = await api("add_site", { user_id: currentUser.user_id, name });
-  if (!r.ok) return toast(r.error);
+  const snap = dashSnap();
+  const tempId = "tmp_site_" + Date.now();
+  // v5.6.0: 목록에 먼저 붙이고 서버는 뒤에서
+  if (dashData) (dashData.sites || (dashData.sites = [])).push({ site_id: tempId, name });
   document.getElementById("newSiteName").value = "";
+  renderTeamTab();
   toast("현장이 추가되었습니다.");
-  loadDashboard();
+  const r = await api("add_site", { user_id: currentUser.user_id, name });
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "현장을 추가하지 못했습니다.");
+  syncDashboardQuietly();
 }
 
 async function deleteSite(siteId, name) {
   const ok = await appConfirm("", { title: "현장 제거", sub: "'" + name + "' 현장을 목록에서 제거할까요?", okText: "제거", icon: "trash", danger: true });
   if (!ok) return;
-  toast("현장 제거 중...");
-  const r = await api("delete_site", { user_id: currentUser.user_id, site_id: siteId, name });
-  if (!r.ok) return toast(r.error);
+  const snap = dashSnap();
+  if (dashData && dashData.sites) dashData.sites = dashData.sites.filter(s => String(s.site_id) !== String(siteId));
+  renderTeamTab();
   toast("현장이 제거되었습니다.");
-  loadDashboard();
+  const r = await api("delete_site", { user_id: currentUser.user_id, site_id: siteId, name });
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "현장을 제거하지 못했습니다.");
+  syncDashboardQuietly();
 }
 
 /* CHAT */
@@ -3906,10 +3991,13 @@ function openChatRoom(roomId, title, roomObj) {
   if (leaveBtn) leaveBtn.classList.toggle("hidden", !(roomObj && roomObj.type === "dm"));
   document.getElementById("chatRoomTitle").textContent = title;
   document.getElementById("chatThread").classList.remove("hidden");
-  // v5.4.9: 방을 처음 열 때는 목록을 비우고 항상 맨 아래(최신)로 내린다
-  document.getElementById("chatMessages").innerHTML = "";
+  // v5.6.0: 저장해 둔 최근 대화를 먼저 0.01초 만에 보여 주고, 최신화는 뒤에서
+  const box = document.getElementById("chatMessages");
+  box.innerHTML = "";
   chatListSig = null;
   chatForceBottom = true;
+  chatMsgsState = loadChatCache(roomId);
+  if (chatMsgsState.length) renderChatMessages(chatMsgsState, { force: true, bottom: true });
   loadMessages();
   if (chatTimer) clearInterval(chatTimer);
   chatTimer = setInterval(loadMessages, 2000);
@@ -3920,6 +4008,8 @@ function closeChatRoom() {
   document.getElementById("chatThread").classList.add("hidden");
   activeChatRoomId = null;
   activeChatRoomObj = null;
+  chatMsgsState = [];
+  chatListSig = null;
   setNativeActiveRoom("");
   const lb = document.getElementById("chatLeaveBtn");
   if (lb) lb.classList.add("hidden");
@@ -3974,15 +4064,21 @@ function fmtChatDate(d) {
 /* 메시지 하나 → 말풍선 한 개(내 쪽은 왼쪽에 시간, 상대는 오른쪽에 시간) */
 function buildMsgNode(m, mine) {
   const wrap = document.createElement("div");
-  wrap.className = "msg-wrap " + (mine ? "mine" : "other");
+  wrap.className = "msg-wrap " + (mine ? "mine" : "other")
+    + (m._pending ? " pending" : (m._failed ? " failed" : ""));
   const t = m.created_at ? new Date(m.created_at) : null;
   const timeStr = fmtChatTime(t);
+  // v5.6.0: 서버 저장 전(전송 중)과 실패를 말풍선 옆에 바로 표시
+  const stateStr = m._failed ? "전송 실패" : (m._pending ? "전송 중" : "");
+  const timeHtml = stateStr
+    ? `<div class="msg-time msg-state${m._failed ? " failed" : ""}">${stateStr}</div>`
+    : `<div class="msg-time">${timeStr}</div>`;
   // 사진·파일만 보낸 메시지는 말풍선 액자를 만들지 않는다
   const noBubble = !!(m.file_url && !m.text);
   wrap.innerHTML = `
     ${mine ? "" : `<div class="msg-sender">${escHtml(m.sender_name)}</div>`}
     <div class="msg-line">
-      ${mine ? `<div class="msg-time">${timeStr}</div>` : ""}
+      ${mine ? timeHtml : ""}
       <div class="msg-bubble${noBubble ? " no-bubble" : ""}">${renderMsgInner(m)}</div>
       ${mine ? "" : `<div class="msg-time">${timeStr}</div>`}
     </div>`;
@@ -3990,50 +4086,128 @@ function buildMsgNode(m, mine) {
 }
 /* 목록이 그대로인지 비교하는 지문 — 같으면 DOM을 갈아엎지 않는다 */
 function chatMsgSignature(msgs) {
-  return (msgs || []).map(m => [m.msg_id || "", m.created_at || "", m.text || "", m.file_url || "", m.sender_name || ""].join("¦")).join("§");
+  return (msgs || []).map(m => [m.msg_id || "", m.created_at || "", m.text || "", m.file_url || "",
+    m.sender_name || "", m._pending ? "P" : (m._failed ? "F" : "")].join("¦")).join("§");
+}
+
+/* ===== v5.6.0: 방별 최근 대화 캐시 — 방에 들어가면 서버를 기다리지 않고 먼저 보여 준다 ===== */
+const CHAT_CACHE_PREFIX = "gongsu_chat_cache_";
+const CHAT_CACHE_KEEP = 60;
+const CHAT_CACHE_ROOMS = 4;
+
+function chatCacheKey(roomId) { return CHAT_CACHE_PREFIX + String(roomId || ""); }
+
+function saveChatCache(roomId, msgs) {
+  if (!roomId) return;
+  try {
+    const keep = (msgs || []).filter(m => !m._pending && !m._failed).slice(-CHAT_CACHE_KEEP).map(m => ({
+      msg_id: m.msg_id || "", room_id: m.room_id || roomId, sender_id: m.sender_id, sender_name: m.sender_name,
+      text: m.text || "", created_at: m.created_at || "",
+      file_url: m.file_url || null, file_name: m.file_name || null,
+      file_type: m.file_type || null, file_size: m.file_size || null
+    }));
+    localStorage.setItem(chatCacheKey(roomId), JSON.stringify({ at: Date.now(), msgs: keep }));
+    // 최근에 열어 본 방 몇 개만 남기고 오래된 캐시는 지운다
+    const olds = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || k.indexOf(CHAT_CACHE_PREFIX) !== 0) continue;
+      let at = 0;
+      try { at = Number(JSON.parse(localStorage.getItem(k)).at) || 0; } catch (e) {}
+      olds.push([k, at]);
+    }
+    olds.sort((a, b) => a[1] - b[1]).slice(0, Math.max(0, olds.length - CHAT_CACHE_ROOMS))
+      .forEach(kv => localStorage.removeItem(kv[0]));
+  } catch (e) {}
+}
+
+function loadChatCache(roomId) {
+  if (!roomId) return [];
+  try {
+    const box = JSON.parse(localStorage.getItem(chatCacheKey(roomId)) || "null");
+    return box && Array.isArray(box.msgs) ? box.msgs : [];
+  } catch (e) { return []; }
+}
+
+/* 메시지 목록 그리기 — 지문이 같으면 DOM을 다시 만들지 않아 스크롤이 튀지 않는다 */
+function renderChatMessages(msgs, opts) {
+  opts = opts || {};
+  const box = document.getElementById("chatMessages");
+  if (!box) return false;
+  const list = msgs || [];
+  const sig = chatMsgSignature(list);
+  if (sig === chatListSig && !opts.force) {
+    if (opts.bottom) box.scrollTop = box.scrollHeight;
+    return false;
+  }
+  const wasBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+  const prevTop = box.scrollTop;
+  chatListSig = sig;
+  box.innerHTML = "";
+  let lastDay = "";
+  list.forEach(m => {
+    const t = m.created_at ? new Date(m.created_at) : null;
+    const day = t && !isNaN(t) ? chatDateKey(t) : "";
+    if (day && day !== lastDay) {
+      const pill = document.createElement("div");
+      pill.className = "chat-date-pill";
+      pill.dataset.day = day;
+      pill.textContent = fmtChatDate(t);
+      box.appendChild(pill);
+      lastDay = day;
+    }
+    box.appendChild(buildMsgNode(m, String(m.sender_id) === String(currentUser.user_id)));
+  });
+  if (!list.length) {
+    box.innerHTML = '<div style="text-align:center;color:var(--chat-meta);margin-top:40px;font-size:13px;">첫 메시지를 보내보세요!</div>';
+  }
+  if (opts.bottom || chatForceBottom || wasBottom) box.scrollTop = box.scrollHeight;
+  else box.scrollTop = prevTop;
+  chatForceBottom = false;
+  return true;
+}
+
+/* v5.6.0: 채팅 목록의 미리보기·시간도 전송 즉시 바꿔 준다 */
+function bumpChatRoomPreview(roomId, text, when) {
+  const room = (chatRoomsCache || []).find(x => String(x.room_id) === String(roomId));
+  const t = when || new Date();
+  if (room) {
+    room.last_text = (room.type === "channel" ? ((currentUser && currentUser.name) || "") + ": " : "")
+      + String(text || "").slice(0, 80);
+    room.last_time = t.toISOString();
+  }
+  const row = Array.from(document.querySelectorAll("#chatRoomsList .chat-room-row"))
+    .find(el => el.dataset.roomId === roomId);
+  if (row && room) {
+    const pv = row.querySelector(".chat-room-preview");
+    if (pv) pv.textContent = room.last_text;
+    const tm = row.querySelector(".chat-room-time");
+    if (tm) tm.textContent = fmtKakaoWhen(room.last_time);
+  }
+  chatRoomsSig = null;   // 다음 목록 갱신 때 서버 값으로 정리
 }
 
 async function loadMessages() {
   if (!activeChatRoomId) return;
+  const roomId = activeChatRoomId;
   try {
-    const r = await api("get_messages", { user_id: currentUser.user_id, room_id: activeChatRoomId });
+    const r = await api("get_messages", { user_id: currentUser.user_id, room_id: roomId });
     if (!r.ok) return;
-    const box = document.getElementById("chatMessages");
-    const msgs = r.messages || [];
-    const sig = chatMsgSignature(msgs);
-    const wasBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
-    const prevTop = box.scrollTop;
-    const forceBottom = chatForceBottom;
-    chatForceBottom = false;
-    // v5.4.9: 바뀐 게 없으면 다시 그리지 않는다(위로 올려 읽는 중 스크롤이 튀지 않게)
-    if (sig !== chatListSig) {
-      chatListSig = sig;
-      box.innerHTML = "";
-      let lastDay = "";
-      msgs.forEach(m => {
-        const t = m.created_at ? new Date(m.created_at) : null;
-        const day = t && !isNaN(t) ? chatDateKey(t) : "";
-        if (day && day !== lastDay) {
-          const pill = document.createElement("div");
-          pill.className = "chat-date-pill";
-          pill.dataset.day = day;
-          pill.textContent = fmtChatDate(t);
-          box.appendChild(pill);
-          lastDay = day;
-        }
-        box.appendChild(buildMsgNode(m, String(m.sender_id) === String(currentUser.user_id)));
-      });
-      if (!msgs.length) {
-        box.innerHTML = '<div style="text-align:center;color:var(--chat-meta);margin-top:40px;font-size:13px;">첫 메시지를 보내보세요!</div>';
-      }
-      if (forceBottom || wasBottom) box.scrollTop = box.scrollHeight;
-      else box.scrollTop = prevTop;
-    } else if (forceBottom) {
-      box.scrollTop = box.scrollHeight;
-    }
+    if (activeChatRoomId !== roomId) return;   // 그새 다른 방으로 옮겼다
+    const serverMsgs = r.messages || [];
+    const myId = String(currentUser.user_id);
+    const nowMs = Date.now();
+    // 아직 서버 응답 전인 내 메시지는 끝에 남긴다(이미 서버에 올라간 건 중복 제외)
+    const pending = chatMsgsState.filter(m => m._pending || m._failed).filter(p => !serverMsgs.some(s =>
+      String(s.sender_id) === myId && String(s.text || "") === String(p.text || "") &&
+      Math.abs(nowMs - new Date(s.created_at || 0).getTime()) < 120000));
+    const merged = serverMsgs.concat(pending);
+    chatMsgsState = merged;
+    renderChatMessages(merged, {});
+    saveChatCache(roomId, merged);
     // v5.5.0: 열린 방에 상대 메시지가 들어오면 그 방을 읽음 처리(배지·탭 숫자 갱신)
-    if (!document.hidden && msgs.some(m => String(m.sender_id) !== String(currentUser.user_id))) {
-      markRoomRead(activeChatRoomId);
+    if (!document.hidden && serverMsgs.some(m => String(m.sender_id) !== myId)) {
+      markRoomRead(roomId);
     }
   } catch (e) {}
 }
@@ -4090,24 +4264,35 @@ async function sendChatMsg() {
   const text = input.value.trim();
   if (!text || !activeChatRoomId) return;
   input.value = "";
-  const box = document.getElementById("chatMessages");
-  if (box.textContent.includes("첫 메시지를 보내보세요")) box.innerHTML = "";
-  // v5.4.9: 그날 첫 메시지면 날짜 배지를 먼저 붙인다
+  const roomId = activeChatRoomId;
   const now = new Date();
-  const dayKey = chatDateKey(now);
-  const pills = box.querySelectorAll(".chat-date-pill");
-  const lastDay = pills.length ? pills[pills.length - 1].dataset.day : "";
-  if (dayKey !== lastDay) {
-    const pill = document.createElement("div");
-    pill.className = "chat-date-pill";
-    pill.dataset.day = dayKey;
-    pill.textContent = fmtChatDate(now);
-    box.appendChild(pill);
+  const tempId = "tmp_" + now.getTime() + "_" + Math.random().toString(36).slice(2, 6);
+  // v5.6.0: 전송을 누른 순간 내 말풍선부터 0.01초 만에 띄운다(서버는 뒤에서)
+  chatMsgsState.push({
+    msg_id: tempId, _tempId: tempId, _pending: true, room_id: roomId,
+    sender_id: currentUser.user_id, sender_name: currentUser.name,
+    text, created_at: now.toISOString()
+  });
+  renderChatMessages(chatMsgsState, { force: true, bottom: true });
+  bumpChatRoomPreview(roomId, text, now);
+  const r = await api("send_message", { user_id: currentUser.user_id, room_id: roomId, text });
+  const item = chatMsgsState.find(m => m._tempId === tempId);
+  if (!r || !r.ok) {
+    if (item) { item._pending = false; item._failed = true; }
+    renderChatMessages(chatMsgsState, { force: true });
+    saveChatCache(roomId, chatMsgsState);
+    toast((r && r.error) || "메시지를 보내지 못했습니다.");
+    return;
   }
-  box.appendChild(buildMsgNode({ sender_id: currentUser.user_id, sender_name: currentUser.name, text, created_at: now.toISOString() }, true));
-  box.scrollTop = box.scrollHeight;
-  const r = await api("send_message", { user_id: currentUser.user_id, room_id: activeChatRoomId, text });
-  if (!r.ok) toast(r.error);
+  if (!item) return;   // 그새 서버 목록으로 맞춰져 이미 확정된 상태
+  const i = chatMsgsState.indexOf(item);
+  chatMsgsState[i] = {
+    msg_id: (r && r.msg_id) || tempId, room_id: roomId,
+    sender_id: currentUser.user_id, sender_name: currentUser.name,
+    text, created_at: now.toISOString()
+  };
+  renderChatMessages(chatMsgsState, { force: true });
+  saveChatCache(roomId, chatMsgsState);
 }
 
 /* MODALS */
@@ -4144,12 +4329,15 @@ async function deleteRecordFromModal() {
   if (!recId) return;
   const ok = await appConfirm("", { title: "공수 기록 삭제", sub: "이 공수 기록을 삭제할까요?\n삭제한 기록은 되돌릴 수 없습니다.", okText: "삭제", icon: "trash", danger: true });
   if (!ok) return;
-  toast("삭제 중...");
-  const r = await api("delete_record", { user_id: currentUser.user_id, record_id: recId });
-  if (!r.ok) return toast(r.error);
+  const snap = dashSnap();
+  // v5.6.0: 삭제도 화면에서 먼저 지우고 서버는 뒤에서
+  removeRecordLocal(recId);
   closeRecordModal();
+  renderAll();
   toast("기록이 삭제되었습니다.");
-  loadDashboard();
+  const r = await api("delete_record", { user_id: currentUser.user_id, record_id: recId });
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "삭제하지 못했습니다.");
+  syncDashboardQuietly();
 }
 
 async function submitRecordModal() {
@@ -4164,22 +4352,35 @@ async function submitRecordModal() {
     wage: Number(document.getElementById("mWage").value),
     memo: document.getElementById("mMemo").value.trim()
   };
-  toast("저장 중...");
-  const r = await api("save_record", payload);
-  if (!r.ok) return toast(r.error);
+  const snap = dashSnap();
+  const tempId = payload.record_id || ("tmp_" + Date.now());
+  // v5.6.0: 모달 저장도 닫는 순간 목록·합계에 바로 반영(서버는 뒤에서)
+  upsertRecordLocal({
+    record_id: tempId, date: payload.date, site: payload.site, worker_id: payload.worker_id,
+    worker_name: workerNameById(payload.worker_id), gongsu: payload.gongsu, wage: payload.wage,
+    amount: recordAmount(payload.gongsu, payload.wage), memo: payload.memo
+  });
   rememberSite(payload.site);
   closeRecordModal();
+  renderAll();
   toast("저장되었습니다!");
-  loadDashboard();
+  const r = await api("save_record", payload);
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "저장하지 못했습니다.");
+  if (!payload.record_id && r.record_id) renameRecordLocal(tempId, r.record_id);
+  syncDashboardQuietly();
 }
 
 async function removeWorkerFromTeam(workerId, name) {
   const ok = await appConfirm("", { title: "팀에서 내보내기", sub: `${name}님을 현재 팀에서 내보낼까요?\n계정과 기존 공수 기록은 삭제되지 않고 개인 공수 캘린더로 전환됩니다.`, okText: "내보내기", icon: "alert", danger: true });
   if (!ok) return;
-  const r = await api("leave_team", { user_id: currentUser.user_id, target_user_id: workerId });
-  if (!r.ok) return toast(r.error);
+  const snap = dashSnap();
+  // v5.6.0: 목록에서 먼저 사라지고 서버는 뒤에서
+  if (dashData && dashData.workers) dashData.workers = dashData.workers.filter(w => String(w.user_id) !== String(workerId));
+  if (dashData) renderTeamTab();
   toast(`${name}님이 개인 공수 캘린더로 전환되었습니다.`);
-  await refreshDashboard();
+  const r = await api("leave_team", { user_id: currentUser.user_id, target_user_id: workerId });
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "내보내지 못했습니다.");
+  syncDashboardQuietly();
 }
 
 function openSettingsModal(onboarding = false) {
@@ -4217,13 +4418,19 @@ function openSettingsModal(onboarding = false) {
 async function saveMyProfileFromSettings() {
   const job_type = document.getElementById("setJobType").value;
   const career_years = document.getElementById("setCareerYears").value;
-  const r = await api("update_profile", { user_id: currentUser.user_id, job_type, career_years });
-  if (!r.ok) return toast(r.error || "저장 실패");
-  currentUser.job_type = r.job_type || "";
-  currentUser.career_years = r.career_years;
-  localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+  const snap = dashSnap();
+  // v5.6.0: 목록·뱃지에 먼저 반영하고 서버는 뒤에서
+  patchWorkerLocal(currentUser.user_id, { job_type, career_years });
+  renderTeamTab();
+  updateProfileNudge();
   toast("직종·경력이 저장되었습니다.");
-  await refreshDashboard();
+  const r = await api("update_profile", { user_id: currentUser.user_id, job_type, career_years });
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "저장 실패");
+  if (r.job_type !== undefined) {
+    patchWorkerLocal(currentUser.user_id, { job_type: r.job_type || "", career_years: r.career_years });
+    renderTeamTab();
+  }
+  syncDashboardQuietly();
 }
 
 async function leaveTeamToSolo() {
@@ -4467,13 +4674,15 @@ function closeSettingsModal() { document.getElementById("settingsModal").classLi
 
 async function saveMySiteFromSettings() {
   const site = document.getElementById("setAssignedSite").value.trim();
-  toast("저장 중...");
-  const r = await api("update_worker_site", { user_id: currentUser.user_id, worker_id: currentUser.user_id, assigned_site: site });
-  if (!r.ok) return toast(r.error || "저장 실패");
-  currentUser.assigned_site = site;
-  localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+  const snap = dashSnap();
+  // v5.6.0: 저장을 기다리지 않고 내 담당 현장 글자부터 바로 바꾼다
+  patchWorkerLocal(currentUser.user_id, { assigned_site: site });
+  selectedSiteTouched = false;
+  if (dashData) { renderWorkerHome(); renderTeamTab(); }
   toast(site ? ("담당 현장이 저장되었습니다: " + site) : "담당 현장이 비워졌습니다.");
-  await loadDashboard();
+  const r = await api("update_worker_site", { user_id: currentUser.user_id, worker_id: currentUser.user_id, assigned_site: site });
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "저장 실패");
+  syncDashboardQuietly();
 }
 
 /* 프로필 설정 유도 (첫 가입 직후 1회 + 상시 뱃지) */
@@ -4985,15 +5194,14 @@ async function editWorkerSite(uid) {
   });
   if (val === null) return;
   const site = String(val).trim();
-  toast("담당 현장 저장 중...");
-  const r = await api("update_worker_site", { user_id: currentUser.user_id, worker_id: uid, assigned_site: site });
-  if (!r.ok) return toast(r.error || "저장 실패");
-  if (String(uid) === String(currentUser.user_id)) {
-    currentUser.assigned_site = site;
-    localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
-  }
+  const snap = dashSnap();
+  // v5.6.0: 저장 즉시 목록의 `현장: …` 글자가 바뀐다(서버 재조회를 기다리지 않는다)
+  patchWorkerLocal(uid, { assigned_site: site });
+  if (dashData) { renderTeamTab(); if (isSelf) renderWorkerHome(); }
   toast(site ? (person.name + " 담당 현장: " + site) : "담당 현장이 미지정으로 바뀌었습니다.");
-  await loadDashboard();
+  const r = await api("update_worker_site", { user_id: currentUser.user_id, worker_id: uid, assigned_site: site });
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "저장 실패");
+  syncDashboardQuietly();
 }
 
 /* 홈 위젯 연동 (안드로이드) */
@@ -5014,13 +5222,14 @@ function syncWidget() {
 async function saveMyWageFromSettings() {
   const wage = Number(document.getElementById("setWageInput").value);
   if (isNaN(wage) || wage < 0) return toast("올바른 금액을 입력해 주세요.");
-  toast("저장 중...");
-  const r = await api("update_worker_wage", { user_id: currentUser.user_id, worker_id: currentUser.user_id, default_wage: wage });
-  if (!r.ok) return toast(r.error);
-  currentUser.default_wage = wage;
-  localStorage.setItem("smile_user_v2", JSON.stringify(currentUser));
+  const snap = dashSnap();
+  // v5.6.0: 일당도 화면부터 즉시
+  patchWorkerLocal(currentUser.user_id, { default_wage: wage });
+  if (dashData) { renderTeamTab(); renderWorkerHome(); }
   toast("내 기본 일당이 저장되었습니다!");
-  loadDashboard();
+  const r = await api("update_worker_wage", { user_id: currentUser.user_id, worker_id: currentUser.user_id, default_wage: wage });
+  if (!r || !r.ok) return dashRollback(snap, (r && r.error) || "저장하지 못했습니다.");
+  syncDashboardQuietly();
 }
 
 async function changePin() {
