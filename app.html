@@ -527,19 +527,31 @@
     line-height: 1; letter-spacing: -0.2px; box-sizing: border-box;
   }
   .chat-unread.hidden { display: none; }
-  /* v5.4.7: 1:1 대화방 나가기 — 카톡 목록을 해치지 않게 작은 회색 글씨로 */
-  .chat-leave-btn {
-    flex: 0 0 auto; margin: 0; padding: 2px 4px; border-radius: 6px;
-    border: none; background: transparent; color: var(--muted);
-    font-family: inherit; font-size: 10.5px; font-weight: 500; cursor: pointer;
-    opacity: 0.55; letter-spacing: -0.2px;
+  /* v5.6.1: 헤더 `나가기`를 없애고 우측 ⚙ 설정 버튼으로 모았다 */
+  .chat-settings-btn {
+    margin: 0 0 0 auto; flex: 0 0 auto; width: 34px; height: 34px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--chat-bar-line); border-radius: 999px;
+    background: var(--chat-input-bg); color: var(--sub);
+    font-family: inherit; font-size: 17px; line-height: 1; cursor: pointer;
   }
-  .chat-leave-btn:active { background: var(--line); }
-  .chat-header-leave {
-    margin: 0 0 0 auto; padding: 7px 12px; border-radius: 10px; flex: 0 0 auto;
-    border: 1.5px solid var(--line); background: var(--surface); color: var(--sub);
-    font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  .chat-settings-btn:active { background: var(--line); }
+  /* v5.6.1: 채팅방 설정 시트 — 아래에서 올라오는 메뉴(pick-card 재사용) */
+  .chat-menu-list { display: flex; flex-direction: column; gap: 8px; }
+  .chat-menu-row {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    padding: 13px 14px; border-radius: 14px; border: 1.5px solid var(--line);
+    background: var(--surface); color: var(--text); font-family: inherit; cursor: pointer;
   }
+  .chat-menu-row:active { background: var(--line); }
+  .chat-menu-row .cm-ico { flex: 0 0 auto; font-size: 17px; line-height: 1; }
+  .chat-menu-row .cm-body { flex: 1 1 auto; min-width: 0; }
+  .chat-menu-row .cm-label { display: block; font-size: 14.5px; font-weight: 800; color: var(--text); }
+  .chat-menu-row .cm-sub { display: block; font-size: 11.5px; color: var(--sub); margin-top: 3px; line-height: 1.32; }
+  .chat-menu-row.danger { border-color: rgba(239,68,68,0.34); background: rgba(239,68,68,0.06); }
+  .chat-menu-row.danger .cm-label { color: #EF4444; }
+  .chat-menu-row.off { cursor: default; border-style: dashed; }
+  .chat-menu-row.off .cm-label { color: var(--sub); }
   /* v5.5.0: .chat-room-title / .chat-room-preview 규칙은 위 CHAT 블록으로 통합(중복 정의 제거) */
 
   /* ===== v5.4.9 카톡 스타일 대화방 ===== */
@@ -593,7 +605,7 @@
     padding: 10px 12px; border-top: 1px solid var(--chat-bar-line);
     display: flex; gap: 8px; align-items: center;
   }
-  .chat-inputbar input { flex: 1; margin: 0; border-radius: 999px; padding: 10px 15px; background: var(--chat-input-bg); }
+  .chat-inputbar input { flex: 1 1 auto; min-width: 0; margin: 0; border-radius: 999px; padding: 10px 15px; background: var(--chat-input-bg); }
   .chat-send-btn {
     background: var(--accent); color: var(--on-accent); border: none; border-radius: 999px;
     padding: 10px 16px; font-weight: 800; font-size: 14px; cursor: pointer;
@@ -1317,14 +1329,29 @@ try {
   <div class="chat-header">
     <button class="icon-btn" onclick="closeChatRoom()">‹</button>
     <span id="chatRoomTitle">스마일산업 전체 채널</span>
-    <button type="button" id="chatLeaveBtn" class="chat-header-leave hidden" onclick="leaveActiveChatRoom()">나가기</button>
+    <button type="button" id="chatRoomSettingsBtn" class="chat-settings-btn" title="채팅방 설정" aria-label="채팅방 설정" onclick="openChatSettings()">⚙</button>
   </div>
   <div id="chatMessages" class="chat-messages"></div>
   <div class="chat-inputbar">
-    <input id="chatFileInput" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.hwp,.hwpx,.dwg,.dxf,.zip,.txt" style="display:none;" onchange="onChatFileSelected(event)" />
-    <button class="chat-attach-btn" type="button" title="파일·사진 첨부" onclick="document.getElementById('chatFileInput').click()">📎</button>
+    <!-- v5.6.1: 사진 공유(핸드폰 사진첩) · 파일 공유를 나란히 -->
+    <input id="chatPhotoInput" type="file" accept="image/*" style="display:none;" onchange="onChatFileSelected(event)" />
+    <button id="chatPhotoBtn" class="chat-attach-btn" type="button" title="사진 공유" aria-label="사진 공유" onclick="document.getElementById('chatPhotoInput').click()">🖼️</button>
+    <input id="chatFileInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.hwp,.hwpx,.dwg,.dxf,.zip,.txt" style="display:none;" onchange="onChatFileSelected(event)" />
+    <button id="chatFileBtn" class="chat-attach-btn" type="button" title="파일 공유" aria-label="파일 공유" onclick="document.getElementById('chatFileInput').click()">📎</button>
     <input id="chatInput" type="text" placeholder="메시지를 입력하세요..." onkeypress="if(event.key==='Enter') sendChatMsg()" />
     <button class="chat-send-btn" onclick="sendChatMsg()">전송</button>
+  </div>
+</div>
+
+<!-- v5.6.1 채팅방 설정 시트 (헤더 우측 ⚙) — 채팅방 나가기는 이 메뉴 안에 -->
+<div id="chatSettingsSheet" class="pick-bg hidden">
+  <div class="pick-card" role="dialog" aria-modal="true" aria-labelledby="chatMenuTitle">
+    <div class="pick-head">
+      <div id="chatMenuTitle" class="pick-title">채팅방 설정</div>
+      <div id="chatMenuSub" class="pick-sub"></div>
+    </div>
+    <div id="chatMenuList" class="chat-menu-list"></div>
+    <button class="btn btn-outline" type="button" style="margin-top:12px;" onclick="closeChatSettings()">닫기</button>
   </div>
 </div>
 
@@ -1608,8 +1635,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 32;
-const APP_VERSION_NAME = "5.6.0";
+const APP_VERSION_CODE = 33;
+const APP_VERSION_NAME = "5.6.1";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -3928,11 +3955,8 @@ async function loadChatOverview(silent) {
         <div class="chat-room-side">
           <div class="chat-room-time">${escHtml(fmtKakaoWhen(room.last_time))}</div>
           <span class="chat-unread${unread > 0 ? "" : " hidden"}">${unread > 99 ? "99+" : unread}</span>
-          ${isChannel ? "" : '<button type="button" class="chat-leave-btn">나가기</button>'}
         </div>`;
       row.onclick = () => openChatRoom(room.room_id, label, room);
-      const leaveBtn = row.querySelector(".chat-leave-btn");
-      if (leaveBtn) leaveBtn.onclick = ev => { ev.stopPropagation(); leaveChatRoom(room, label); };
       listEl.appendChild(row);
     });
     if (!rooms.length) {
@@ -3975,11 +3999,69 @@ async function leaveChatRoom(room, label) {
   toast("대화방에서 나갔습니다. 상대가 새 메시지를 보내면 다시 나타납니다.");
 }
 
-/* 대화방 헤더의 `나가기` — 열려 있는 1:1 방에서 바로 나가기 */
+/* v5.6.1: 열린 방의 정보(방 객체가 없으면 목록·room_id로 추정) */
+function activeRoomInfo() {
+  if (!activeChatRoomId) return null;
+  let room = activeChatRoomObj;
+  if (!room) room = (chatRoomsCache || []).find(r => r.room_id === activeChatRoomId) || null;
+  if (!room) {
+    return {
+      room_id: activeChatRoomId,
+      type: String(activeChatRoomId).indexOf("dm_") === 0 ? "dm" : "channel",
+      title: (document.getElementById("chatRoomTitle") || {}).textContent || ""
+    };
+  }
+  return room;
+}
+
+/* v5.6.1: 헤더 우측 ⚙ — 채팅방 설정 시트(채팅방 나가기는 이 안에만 있다) */
+function chatMenuRow(opt) {
+  const row = document.createElement("button");
+  row.type = "button";
+  row.className = "chat-menu-row" + (opt.danger ? " danger" : "") + (opt.off ? " off" : "");
+  if (opt.off) row.setAttribute("aria-disabled", "true");
+  row.innerHTML = '<span class="cm-ico">' + (opt.icon || "") + "</span>" +
+    '<span class="cm-body"><span class="cm-label">' + escHtml(opt.label) + "</span>" +
+    (opt.sub ? '<span class="cm-sub">' + escHtml(opt.sub) + "</span>" : "") + "</span>";
+  if (!opt.off && typeof opt.onClick === "function") row.onclick = opt.onClick;
+  return row;
+}
+
+function openChatSettings() {
+  const info = activeRoomInfo();
+  if (!info) return;
+  const sub = document.getElementById("chatMenuSub");
+  if (sub) sub.textContent = document.getElementById("chatRoomTitle").textContent || info.title || "";
+  const list = document.getElementById("chatMenuList");
+  if (!list) return;
+  list.innerHTML = "";
+  if (info.type === "dm") {
+    list.appendChild(chatMenuRow({
+      icon: "🚪", label: "채팅방 나가기",
+      sub: "목록에서 사라집니다. 지난 대화 내용은 그대로 남습니다.",
+      danger: true, onClick: leaveActiveChatRoom
+    }));
+  } else {
+    list.appendChild(chatMenuRow({
+      icon: "🚪", label: "채팅방 나가기",
+      sub: "전체 대화방은 나갈 수 없습니다.", off: true
+    }));
+  }
+  document.getElementById("chatSettingsSheet").classList.remove("hidden");
+}
+
+function closeChatSettings() {
+  const el = document.getElementById("chatSettingsSheet");
+  if (el) el.classList.add("hidden");
+}
+
+/* 대화방 설정 시트의 `채팅방 나가기` — 열려 있는 1:1 방에서 나가기 */
 function leaveActiveChatRoom() {
-  if (!activeChatRoomObj) return;
-  const label = document.getElementById("chatRoomTitle").textContent || activeChatRoomObj.title || "";
-  leaveChatRoom(activeChatRoomObj, label);
+  const info = activeRoomInfo();
+  if (!info) return;
+  closeChatSettings();
+  const label = document.getElementById("chatRoomTitle").textContent || info.title || "";
+  leaveChatRoom(info, label);
 }
 
 function openChatRoom(roomId, title, roomObj) {
@@ -3987,8 +4069,6 @@ function openChatRoom(roomId, title, roomObj) {
   activeChatRoomObj = roomObj || null;
   setNativeActiveRoom(roomId);
   markRoomRead(roomId);   // v5.5.0: 방을 열면 바로 읽음 처리(안읽음 배지 0)
-  const leaveBtn = document.getElementById("chatLeaveBtn");
-  if (leaveBtn) leaveBtn.classList.toggle("hidden", !(roomObj && roomObj.type === "dm"));
   document.getElementById("chatRoomTitle").textContent = title;
   document.getElementById("chatThread").classList.remove("hidden");
   // v5.6.0: 저장해 둔 최근 대화를 먼저 0.01초 만에 보여 주고, 최신화는 뒤에서
@@ -4011,8 +4091,7 @@ function closeChatRoom() {
   chatMsgsState = [];
   chatListSig = null;
   setNativeActiveRoom("");
-  const lb = document.getElementById("chatLeaveBtn");
-  if (lb) lb.classList.add("hidden");
+  closeChatSettings();
   if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
   loadChatOverview();
 }
@@ -5399,6 +5478,7 @@ async function deleteCurrentPost() {
 
 /* ===== v5.4.3: 안드로이드 뒤로가기 — 열린 창이 있으면 앱을 끄지 않고 그 창만 닫는다 ===== */
 const ANDROID_BACK_OVERLAYS = [
+  { id: "chatSettingsSheet", close: closeChatSettings },
   { id: "pickSheet", close: closePickSheet },
   { id: "appDlg", close: function () { if (dlgState) closeAppDialog(dlgCancelValue()); } },
   { id: "policyModal", close: closePolicyModal },
