@@ -589,6 +589,13 @@
   .msg-bubble.no-bubble .msg-img { border-radius: 14px; margin-bottom: 0; }
   .msg-bubble.no-bubble .msg-file-card { margin-bottom: 0; }
   .msg-time { font-size: 10px; color: var(--chat-meta); flex: 0 0 auto; padding-bottom: 1px; white-space: nowrap; }
+  /* v5.6.2: 카톡식 안읽음 숫자 — 내 말풍선 시간 바로 위 노란 배지 */
+  .msg-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex: 0 0 auto; padding-bottom: 1px; }
+  .msg-unread {
+    background: #FEE500; color: #191919; font-size: 10px; font-weight: 800; line-height: 1;
+    padding: 3px 5px; border-radius: 8px; min-width: 17px; text-align: center;
+    box-shadow: 0 0 0 1px rgba(15,23,42,0.12);
+  }
   /* v5.6.0: 전송 즉시 말풍선 — 서버 저장 전에는 '전송 중', 실패하면 '전송 실패' */
   .msg-state { color: var(--chat-meta); }
   .msg-state.failed { color: #EF4444; font-weight: 700; }
@@ -1196,8 +1203,9 @@ try {
           </div>
           <span style="font-size:13px;font-weight:700;color:var(--sub);">월별 정산</span>
         </div>
-        <div id="taxControlBar" style="background:var(--surface);border-radius:12px;padding:10px 12px;margin-bottom:12px;">
-          <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px;">세금 설정</div>
+        <!-- v5.6.2: 관리자 세금 설정은 이 화면(`월별 정산`)·정산서에만 적용된다 -->
+        <div id="taxBarAdmin" style="background:var(--surface);border-radius:12px;padding:10px 12px;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px;">세금 설정 <span style="font-weight:600;">(사장님 정산 기준)</span></div>
           <div class="row" style="gap:6px;">
             <button type="button" id="taxBtnNone" class="chip" style="flex:1;text-align:center;" onclick="setTaxMode('none')">설정 안함</button>
             <button type="button" id="taxBtn33" class="chip active" style="flex:1;text-align:center;" onclick="setTaxMode('3.3')">3.3%</button>
@@ -1208,6 +1216,22 @@ try {
             <span style="font-size:13px;font-weight:700;color:var(--sub);flex:0 0 auto;">%</span>
             <button type="button" class="btn btn-primary btn-sm" style="margin:0;flex:0 0 auto;" onclick="applyCustomTax()">적용</button>
           </div>
+          <div style="font-size:11px;color:var(--sub);margin-top:8px;line-height:1.45;">직원 개인의 `내 정산` 설정과는 서로 영향을 주지 않습니다.</div>
+        </div>
+        <!-- v5.6.2: 개인 `내 정산` 전용 세금 설정(관리자 설정과 분리 · 기본 설정 안함) -->
+        <div id="taxBarMe" class="hidden" style="background:var(--surface);border-radius:12px;padding:10px 12px;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px;">세금 설정 <span style="font-weight:600;">(내 정산 기준)</span></div>
+          <div class="row" style="gap:6px;">
+            <button type="button" id="myTaxBtnNone" class="chip" style="flex:1;text-align:center;" onclick="setTaxMode('none', 'me')">설정 안함</button>
+            <button type="button" id="myTaxBtn33" class="chip" style="flex:1;text-align:center;" onclick="setTaxMode('3.3', 'me')">3.3%</button>
+            <button type="button" id="myTaxBtnCustom" class="chip" style="flex:1;text-align:center;" onclick="setTaxMode('custom', 'me')">직접입력</button>
+          </div>
+          <div id="myTaxCustomWrap" class="row hidden" style="margin-top:8px;gap:6px;align-items:center;">
+            <input id="myTaxCustomInput" type="number" step="0.1" min="0" max="50" placeholder="세율 예: 8.8" style="margin:0;padding:8px 10px;font-size:14px;" />
+            <span style="font-size:13px;font-weight:700;color:var(--sub);flex:0 0 auto;">%</span>
+            <button type="button" class="btn btn-primary btn-sm" style="margin:0;flex:0 0 auto;" onclick="applyCustomTax('me')">적용</button>
+          </div>
+          <div style="font-size:11px;color:var(--sub);margin-top:8px;line-height:1.45;">`설정 안함`이면 일당 그대로(세전) 보입니다. 사장님의 정산 설정과는 서로 영향을 주지 않습니다.</div>
         </div>
         <!-- v5.4.1 사장님용 현장별 공수 합계 (기본 접힘 · 헤더를 누르면 펼침) -->
         <div id="siteSummaryCard" class="hidden" style="background:var(--surface);border-radius:14px;padding:12px 14px;margin-bottom:12px;">
@@ -1370,7 +1394,7 @@ try {
       <button class="btn btn-outline" style="margin:0;flex:1;" onclick="downloadPaySheet()">🖼 이미지 저장</button>
       <button class="btn btn-outline" style="margin:0;flex:1;" onclick="copyPaySheet()">📋 텍스트 복사</button>
     </div>
-    <div style="font-size:11.5px;color:var(--sub);margin-top:8px;line-height:1.5;">이미지로 바로 보내면 카톡·문자에서 사진으로 표시됩니다. 금액은 현재 세금 설정(내 정산 탭) 기준입니다.</div>
+    <div style="font-size:11.5px;color:var(--sub);margin-top:8px;line-height:1.5;">이미지로 바로 보내면 카톡·문자에서 사진으로 표시됩니다. 금액은 지금 보고 있는 화면의 세금 설정 기준입니다.</div>
     <div id="paySheetPreview" class="hidden" aria-hidden="true"></div>
   </div>
 </div>
@@ -1395,7 +1419,14 @@ try {
       <input id="mSite" type="text" placeholder="비워둬도 저장됩니다 · 새 현장은 직접 입력" oninput="syncMSiteChips()" />
     </div>
     <div class="row">
-      <div><label>공수</label><input id="mGongsu" type="number" step="0.5" value="1.0" /></div>
+      <!-- v5.6.2: 워크 화면(홈 → 공수 선택)과 같은 드롭다운(기본 1.0공수) -->
+      <div>
+        <label>공수</label>
+        <input id="mGongsu" type="hidden" value="1.0" />
+        <button id="mGongsuBtn" type="button" class="pick-field" onclick="openMGongsuPicker()" aria-haspopup="dialog">
+          <span id="mGongsuVal" class="pick-val">1.0공수</span><span class="pick-caret">▾</span>
+        </button>
+      </div>
       <div><label>일당 (원)</label><input id="mWage" type="number" step="10000" value="180000" /></div>
     </div>
     <label>메모</label>
@@ -1635,8 +1666,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 33;
-const APP_VERSION_NAME = "5.6.1";
+const APP_VERSION_CODE = 34;
+const APP_VERSION_NAME = "5.6.2";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -2596,14 +2627,62 @@ function openSitePicker() {
   inp.value = (cur && names.indexOf(cur) < 0) ? cur : "";
 }
 
+/* ===== v5.6.2: 관리자 출근 기록 모달의 공수도 드롭다운(기본 1.0공수) ===== */
+const M_GONGSU_OPTIONS = [0.5, 1.0, 1.5, 2.0];
+
+function mGongsuValue() {
+  const n = Number((document.getElementById("mGongsu") || {}).value);
+  return (isFinite(n) && n > 0) ? Math.round(n * 100) / 100 : 1.0;
+}
+
+function setMGongsu(v) {
+  const n = Math.round(Number(v) * 100) / 100;
+  const safe = (isFinite(n) && n > 0) ? n : 1.0;
+  const hid = document.getElementById("mGongsu");
+  if (hid) hid.value = String(safe);
+  const el = document.getElementById("mGongsuVal");
+  if (el) el.textContent = fmtGongsu(safe);
+}
+
+function openMGongsuPicker() {
+  pickKind = "mGongsu";
+  openPickSheet("공수 선택", "하루 일한 공수를 골라 주세요");
+  const box = document.getElementById("pickOpts");
+  box.className = "pick-opt-grid";
+  box.innerHTML = "";
+  const cur = mGongsuValue();
+  const inList = M_GONGSU_OPTIONS.indexOf(cur) >= 0;
+  M_GONGSU_OPTIONS.forEach(function (v) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pick-opt" + ((inList && v === cur) ? " active" : "");
+    b.textContent = fmtGongsu(v);
+    b.onclick = function () {
+      setMGongsu(v);
+      closePickSheet();
+    };
+    box.appendChild(b);
+  });
+  const cbtn = document.createElement("button");
+  cbtn.type = "button";
+  cbtn.className = "pick-opt" + (inList ? "" : " active");
+  cbtn.textContent = "직접 입력...";
+  cbtn.onclick = function () { openPickCustom(); };
+  box.appendChild(cbtn);
+  const inp = document.getElementById("pickCustomInput");
+  inp.value = inList ? "" : String(cur);
+  /* 목록에 없는 공수(예: 기존 기록 0.7)면 직접 입력 칸을 함께 보여 준다 */
+  document.getElementById("pickCustomRow").classList.toggle("hidden", inList);
+}
+
 function openPickCustom() {
-  const isGongsu = pickKind === "gongsu";
+  const isGongsu = (pickKind === "gongsu" || pickKind === "mGongsu");
   const inp = document.getElementById("pickCustomInput");
   inp.inputMode = isGongsu ? "decimal" : "text";
   inp.placeholder = isGongsu ? "예: 0.7" : "예: 강릉";
   if (!inp.value) {
     if (isGongsu) {
-      const cur = Math.round(Number(selectedGongsu) * 100) / 100;
+      const cur = (pickKind === "mGongsu") ? mGongsuValue() : (Math.round(Number(selectedGongsu) * 100) / 100);
       if (cur && GONGSU_OPTIONS.indexOf(cur) < 0) inp.value = String(cur);
     } else {
       const cur = String(selectedSite || "").trim();
@@ -2627,6 +2706,15 @@ function applyPickCustom() {
     closePickSheet();
     updateWorkerPickFields();
     toast(fmtGongsu(selectedGongsu) + " 선택됨");
+  } else if (pickKind === "mGongsu") {
+    if (!raw) return toast("공수를 입력해 주세요.");
+    if (!/^\d+(\.\d+)?$/.test(raw)) return toast("숫자만 입력해 주세요. (예: 0.7)");
+    const n = Number(raw);
+    if (!isFinite(n) || n <= 0) return toast("0보다 큰 공수를 입력해 주세요.");
+    if (n > 24) return toast("공수는 24 이하로 입력해 주세요.");
+    setMGongsu(n);
+    closePickSheet();
+    toast(fmtGongsu(n) + " 선택됨");
   } else if (pickKind === "site") {
     if (!raw) return toast("현장명을 입력해 주세요.");
     if (raw.length > 30) return toast("현장명은 30자까지 입력할 수 있어요.");
@@ -3056,11 +3144,16 @@ function renderTeamTab() {
     map[r.worker_id].g += Number(r.gongsu || 0);
     map[r.worker_id].amt += Number(r.amount || 0);
   });
-  const taxRate = getTaxRate();
+  const taxRate = isAdm ? getAdminTaxRate() : getMyTaxRate();
   const taxLabel = taxRate > 0 ? `세금 (${taxRate}%)` : "세금 (미설정)";
   const pEl = document.getElementById("teamPayList");
   pEl.innerHTML = "";
   updateTaxButtons();
+  /* v5.6.2: 사장님 `월별 정산` → 관리자 설정, 직원·개인 `내 정산` → 내 설정 만 보인다 */
+  const barAdmin = document.getElementById("taxBarAdmin");
+  const barMe = document.getElementById("taxBarMe");
+  if (barAdmin) barAdmin.classList.toggle("hidden", !isAdm);
+  if (barMe) barMe.classList.toggle("hidden", !!isAdm);
   if (isAdm) {
     document.getElementById("workerPayCalendarWrap").classList.add("hidden");
     Object.values(map).forEach(w => {
@@ -3221,7 +3314,7 @@ function renderSiteSummary(isAdm) {
         </div>
         <div class="sr-amt" style="color:var(--primary);">${fmtMoney(totAmt)}</div>
       </div>`;
-  const rate = getTaxRate();
+  const rate = getAdminTaxRate();
   const netEl = document.getElementById("siteSummaryNet");
   netEl.textContent = rate > 0
     ? `세금 ${rate}% 공제 후 실지급 합계 ${fmtMoney(totAmt - Math.round(totAmt * rate / 100))}` + (unassigned ? ` · 현장 미지정 ${unassigned.gongsu.toFixed(1)}공수 포함` : "")
@@ -3359,8 +3452,8 @@ function payDrawCrane(ctx, cx, cy) {
   ctx.restore();
 }
 
-function buildPaySheetModel(personName, defaultWage, recs) {
-  const taxRate = getTaxRate();
+function buildPaySheetModel(personName, defaultWage, recs, taxRateIn) {
+  const taxRate = (taxRateIn === undefined || taxRateIn === null) ? getAdminTaxRate() : Number(taxRateIn);
   const days = new Set(recs.map(r => r.date));
   let g = 0, gross = 0;
   const wages = new Set();
@@ -3704,7 +3797,8 @@ function openPaySheet(workerId) {
     const w = (dashData.workers || []).find(x => String(x.user_id) === uid);
     if (w) { name = w.name || name; wage = Number(w.default_wage || 180000); }
   }
-  const model = buildPaySheetModel(name, wage, recs);
+  /* v5.6.2: 이 화면(사장님=관리자 설정 / 내 정산=내 설정)의 세율로 정산서를 만든다 */
+  const model = buildPaySheetModel(name, wage, recs, isAdm ? getAdminTaxRate() : getMyTaxRate());
   let dataUrl = "";
   try {
     dataUrl = renderPaySheetImage(model).dataUrl;
@@ -4149,9 +4243,14 @@ function buildMsgNode(m, mine) {
   const timeStr = fmtChatTime(t);
   // v5.6.0: 서버 저장 전(전송 중)과 실패를 말풍선 옆에 바로 표시
   const stateStr = m._failed ? "전송 실패" : (m._pending ? "전송 중" : "");
+  // v5.6.2: 내가 보낸 말풍선은 상대가 아직 안 읽었으면 노란 숫자(1·N)를 시간 위에 표시
+  const unread = Math.max(0, Number(m.unread || 0));
+  const unreadHtml = (mine && !stateStr && unread > 0)
+    ? `<span class="msg-unread" aria-label="안 읽음 ${unread}명">${unread > 99 ? "99+" : unread}</span>`
+    : "";
   const timeHtml = stateStr
     ? `<div class="msg-time msg-state${m._failed ? " failed" : ""}">${stateStr}</div>`
-    : `<div class="msg-time">${timeStr}</div>`;
+    : `<div class="msg-meta">${unreadHtml}<span class="msg-time">${timeStr}</span></div>`;
   // 사진·파일만 보낸 메시지는 말풍선 액자를 만들지 않는다
   const noBubble = !!(m.file_url && !m.text);
   wrap.innerHTML = `
@@ -4166,7 +4265,7 @@ function buildMsgNode(m, mine) {
 /* 목록이 그대로인지 비교하는 지문 — 같으면 DOM을 갈아엎지 않는다 */
 function chatMsgSignature(msgs) {
   return (msgs || []).map(m => [m.msg_id || "", m.created_at || "", m.text || "", m.file_url || "",
-    m.sender_name || "", m._pending ? "P" : (m._failed ? "F" : "")].join("¦")).join("§");
+    m.sender_name || "", m._pending ? "P" : (m._failed ? "F" : ""), Number(m.unread || 0)].join("¦")).join("§");
 }
 
 /* ===== v5.6.0: 방별 최근 대화 캐시 — 방에 들어가면 서버를 기다리지 않고 먼저 보여 준다 ===== */
@@ -4396,7 +4495,7 @@ function openRecordModal(rec = null) {
   document.getElementById("mDate").value = rec ? rec.date : (selectedDate || dashData.today);
   document.getElementById("mSite").value = rec ? (rec.site || "") : "";
   if (isAdm) renderMSiteChips();
-  document.getElementById("mGongsu").value = rec ? rec.gongsu : 1.0;
+  setMGongsu(rec ? rec.gongsu : 1.0);   // v5.6.2: 드롭다운(기본 1.0공수)
   document.getElementById("mWage").value = rec ? rec.wage : (currentUser.default_wage || 180000);
   document.getElementById("mMemo").value = rec ? rec.memo : "";
 }
@@ -4421,13 +4520,15 @@ async function deleteRecordFromModal() {
 
 async function submitRecordModal() {
   const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  const gongsuVal = Number(document.getElementById("mGongsu").value);
+  if (!isFinite(gongsuVal) || gongsuVal <= 0) return toast("공수를 선택해 주세요.");
   const payload = {
     user_id: currentUser.user_id,
     record_id: document.getElementById("mRecId").value,
     worker_id: isAdm ? document.getElementById("mWorkerId").value : currentUser.user_id,
     date: document.getElementById("mDate").value,
     site: document.getElementById("mSite").value.trim(),
-    gongsu: Number(document.getElementById("mGongsu").value),
+    gongsu: gongsuVal,
     wage: Number(document.getElementById("mWage").value),
     memo: document.getElementById("mMemo").value.trim()
   };
@@ -4553,34 +4654,57 @@ function saveReminderSetting() {
   toast(enabled ? `매일 ${timeVal} 알림이 설정되었습니다.` : "매일 알림이 꺼졌습니다.");
 }
 
-function getTaxMode() { return localStorage.getItem("gongsu_tax_mode") || "3.3"; }
-function getTaxRate() {
-  const mode = getTaxMode();
+/* ===== v5.6.2: 세금 설정 관리자·개인 분리 =====
+   관리자 설정(`gongsu_tax_mode` — 기존 값 이어받음)은 `월별 정산`·정산서에만,
+   개인 설정(`gongsu_tax_me_mode`, 기본 `설정 안함`)은 `내 정산`에만 적용한다. */
+const TAX_STORE = {
+  admin: { mode: "gongsu_tax_mode", custom: "gongsu_tax_custom", def: "3.3", prefix: "tax" },
+  me: { mode: "gongsu_tax_me_mode", custom: "gongsu_tax_me_custom", def: "none", prefix: "myTax" }
+};
+function taxStore(side) { return TAX_STORE[side === "me" ? "me" : "admin"]; }
+function getTaxMode(side) {
+  const st = taxStore(side);
+  return localStorage.getItem(st.mode) || st.def;
+}
+function getTaxRate(side) {
+  const st = taxStore(side);
+  const mode = getTaxMode(side);
   if (mode === "none") return 0;
-  if (mode === "custom") return Number(localStorage.getItem("gongsu_tax_custom") || 0);
+  if (mode === "custom") return Number(localStorage.getItem(st.custom) || 0);
   return 3.3;
 }
+function getAdminTaxRate() { return getTaxRate("admin"); }
+function getMyTaxRate() { return getTaxRate("me"); }
 function updateTaxButtons() {
-  const mode = getTaxMode();
-  document.getElementById("taxBtnNone").classList.toggle("active", mode === "none");
-  document.getElementById("taxBtn33").classList.toggle("active", mode === "3.3");
-  document.getElementById("taxBtnCustom").classList.toggle("active", mode === "custom");
-  document.getElementById("taxCustomWrap").classList.toggle("hidden", mode !== "custom");
-  if (mode === "custom") {
-    document.getElementById("taxCustomInput").value = localStorage.getItem("gongsu_tax_custom") || "";
-  }
+  ["admin", "me"].forEach(function (side) {
+    const st = taxStore(side);
+    const mode = getTaxMode(side);
+    const none = document.getElementById(st.prefix + "BtnNone");
+    const t33 = document.getElementById(st.prefix + "Btn33");
+    const custom = document.getElementById(st.prefix + "BtnCustom");
+    const wrap = document.getElementById(st.prefix + "CustomWrap");
+    const input = document.getElementById(st.prefix + "CustomInput");
+    if (none) none.classList.toggle("active", mode === "none");
+    if (t33) t33.classList.toggle("active", mode === "3.3");
+    if (custom) custom.classList.toggle("active", mode === "custom");
+    if (wrap) wrap.classList.toggle("hidden", mode !== "custom");
+    if (input && mode === "custom") input.value = localStorage.getItem(st.custom) || "";
+  });
 }
-function setTaxMode(mode) {
-  localStorage.setItem("gongsu_tax_mode", mode);
+function setTaxMode(mode, side) {
+  const st = taxStore(side);
+  localStorage.setItem(st.mode, mode);
   updateTaxButtons();
   if (mode !== "custom") renderTeamTab();
 }
-function applyCustomTax() {
-  const v = Number(document.getElementById("taxCustomInput").value);
+function applyCustomTax(side) {
+  const st = taxStore(side);
+  const isAdmin = side !== "me";
+  const v = Number(document.getElementById(st.prefix + "CustomInput").value);
   if (isNaN(v) || v < 0 || v > 50) return toast("0~50% 사이로 입력해 주세요.");
-  localStorage.setItem("gongsu_tax_custom", String(v));
+  localStorage.setItem(st.custom, String(v));
   renderTeamTab();
-  toast(`세율 ${v}%가 적용되었습니다.`);
+  toast(`세율 ${v}%가 ${isAdmin ? "정산서" : "내 정산"}에 적용되었습니다.`);
 }
 
 /* ===== v5.4.8: 채팅 알림 3단(소리+진동 / 무음 / 끄기) + FCM 기기 토큰 등록 ===== */
