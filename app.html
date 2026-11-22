@@ -1666,8 +1666,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 34;
-const APP_VERSION_NAME = "5.6.2";
+const APP_VERSION_CODE = 35;
+const APP_VERSION_NAME = "5.6.3";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -2420,6 +2420,15 @@ function workerNameById(uid) {
   if (currentUser && String(uid) === String(currentUser.user_id)) return currentUser.name;
   const w = findWorker(uid);
   return (w && w.name) || "";
+}
+/* v5.6.3: 직원의 기본 일당 — 본인은 currentUser, 직원은 dashData.workers 의 default_wage(없으면 wage) */
+function defaultWageFor(uid) {
+  if (currentUser && String(uid) === String(currentUser.user_id)) return Number(currentUser.default_wage || 180000);
+  const w = findWorker(uid);
+  if (!w) return 180000;
+  const raw = (w.default_wage !== undefined && w.default_wage !== null) ? w.default_wage : w.wage;
+  const n = Number(raw);
+  return (isFinite(n) && n > 0) ? n : 180000;
 }
 /* 직원 정보(일당·현장·직종·권한)를 화면 데이터에 먼저 반영한다. 본인이면 currentUser도 함께. */
 function patchWorkerLocal(uid, patch) {
@@ -4489,6 +4498,10 @@ function openRecordModal(rec = null) {
       sel.appendChild(o);
     });
     if (rec) sel.value = rec.worker_id;
+    /* v5.6.3: 직원을 바꾸면 그 직원의 기본 일당으로 채운다(수정 중 다른 직원으로 바꿔도 새 직원 기준) */
+    sel.onchange = () => {
+      document.getElementById("mWage").value = defaultWageFor(sel.value);
+    };
   }
   document.getElementById("mRecId").value = rec ? rec.record_id : "";
   document.getElementById("mDeleteBtn").classList.toggle("hidden", !(rec && rec.record_id));
@@ -4496,7 +4509,10 @@ function openRecordModal(rec = null) {
   document.getElementById("mSite").value = rec ? (rec.site || "") : "";
   if (isAdm) renderMSiteChips();
   setMGongsu(rec ? rec.gongsu : 1.0);   // v5.6.2: 드롭다운(기본 1.0공수)
-  document.getElementById("mWage").value = rec ? rec.wage : (currentUser.default_wage || 180000);
+  /* v5.6.3: 신규 기록은 지금 고른 직원의 기본 일당, 기존 기록 수정은 저장된 일당으로 시작(직원을 바꾸면 갱신) */
+  document.getElementById("mWage").value = rec
+    ? rec.wage
+    : defaultWageFor(isAdm ? document.getElementById("mWorkerId").value : currentUser.user_id);
   document.getElementById("mMemo").value = rec ? rec.memo : "";
 }
 
