@@ -370,57 +370,6 @@
   .notif-mode-chip { flex: 1 1 0; text-align: center; padding: 10px 4px; font-size: 12.5px; white-space: nowrap; }
   .notif-mode-chip.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 
-  /* ===== v5.6.4 오픈카톡 구인글 자동 등록 ===== */
-  .kj-badge {
-    flex: 0 0 auto; padding: 5px 10px; border-radius: 999px;
-    font-size: 11.5px; font-weight: 800; background: var(--pill-bg); color: var(--sub);
-    white-space: nowrap;
-  }
-  .kj-badge.on { background: var(--green-soft); color: var(--green); }
-  .kj-badge.warn { background: var(--orange-soft); color: var(--orange); }
-  .kj-perm {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    margin-top: 10px; padding: 10px 12px; border-radius: 12px;
-    background: var(--surface); border: 1px solid var(--line);
-  }
-  .kj-perm-text { font-size: 12.5px; font-weight: 700; color: var(--muted); line-height: 1.4; flex: 1 1 auto; }
-  .kj-perm-text b { color: var(--orange); }
-  .kj-perm-text.ok b { color: var(--green); }
-  .kj-log-head {
-    display: flex; align-items: center; justify-content: space-between;
-    margin: 14px 0 6px; font-size: 12px; font-weight: 700; color: var(--sub);
-  }
-  .kj-link {
-    border: none; background: transparent; color: var(--accent-text);
-    font-size: 12px; font-weight: 800; cursor: pointer; font-family: inherit; padding: 2px 4px;
-  }
-  .kj-logs { display: flex; flex-direction: column; gap: 6px; }
-  .kj-log {
-    display: flex; align-items: center; gap: 8px;
-    padding: 9px 11px; border-radius: 11px; background: var(--surface);
-    border: 1px solid var(--line); font-size: 12px;
-  }
-  .kj-log-t { flex: 0 0 auto; color: var(--sub); font-variant-numeric: tabular-nums; font-size: 11.5px; }
-  .kj-log-room {
-    flex: 1 1 auto; min-width: 0; color: var(--text); font-weight: 700;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .kj-log-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
-  .kj-log-sub {
-    font-size: 11px; color: var(--sub); overflow: hidden;
-    text-overflow: ellipsis; white-space: nowrap; margin-top: 1px;
-  }
-  .kj-log-st { flex: 0 0 auto; font-weight: 800; color: var(--sub); font-size: 11.5px; }
-  .kj-log-st.ok { color: var(--green); }
-  .kj-log-st.bad { color: var(--red); }
-  .kj-empty { font-size: 12px; color: var(--placeholder); padding: 10px 2px; }
-  .kj-web {
-    margin-top: 10px; padding: 12px; border-radius: 12px;
-    background: var(--surface); border: 1px dashed var(--line);
-    font-size: 12.5px; font-weight: 700; color: var(--muted); line-height: 1.5;
-  }
-  .kj-web-sub { font-size: 11.5px; font-weight: 600; color: var(--sub); }
-
   /* ===== v5.4.6 관리자 출근 기록 모달: 현장 목록 칩(등록 현장 + 최근 사용) ===== */
   .m-site-chips { margin: 0 0 7px; gap: 6px; }
   .m-site-chips .chip { padding: 7px 12px; font-size: 12.5px; }
@@ -1558,49 +1507,6 @@ try {
       </div>
       <div class="set-row-sub" id="chatNotifModeSub" style="margin-top:7px;">앱을 꺼 두어도 새 채팅이 오면 소리와 진동으로 알려드립니다.</div>
     </div>
-    <!-- v5.6.4: 오픈카톡 구인글 자동 등록 -->
-    <div id="kakaoJobSection" class="hidden" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
-      <div class="set-row">
-        <div>
-          <div class="set-row-title">📣 오픈카톡 구인글 자동 등록</div>
-          <div class="set-row-sub">오픈톡방에 구인글이 올라오면 광장 › 구인·구직에 자동으로 올립니다</div>
-        </div>
-        <span id="kakaoJobBadge" class="kj-badge">—</span>
-      </div>
-      <div id="kakaoJobNative" class="hidden">
-        <div class="kj-perm">
-          <div id="kakaoJobPermText" class="kj-perm-text">알림 접근 권한을 허용해야 카톡 알림을 읽을 수 있습니다.</div>
-          <button id="kakaoJobPermBtn" type="button" class="btn btn-primary btn-sm" style="margin:0;flex:0 0 auto;" onclick="openKakaoJobPermission()">권한 설정 열기</button>
-        </div>
-        <div class="set-row" style="margin-top:12px;">
-          <div>
-            <div class="set-row-title">자동 수집</div>
-            <div class="set-row-sub" id="kakaoJobToggleSub">켜 두면 카톡 알림을 읽어 구인글만 골라 올립니다</div>
-          </div>
-          <label class="switch" style="margin:0;">
-            <input id="kakaoJobToggle" type="checkbox" onchange="toggleKakaoJob(this.checked)" />
-            <span class="slider"></span>
-          </label>
-        </div>
-        <label for="kakaoJobFilter">방 이름 필터 (선택)</label>
-        <div class="row">
-          <input id="kakaoJobFilter" type="text" placeholder="비우면 모든 카톡방 · 쉼표로 여러 개 (예: 구인, 하남)" onkeydown="if(event.key==='Enter')saveKakaoJobFilter()" />
-          <button class="btn btn-primary btn-sm" style="margin:0;" onclick="saveKakaoJobFilter()">저장</button>
-        </div>
-        <div class="kj-log-head">
-          <span>최근 전송 기록</span>
-          <span>
-            <button class="kj-link" type="button" onclick="refreshKakaoJobLogs(true)">새로고침</button>
-            <button class="kj-link" type="button" onclick="clearKakaoJobLogs()">기록 지우기</button>
-          </span>
-        </div>
-        <div id="kakaoJobLogs" class="kj-logs"></div>
-      </div>
-      <div id="kakaoJobWeb" class="kj-web hidden">
-        안드로이드 앱(APK)에서 설정할 수 있습니다.<br />
-        <span class="kj-web-sub">폰에 오늘몇공 앱을 설치하면 카톡 알림을 읽어 구인글을 자동으로 올려 드려요.</span>
-      </div>
-    </div>
     <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
       <div class="set-row">
         <div>
@@ -1760,8 +1666,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 36;
-const APP_VERSION_NAME = "5.6.4";
+const APP_VERSION_CODE = 37;
+const APP_VERSION_NAME = "5.6.5";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -4702,8 +4608,6 @@ function openSettingsModal(onboarding = false) {
   document.getElementById("dailyNotifCheck").checked = enabled;
   document.getElementById("dailyNotifTime").value = timeVal;
   renderChatNotifMode();
-  // v5.6.4: 오픈카톡 구인글 자동 등록 상태·기록
-  renderKakaoJobSection();
   document.getElementById("settingsModal").classList.remove("hidden");
 }
 
@@ -4883,186 +4787,6 @@ async function setChatNotifMode(mode) {
   const r = await api("set_notif_mode", { mode });
   if (r && r.ok === false && r.error) toast(r.error);
 }
-
-/* ===== v5.6.4: 오픈카톡 구인글 자동 등록 (안드로이드 알림 리스너) ===== */
-//  카톡 알림을 읽어 서버(kakao-job-webhook)로 넘기면 서버가 구인글만 골라 광장 › 구인·구직에 올린다.
-//  앱(안드로이드)에서만 동작하고, 웹에서는 안내만 보여 준다.
-function kakaoJobBridge() {
-  try {
-    if (window.KakaoJob && typeof window.KakaoJob.getConfig === "function") return window.KakaoJob;
-  } catch (e) {}
-  return null;
-}
-
-function kakaoJobConfig() {
-  const b = kakaoJobBridge();
-  if (!b) return null;
-  try { return JSON.parse(String(b.getConfig() || "{}")) || {}; } catch (e) { return {}; }
-}
-
-function kakaoJobLogTime(ms) {
-  const d = new Date(Number(ms) || 0);
-  if (!isFinite(d.getTime()) || d.getTime() <= 0) return "--:--";
-  const p = n => String(n).padStart(2, "0");
-  const now = new Date();
-  const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
-  return (sameDay ? "" : (d.getMonth() + 1) + "." + p(d.getDate()) + " ") + p(d.getHours()) + ":" + p(d.getMinutes());
-}
-
-function renderKakaoJobLogs(items) {
-  const box = document.getElementById("kakaoJobLogs");
-  if (!box) return;
-  if (!Array.isArray(items)) {
-    const b = kakaoJobBridge();
-    try { items = b ? JSON.parse(String(b.getLogs() || "[]")) : []; } catch (e) { items = []; }
-    if (!Array.isArray(items)) items = [];
-  }
-  if (!items.length) {
-    box.innerHTML = '<div class="kj-empty">아직 전송 기록이 없습니다. 카톡에 구인글이 올라오면 여기에 표시됩니다.</div>';
-    return;
-  }
-  box.innerHTML = items.map(it => {
-    const st = String((it && it.status) || "");
-    const cls = st.indexOf("등록") === 0 ? "ok"
-      : (st.indexOf("실패") === 0 || st.indexOf("오류") >= 0 || st.indexOf("설정 없음") === 0 ? "bad" : "");
-    const room = String((it && it.room) || "카톡방");
-    const title = String((it && it.title) || "");
-    return '<div class="kj-log">'
-      + '<span class="kj-log-t">' + escHtml(kakaoJobLogTime(it && it.at)) + '</span>'
-      + '<span class="kj-log-main"><span class="kj-log-room">' + escHtml(room) + '</span>'
-      + (title ? '<span class="kj-log-sub">' + escHtml(title) + '</span>' : '') + '</span>'
-      + '<span class="kj-log-st ' + cls + '">' + escHtml(st || "-") + '</span></div>';
-  }).join("");
-}
-
-function refreshKakaoJobLogs(notify) {
-  if (!kakaoJobBridge()) return;
-  renderKakaoJobLogs();
-  if (notify) toast("최근 전송 기록을 새로 불러왔습니다.");
-}
-
-function renderKakaoJobSection() {
-  const sec = document.getElementById("kakaoJobSection");
-  if (!sec) return;
-  const isAdm = !!(currentUser && currentUser.role === "admin");
-  sec.classList.toggle("hidden", !isAdm);
-  if (!isAdm) return;
-
-  const b = kakaoJobBridge();
-  const nativeBox = document.getElementById("kakaoJobNative");
-  const webBox = document.getElementById("kakaoJobWeb");
-  const badgeEl = document.getElementById("kakaoJobBadge");
-  if (badgeEl) badgeEl.classList.toggle("hidden", !b);
-  if (nativeBox) nativeBox.classList.toggle("hidden", !b);
-  if (webBox) webBox.classList.toggle("hidden", !!b);
-  if (!b) return;
-
-  const cfg = kakaoJobConfig() || {};
-  let granted = !!cfg.permission;
-  try { granted = !!b.isPermissionGranted(); } catch (e) {}
-  const enabled = cfg.enabled !== false;
-
-  const badge = document.getElementById("kakaoJobBadge");
-  if (badge) {
-    badge.classList.remove("hidden");
-    badge.textContent = !granted ? "권한 필요" : (enabled ? "작동 중" : "꺼짐");
-    badge.className = "kj-badge" + (!granted ? " warn" : (enabled ? " on" : ""));
-  }
-
-  const permText = document.getElementById("kakaoJobPermText");
-  if (permText) {
-    permText.className = "kj-perm-text" + (granted ? " ok" : "");
-    permText.innerHTML = granted
-      ? "알림 접근 권한 <b>허용됨</b> · 카카오톡 알림을 읽을 수 있습니다."
-      : "알림 접근 권한이 <b>필요합니다</b> · [권한 설정]에서 ‘오늘몇공’을 허용해 주세요.";
-  }
-  const permBtn = document.getElementById("kakaoJobPermBtn");
-  if (permBtn) {
-    permBtn.textContent = granted ? "권한 설정" : "권한 설정 열기";
-    permBtn.className = "btn btn-sm " + (granted ? "btn-outline" : "btn-primary");
-    permBtn.style.margin = "0";
-    permBtn.style.flex = "0 0 auto";
-  }
-
-  const tgl = document.getElementById("kakaoJobToggle");
-  if (tgl) tgl.checked = enabled;
-  const tsub = document.getElementById("kakaoJobToggleSub");
-  if (tsub) {
-    tsub.textContent = !granted
-      ? "권한을 허용하면 켜진 상태로 바로 작동합니다"
-      : (cfg.configured === false ? "이 빌드에는 웹훅 설정이 없습니다"
-        : (enabled ? "켜짐 · 카톡 알림을 읽어 구인글만 올립니다" : "꺼짐 · 카톡 알림을 읽지 않습니다"));
-  }
-
-  const flt = document.getElementById("kakaoJobFilter");
-  if (flt && document.activeElement !== flt) flt.value = String(cfg.roomFilter || "");
-  renderKakaoJobLogs();
-}
-
-function openKakaoJobPermission() {
-  const b = kakaoJobBridge();
-  if (!b) return;
-  try { b.openPermissionSettings(); } catch (e) {}
-  toast("설정에서 ‘오늘몇공’ 알림 접근을 허용해 주세요.");
-}
-
-function toggleKakaoJob(on) {
-  const b = kakaoJobBridge();
-  const el = document.getElementById("kakaoJobToggle");
-  if (!b) { if (el) el.checked = false; return; }
-  let granted = false;
-  try { granted = !!b.isPermissionGranted(); } catch (e) {}
-  try { b.setConfig(JSON.stringify({ enabled: !!on })); } catch (e) {}
-  if (on && !granted) {
-    toast("알림 접근 권한을 먼저 허용해 주세요.");
-    openKakaoJobPermission();
-  } else {
-    toast(on ? "📣 오픈카톡 구인글 자동 등록을 켰습니다." : "자동 등록을 껐습니다. 카톡 알림을 읽지 않습니다.");
-  }
-  renderKakaoJobSection();
-}
-
-function saveKakaoJobFilter() {
-  const b = kakaoJobBridge();
-  if (!b) return;
-  const el = document.getElementById("kakaoJobFilter");
-  const raw = (el ? el.value : "").replace(/\s*,\s*/g, ", ").trim();
-  try { b.setConfig(JSON.stringify({ roomFilter: raw })); } catch (e) {}
-  if (el) el.blur();
-  toast(raw
-    ? "방 이름 필터를 저장했습니다. (‘" + raw + "’ 가 들어간 방만 올립니다)"
-    : "필터를 비웠습니다. 모든 카톡방에서 구인글을 찾습니다.");
-  renderKakaoJobSection();
-}
-
-async function clearKakaoJobLogs() {
-  const b = kakaoJobBridge();
-  if (!b) return;
-  const ok = await appConfirm("", {
-    title: "전송 기록 지우기",
-    sub: "최근 전송 기록만 지웁니다. 이미 광장에 올라간 글은 그대로 남습니다.",
-    okText: "지우기", icon: "alert", danger: true
-  });
-  if (!ok) return;
-  try { b.clearLogs(); } catch (e) {}
-  renderKakaoJobLogs([]);
-  toast("전송 기록을 지웠습니다.");
-}
-
-/* 설정 창을 열어 둔 동안 전송 기록을 6초마다 조용히 갱신한다 */
-setInterval(function () {
-  const modal = document.getElementById("settingsModal");
-  if (!modal || modal.classList.contains("hidden")) return;
-  if (!kakaoJobBridge()) return;
-  renderKakaoJobLogs();
-}, 6000);
-
-/* 알림 접근 권한 화면에 다녔다 오면 상태를 다시 읽는다 */
-document.addEventListener("visibilitychange", function () {
-  if (document.hidden) return;
-  const modal = document.getElementById("settingsModal");
-  if (modal && !modal.classList.contains("hidden")) renderKakaoJobSection();
-});
 
 /* 알림을 누르면 그 대화방을 연다 (안드로이드 네이티브 → window.onPushOpen) */
 function setNativeActiveRoom(roomId) {
