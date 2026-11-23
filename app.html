@@ -1160,11 +1160,26 @@ try {
     <div class="card">
       <div class="row" style="justify-content:space-between;margin-bottom:8px;">
         <h2 id="calSelectedTitle" class="card-title" style="margin:0;">선택한 날짜</h2>
-        <select id="calWorkerFilter" class="hidden" style="width:auto;padding:5px 8px;font-size:12px;" onchange="renderCalDayRecords()">
+        <select id="calWorkerFilter" class="hidden" style="width:auto;padding:5px 8px;font-size:12px;" onchange="onCalWorkerFilterChange()">
           <option value="ALL">전체 직원</option>
         </select>
       </div>
       <div id="calDayList"></div>
+    </div>
+
+    <!-- v5.6.6: 이번달 공수 요약 (관리자 = 선택 직원·전체, 직원 = 본인) -->
+    <div class="card" id="calSummaryCard">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px;align-items:center;">
+        <h2 class="card-title" style="margin:0;">이번달 공수 요약</h2>
+        <span id="calSumWho" class="pill pill-indigo">전체 직원</span>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="val" id="calSumDays">0일</div><div class="lbl">출근일</div></div>
+        <div class="stat-box"><div class="val" id="calSumGongsu">0</div><div class="lbl">총 공수</div></div>
+        <div class="stat-box"><div class="val" id="calSumPay">0원</div><div class="lbl" id="calSumPayLbl">총 금액</div></div>
+      </div>
+      <div id="calSumDetail" style="margin-top:10px;"></div>
+      <div id="calSumNote" class="list-sub" style="margin-top:8px;"></div>
     </div>
   </div>
 
@@ -1666,8 +1681,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 37;
-const APP_VERSION_NAME = "5.6.5";
+const APP_VERSION_CODE = 38;
+const APP_VERSION_NAME = "5.6.6";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -2920,10 +2935,14 @@ function renderCalendar() {
       wf.appendChild(o);
     });
     if (prev) wf.value = prev;
+    if (!wf.value) wf.value = "ALL";
   }
 
+  /* v5.6.6: 직원을 고르면 그 직원의 근무일만 달력에 점이 찍힌다(ALL = 전체 직원) */
   const recs = isAdm ? (dashData.records || []) : getMyRecords();
-  const hasDot = new Set(recs.map(r => r.date));
+  const dotFilter = calFilterValue();
+  const dotRecs = (isAdm && dotFilter !== "ALL") ? recs.filter(r => r.worker_id === dotFilter) : recs;
+  const hasDot = new Set(dotRecs.map(r => r.date));
 
   const grid = document.getElementById("calGrid");
   grid.innerHTML = "";
@@ -2950,11 +2969,83 @@ function renderCalendar() {
     grid.appendChild(cell);
   }
   renderCalDayRecords();
+  renderCalSummary();
+}
+
+/* v5.6.6: 출근달력의 지금 필터 값 — 관리자는 고른 직원(또는 "ALL"), 직원은 본인 */
+function calFilterValue() {
+  const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  if (!isAdm) return currentUser.user_id;
+  const wf = document.getElementById("calWorkerFilter");
+  const v = wf ? String(wf.value || "ALL") : "ALL";
+  return v || "ALL";
+}
+
+/* 드롭다운 변경 → 달력 점 · 선택 날짜 근무 기록 · 이번달 공수 요약을 한 번에 갱신 */
+function onCalWorkerFilterChange() {
+  renderCalendar();
+}
+
+function renderCalSummary() {
+  if (!dashData || !currentUser) return;
+  const isAdm = (currentUser.role === "admin" && viewMode === "admin");
+  const fid = calFilterValue();
+  const allRecs = (dashData && dashData.records) || [];
+  const srcRecs = isAdm ? (fid === "ALL" ? allRecs : allRecs.filter(r => r.worker_id === fid)) : getMyRecords();
+  /* 이번달(`curMonth`) 기록만 — 달을 넘겨 가며 봐도 요약이 그 달 기준으로 */
+  const recs = srcRecs.filter(r => String(r.date || "").indexOf(curMonth) === 0);
+
+  let days = new Set(), gross = 0, g = 0;
+  recs.forEach(r => { days.add(r.date); g += Number(r.gongsu || 0); gross += Number(r.amount || 0); });
+
+  const whoEl = document.getElementById("calSumWho");
+  if (whoEl) {
+    if (!isAdm) whoEl.textContent = "내 기록";
+    else if (fid === "ALL") whoEl.textContent = "전체 직원";
+    else {
+      const w = (dashData.workers || []).find(x => x.user_id === fid);
+      whoEl.textContent = (w && w.name) || (recs[0] && recs[0].worker_name) || "선택 직원";
+    }
+  }
+
+  const daysEl = document.getElementById("calSumDays");
+  if (daysEl) daysEl.textContent = days.size + "일";
+  const gEl = document.getElementById("calSumGongsu");
+  if (gEl) gEl.textContent = g.toFixed(1);
+  const payEl = document.getElementById("calSumPay");
+  if (payEl) payEl.textContent = fmtMoney(gross);
+  const payLbl = document.getElementById("calSumPayLbl");
+  if (payLbl) payLbl.textContent = isAdm ? "총 금액" : "예상 금액";
+
+  /* 홈·`내 정산`과 같은 톤: 세전 → 세금 → 실수령 */
+  const taxRate = isAdm ? getAdminTaxRate() : getMyTaxRate();
+  const tax = Math.round(gross * taxRate / 100);
+  const net = gross - tax;
+  const taxLabel = taxRate > 0 ? `세금 (${taxRate}%)` : "세금 (미설정)";
+  const detail = document.getElementById("calSumDetail");
+  if (detail) {
+    detail.innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:3px 2px;">
+        <span style="color:var(--sub);">총 금액 (세전)</span><b>${fmtMoney(gross)}</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:3px 2px;">
+        <span style="color:var(--sub);">${taxLabel}</span>
+        <span style="color:${taxRate > 0 ? "#EF4444" : "var(--sub)"};font-weight:700;">${taxRate > 0 ? "-" + fmtMoney(tax) : "0원"}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;padding:8px 2px 2px;margin-top:4px;border-top:1px solid var(--line);">
+        <b>실수령</b><b style="color:var(--primary);">${fmtMoney(net)}</b>
+      </div>`;
+  }
+  const note = document.getElementById("calSumNote");
+  if (note) {
+    note.textContent = monthLabelKR(curMonth) + " 기준 · " + (isAdm ? "사장님 정산 기준" : "내 정산 기준")
+      + (days.size ? "" : " · 이번 달 기록이 없습니다");
+  }
 }
 
 function renderCalDayRecords() {
   const isAdm = (currentUser.role === "admin" && viewMode === "admin");
-  const filterId = isAdm ? document.getElementById("calWorkerFilter").value : currentUser.user_id;
+  const filterId = calFilterValue();
   document.getElementById("calSelectedTitle").textContent = selectedDate + " 근무 기록";
 
   const listEl = document.getElementById("calDayList");
@@ -4712,6 +4803,7 @@ function setTaxMode(mode, side) {
   localStorage.setItem(st.mode, mode);
   updateTaxButtons();
   if (mode !== "custom") renderTeamTab();
+  renderCalSummary(); /* v5.6.6: 세금 기준이 바뀌면 이번달 공수 요약의 세금·실수령도 같이 */
 }
 function applyCustomTax(side) {
   const st = taxStore(side);
@@ -4720,6 +4812,7 @@ function applyCustomTax(side) {
   if (isNaN(v) || v < 0 || v > 50) return toast("0~50% 사이로 입력해 주세요.");
   localStorage.setItem(st.custom, String(v));
   renderTeamTab();
+  renderCalSummary(); /* v5.6.6 */
   toast(`세율 ${v}%가 ${isAdmin ? "정산서" : "내 정산"}에 적용되었습니다.`);
 }
 
