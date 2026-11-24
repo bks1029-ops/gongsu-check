@@ -424,6 +424,17 @@
   .list-top { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 15px; color: var(--text); }
   /* v5.6.6 광장: `공지` 배지가 좁아져도 두 줄(공\n지)로 쪼개지지 않게 */
   .list-top > .pill { flex: 0 0 auto; white-space: nowrap; }
+  /* v5.6.6 광장 공지 카드: 은은한 회색·슬레이트 바탕 + 둥근 모서리·테두리 + 왼쪽 골드 라인 */
+  .list-item-notice {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--primary);
+    border-radius: 14px;
+    padding: 12px 13px;
+    margin-bottom: 10px;
+  }
+  .list-item-notice:last-child { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+  .list-item-notice .list-sub { color: var(--muted); }
 
   /* ===== v5.5.1 인력관리 `직원·초대` — 관리자 왕관 배지 + 2줄 정렬 ===== */
   /* 윗줄: [👑]이름 · 직종 · 경력 …… 연락처 · 일당(✎) / 아랫줄: 관리자 지정·팀 종료·현장 (오른쪽) */
@@ -5592,11 +5603,12 @@ function renderCommunityPosts() {
   });
   list.forEach(p => {
     const d = document.createElement("div");
-    d.className = "list-item";
+    const isNotice = String(p.category || "") === "공지";
+    d.className = "list-item" + (isNotice ? " list-item-notice" : "");
     const dt = (p.created_at || "").slice(0, 10);
     d.innerHTML = `
       <div class="list-top">
-        <span style="font-size:15px;">${(p.title || "").replace(/</g, "&lt;")}</span>
+        <span style="font-size:15px;">${isNotice ? "📌 " : ""}${(p.title || "").replace(/</g, "&lt;")}</span>
         <span class="pill pill-indigo" style="font-size:11px;white-space:nowrap;flex:0 0 auto;">${p.category || "자유"}</span>
       </div>
       <div class="list-sub" style="margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(p.body || "").replace(/</g, "&lt;")}</div>
