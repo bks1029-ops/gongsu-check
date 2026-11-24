@@ -422,6 +422,8 @@
   .list-item { padding: 12px 0; border-bottom: 1px solid var(--line); }
   .list-item:last-child { border-bottom: none; padding-bottom: 0; }
   .list-top { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 15px; color: var(--text); }
+  /* v5.6.6 광장: `공지` 배지가 좁아져도 두 줄(공\n지)로 쪼개지지 않게 */
+  .list-top > .pill { flex: 0 0 auto; white-space: nowrap; }
 
   /* ===== v5.5.1 인력관리 `직원·초대` — 관리자 왕관 배지 + 2줄 정렬 ===== */
   /* 윗줄: [👑]이름 · 직종 · 경력 …… 연락처 · 일당(✎) / 아랫줄: 관리자 지정·팀 종료·현장 (오른쪽) */
@@ -1318,11 +1320,12 @@ try {
 <div id="postComposeModal" class="modal-bg hidden">
   <div class="modal-card">
     <div class="row" style="justify-content:space-between;margin-bottom:10px;">
-      <h2 style="margin:0;font-size:17px;">광장 글쓰기</h2>
+      <h2 id="postComposeTitle" style="margin:0;font-size:17px;">광장 글쓰기</h2>
       <button class="btn btn-outline btn-sm" style="margin:0;" onclick="closePostComposeModal()">닫기</button>
     </div>
     <label>카테고리</label>
     <select id="postCatInput">
+      <!-- v5.6.6: `공지` 선택지는 운영자(isOperator)에게만 openPostComposeModal()에서 붙는다 -->
       <option value="구인·구직">구인·구직</option>
       <option value="현장후기">현장후기</option>
       <option value="장비·팁">장비·팁</option>
@@ -1333,7 +1336,7 @@ try {
     <input id="postTitleInput" type="text" placeholder="제목을 입력하세요" />
     <label>내용</label>
     <textarea id="postBodyInput" rows="5" placeholder="현장 정보, 구인/구직, 장비 팁 등을 자유롭게 나눠주세요" style="width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;"></textarea>
-    <button class="btn btn-primary" style="margin-top:14px;" onclick="submitCommunityPost()">게시하기</button>
+    <button id="postSubmitBtn" class="btn btn-primary" style="margin-top:14px;" onclick="submitCommunityPost()">게시하기</button>
   </div>
 </div>
 
@@ -1343,6 +1346,7 @@ try {
     <div class="row" style="justify-content:space-between;margin-bottom:10px;">
       <span id="pdCat" class="pill pill-indigo"></span>
       <div class="row" style="flex:0 0 auto;gap:6px;">
+        <button id="pdEditBtn" class="btn btn-outline btn-sm hidden" style="margin:0;" onclick="openPostEditFromDetail()">수정</button>
         <button id="pdDeleteBtn" class="btn btn-outline btn-sm hidden" style="margin:0;color:var(--red);border-color:rgba(248,113,113,0.45);" onclick="deleteCurrentPost()">삭제</button>
         <button class="btn btn-outline btn-sm" style="margin:0;" onclick="reportCurrentPost()">신고</button>
         <button class="btn btn-outline btn-sm" style="margin:0;" onclick="closePostDetailModal()">닫기</button>
@@ -5557,6 +5561,7 @@ async function changePin() {
 let curCommCat = "전체";
 let commPostsCache = [];
 let activePost = null;
+let editingPostId = null;   /* v5.6.6: 글 수정 중인 post_id (null = 새 글) */
 
 function pickCommCat(cat, btn) {
   curCommCat = cat;
@@ -5577,7 +5582,14 @@ async function loadCommunityPosts() {
 function renderCommunityPosts() {
   const listEl = document.getElementById("communityPostList");
   listEl.innerHTML = "";
-  const list = curCommCat === "전체" ? commPostsCache : commPostsCache.filter(p => p.category === curCommCat);
+  const list = (curCommCat === "전체" ? commPostsCache.slice() : commPostsCache.filter(p => p.category === curCommCat));
+  /* v5.6.6: 공지글이 항상 맨 위(최신 공지 우선), 그 아래는 최신순 — 서버 정렬과 이중으로 보장 */
+  list.sort((a, b) => {
+    const an = String(a.category || "") === "공지" ? 0 : 1;
+    const bn = String(b.category || "") === "공지" ? 0 : 1;
+    if (an !== bn) return an - bn;
+    return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+  });
   list.forEach(p => {
     const d = document.createElement("div");
     d.className = "list-item";
@@ -5585,7 +5597,7 @@ function renderCommunityPosts() {
     d.innerHTML = `
       <div class="list-top">
         <span style="font-size:15px;">${(p.title || "").replace(/</g, "&lt;")}</span>
-        <span class="pill pill-indigo" style="font-size:11px;">${p.category || "자유"}</span>
+        <span class="pill pill-indigo" style="font-size:11px;white-space:nowrap;flex:0 0 auto;">${p.category || "자유"}</span>
       </div>
       <div class="list-sub" style="margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(p.body || "").replace(/</g, "&lt;")}</div>
       <div class="list-sub" style="margin-top:4px;display:flex;justify-content:space-between;">
@@ -5599,9 +5611,61 @@ function renderCommunityPosts() {
 }
 
 function openPostComposeModal() {
+  editingPostId = null;
+  const tmp = document.getElementById("postCatTempOpt");
+  if (tmp) tmp.remove();
   document.getElementById("postTitleInput").value = "";
   document.getElementById("postBodyInput").value = "";
+  const t = document.getElementById("postComposeTitle"); if (t) t.textContent = "광장 글쓰기";
+  const s = document.getElementById("postSubmitBtn"); if (s) s.textContent = "게시하기";
+  syncPostCatNoticeOption();
   document.getElementById("postComposeModal").classList.remove("hidden");
+}
+
+/* v5.6.6: 상세 모달의 `수정` → 작성 모달을 그대로 재사용해 기존 값을 채운다 */
+function openPostEditFromDetail() {
+  if (!activePost) return;
+  const p = activePost;
+  editingPostId = p.post_id;
+  closePostDetailModal();
+  document.getElementById("postComposeTitle").textContent = "글 수정";
+  document.getElementById("postSubmitBtn").textContent = "수정 저장";
+  syncPostCatNoticeOption();
+  const sel = document.getElementById("postCatInput");
+  const cat = p.category || "자유";
+  if (!Array.prototype.some.call(sel.options, o => o.value === cat)) {
+    const opt = document.createElement("option");
+    opt.id = "postCatTempOpt";
+    opt.value = cat;
+    opt.textContent = cat;
+    sel.appendChild(opt);
+  }
+  sel.value = cat;
+  document.getElementById("postTitleInput").value = p.title || "";
+  document.getElementById("postBodyInput").value = p.body || "";
+  document.getElementById("postComposeModal").classList.remove("hidden");
+}
+
+/* v5.6.6: `공지` 카테고리는 운영자(admin_01 / 01031357779)에게만 보인다 */
+function syncPostCatNoticeOption() {
+  const sel = document.getElementById("postCatInput");
+  if (!sel) return;
+  let opt = document.getElementById("postCatNoticeOpt");
+  if (isOperator()) {
+    if (!opt) {
+      opt = document.createElement("option");
+      opt.id = "postCatNoticeOpt";
+      opt.value = "공지";
+      opt.textContent = "📌 공지 (목록 맨 위 고정)";
+      const keep = sel.value;
+      sel.insertBefore(opt, sel.firstChild);
+      sel.value = keep || "구인·구직";
+    }
+  } else if (opt) {
+    const keep = sel.value;
+    opt.remove();
+    if (keep === "공지") sel.value = "구인·구직";
+  }
 }
 function closePostComposeModal() { document.getElementById("postComposeModal").classList.add("hidden"); }
 
@@ -5609,15 +5673,24 @@ async function submitCommunityPost() {
   const category = document.getElementById("postCatInput").value;
   const title = document.getElementById("postTitleInput").value.trim();
   const body = document.getElementById("postBodyInput").value.trim();
+  if (category === "공지" && !isOperator()) return toast("공지글은 운영자만 작성할 수 있습니다.");
   if (!title || !body) return toast("제목과 내용을 입력해 주세요.");
-  toast("게시 중...");
+  const editId = editingPostId;
+  toast(editId ? "수정 중..." : "게시 중...");
   try {
-    const r = await rpc("app_create_post", { p_token: SB_TOKEN, p_category: category, p_title: title, p_body: body });
-    if (!r || !r.ok) throw new Error((r && r.error) || "게시 실패");
+    const r = editId
+      ? await rpc("app_update_post", { p_token: SB_TOKEN, p_post_id: editId, p_category: category, p_title: title, p_body: body })
+      : await rpc("app_create_post", { p_token: SB_TOKEN, p_category: category, p_title: title, p_body: body });
+    if (!r || !r.ok) throw new Error((r && r.error) || (editId ? "수정 실패" : "게시 실패"));
+    editingPostId = null;
     closePostComposeModal();
-    toast("광장에 글이 올라갔습니다!");
-    loadCommunityPosts();
-  } catch (e) { toast("게시 오류: " + e.message); }
+    toast(editId ? "글이 수정되었습니다." : "광장에 글이 올라갔습니다!");
+    await loadCommunityPosts();
+    if (editId) {
+      const fresh = commPostsCache.find(p => String(p.post_id) === String(editId));
+      if (fresh) openPostDetailModal(fresh);
+    }
+  } catch (e) { toast((editId ? "수정 오류: " : "게시 오류: ") + e.message); }
 }
 
 async function openPostDetailModal(post) {
@@ -5627,7 +5700,10 @@ async function openPostDetailModal(post) {
   document.getElementById("pdMeta").textContent = `${post.author_name || "익명"}${post.author_team ? " · " + post.author_team : ""} · ${(post.created_at || "").slice(0, 10)}`;
   document.getElementById("pdBody").textContent = post.body || "";
   document.getElementById("pdLikeBtn").textContent = `♥ 좋아요 ${post.likes || 0}`;
-  document.getElementById("pdDeleteBtn").classList.toggle("hidden", String(post.author_id) !== String(currentUser.user_id));
+  /* v5.6.6: 본인 글 또는 운영자(전체 글)만 수정·삭제 */
+  const canManage = String(post.author_id) === String(currentUser.user_id) || isOperator();
+  document.getElementById("pdEditBtn").classList.toggle("hidden", !canManage);
+  document.getElementById("pdDeleteBtn").classList.toggle("hidden", !canManage);
   document.getElementById("pdCommentInput").value = "";
   document.getElementById("postDetailModal").classList.remove("hidden");
   loadPostComments(post.post_id);
