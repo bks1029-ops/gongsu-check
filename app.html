@@ -1696,8 +1696,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 39;
-const APP_VERSION_NAME = "5.6.7";
+const APP_VERSION_CODE = 40;
+const APP_VERSION_NAME = "5.6.8";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -1960,7 +1960,7 @@ function appPrompt(message, o) { return appDialog(Object.assign({}, o || {}, { m
 const POLICY_PRIVACY_HTML = `
 <div class="policy-section">
   <h4>개인정보처리방침</h4>
-  <p>오늘몇공(이하 "앱")은 스마일산업(대표 박기성)이 운영하며, 이용자의 개인정보를 소중히 다루고 「개인정보 보호법」 등 관계 법령을 준수합니다. 이 방침은 2026년 11월 19일부터 적용됩니다.</p>
+  <p>오늘몇공(이하 "앱")은 스마일산업(대표 박기성)이 운영하며, 이용자의 개인정보를 소중히 다루고 「개인정보 보호법」 등 관계 법령을 준수합니다. 이 방침은 2026년 11월 19일부터 적용되며, 2026년 11월 25일 광고(Google AdMob) 조항을 추가했습니다.</p>
 </div>
 <div class="policy-section">
   <h4>1. 수집하는 개인정보 항목</h4>
@@ -1968,6 +1968,7 @@ const POLICY_PRIVACY_HTML = `
     <li>필수: 이름, 휴대폰 번호, 비밀번호(4자리 이상), 소속 업체(팀) 정보</li>
     <li>서비스 이용 중 생성: 공수(출근) 기록, 기본 일당, 직종, 경력 연수, 담당 현장, 팀 채팅 메시지와 첨부파일, 광장 게시글·댓글</li>
     <li>선택: 초대코드(개인·직원 가입 시)</li>
+    <li>자동 수집: 광고 식별자(AD_ID), 기기·앱 정보 — 앱 하단 배너 광고를 표시하기 위한 정보로, 이름·전화번호·공수 기록과는 별개입니다.</li>
   </ul>
 </div>
 <div class="policy-section">
@@ -1990,7 +1991,7 @@ const POLICY_PRIVACY_HTML = `
 </div>
 <div class="policy-section">
   <h4>5. 처리 위탁</h4>
-  <p>서비스 운영을 위해 클라우드 데이터베이스(Supabase Inc., 일본 도쿄 리전)에 데이터를 보관하고, 앱 배포를 위해 GitHub Inc.의 저장소·페이지 서비스를 이용합니다. 위탁 사업자는 서버 운영·백업·배포 목적으로만 데이터에 접근합니다.</p>
+  <p>서비스 운영을 위해 클라우드 데이터베이스(Supabase Inc., 일본 도쿄 리전)에 데이터를 보관하고, 앱 배포를 위해 GitHub Inc.의 저장소·페이지 서비스를 이용합니다. 하단 배너 광고 표시를 위해 Google LLC(AdMob)의 광고 SDK를 사용합니다. 위탁 사업자는 서버 운영·백업·배포·광고 게재 목적으로만 데이터에 접근합니다.</p>
 </div>
 <div class="policy-section">
   <h4>6. 이용자의 권리</h4>
@@ -2009,7 +2010,12 @@ const POLICY_PRIVACY_HTML = `
   <p>성명: 박기성 · 연락처: 010-3135-7779 · 이메일: bks1029@gmail.com<br/>문의는 7일 이내에 답변드립니다.</p>
 </div>
 <div class="policy-section">
-  <h4>9. 고지의 의무</h4>
+  <h4>9. 광고</h4>
+  <p>앱은 서비스 운영을 위해 화면 하단에 Google AdMob 배너 광고를 표시합니다. 광고를 불러오고 보여 주는 과정에서 광고 식별자(AD_ID), 기기 정보, 앱 정보, 대략적인 접속 위치가 Google LLC에 전송될 수 있습니다. 앱은 이름·전화번호·공수 기록 등 이용자를 알아볼 수 있는 정보를 광고 사업자에게 넘기지 않습니다.</p>
+  <p>광고 식별자는 기기 설정(설정 → Google → 광고)에서 재설정하거나 맞춤 광고를 끌 수 있습니다. 광고가 표시되지 않거나 오프라인이면 광고 영역은 화면에서 사라지고 앱 기능에는 아무 영향이 없습니다. 자세한 내용은 Google 개인정보처리방침(policies.google.com/privacy)을 참고하세요.</p>
+</div>
+<div class="policy-section">
+  <h4>10. 고지의 의무</h4>
   <p>이 방침이 변경되면 앱 내 공지 또는 다운로드 페이지를 통해 시행일자를 명시하여 알립니다.</p>
 </div>
 <div class="policy-section">
