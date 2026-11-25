@@ -228,6 +228,9 @@
   }
 
   /* TOP BAR */
+  /* v5.6.9: 상단 고정은 헤더를 감싼 .top-zone 이 맡는다 — 헤더와 그 아래 광고 자리가
+     한 덩어리로 화면 위에 붙어 있고, 그 사이로 본문이 비집고 들어오지 않는다. */
+  .top-zone { position: sticky; top: 0; z-index: 30; }
   .topbar {
     background: var(--topbar-bg);
     backdrop-filter: blur(12px);
@@ -236,10 +239,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 30;
+    position: static;
   }
+  /* v5.6.9: 상단 광고 자리 — 앱(안드로이드)이 알려준 배너 높이만큼만 자리를 비워 두고,
+     실제 광고는 그 자리에 네이티브 AdView 로 겹쳐 그려진다. 광고가 없으면 높이 0으로 접힌다. */
+  .ad-slot { height: 0; overflow: hidden; background: var(--bg-bar); }
+  .ad-slot.on { border-bottom: 1px solid var(--line); }
   .brand {
     font-size: 20px;
     font-weight: 800;
@@ -890,16 +895,19 @@ try {
 } catch (e) {}
 </script>
 
-<!-- TOP HEADER -->
-<div id="mainTopbar" class="topbar hidden">
-  <div class="brand">오늘몇공</div>
-  <div id="topbarRight" class="topbar-right hidden">
-    <div id="modeSwitch" class="mode-switch hidden">
-      <button id="btnModeWork" class="mode-btn" onclick="setViewMode('worker')">워크</button>
-      <button id="btnModeAdmin" class="mode-btn active" onclick="setViewMode('admin')">관리자</button>
+<!-- TOP HEADER + v5.6.9 상단 광고 자리 (네이티브 배너가 이 자리에 겹쳐 그려진다) -->
+<div id="topZone" class="top-zone">
+  <div id="mainTopbar" class="topbar hidden">
+    <div class="brand">오늘몇공</div>
+    <div id="topbarRight" class="topbar-right hidden">
+      <div id="modeSwitch" class="mode-switch hidden">
+        <button id="btnModeWork" class="mode-btn" onclick="setViewMode('worker')">워크</button>
+        <button id="btnModeAdmin" class="mode-btn active" onclick="setViewMode('admin')">관리자</button>
+      </div>
+      <button class="icon-btn" onclick="openSettingsModal()">⚙️</button>
     </div>
-    <button class="icon-btn" onclick="openSettingsModal()">⚙️</button>
   </div>
+  <div id="adSlot" class="ad-slot" aria-hidden="true"></div>
 </div>
 
 <!-- AUTH VIEW -->
@@ -1696,8 +1704,8 @@ let bgChatTimer = null;
 let lastNotifiedMsgId = localStorage.getItem("gongsu_last_msg_id") || "";
 
 /* ===== v5.4 앱 버전 · 새 버전 안내 ===== */
-const APP_VERSION_CODE = 40;
-const APP_VERSION_NAME = "5.6.8";
+const APP_VERSION_CODE = 41;
+const APP_VERSION_NAME = "5.6.9";
 const APP_PAGE_URL = "https://bks1029-ops.github.io/gongsu-check/";
 const APP_VERSION_URL = APP_PAGE_URL + "version.json";
 let latestVersion = null;
@@ -5845,6 +5853,72 @@ window.handleAndroidBack = function () {
   } catch (e) {}
   return false;
 };
+
+/* ===== v5.6.9: 상단 광고 자리 — 안드로이드 앱의 네이티브 AdView 가 이 자리에 겹쳐 그려진다 =====
+   웹은 ① 앱이 알려준 배너 높이만큼 자리(#adSlot)만 비워 두고,
+        ② 그 자리가 화면 어디에 있는지·지금 보여도 되는지를 앱에 알려 준다.
+   앱은 그 좌표에 배너를 얻는다. 광고가 없으면(오프라인·심사 전) 앱이 높이 0을 보내 자리가 접힌다. */
+(function () {
+  var slot = document.getElementById("adSlot");
+  if (!slot) return;
+
+  var reserved = 0;   // 앱이 알려준 배너 높이(px). 0 = 광고 없음 → 자리 없음
+  var lastInfo = "";
+
+  function isShown(id) {
+    var e = document.getElementById(id);
+    return !!e && !e.classList.contains("hidden");
+  }
+
+  // 헤더가 있는 메인 화면인가? (로그인 화면에서는 자리도 만들지 않는다)
+  function hasPlace() {
+    return reserved > 0 && isShown("mainTopbar") && isShown("appMain");
+  }
+
+  // 위를 전체 화면 창(채팅방·바텀시트·팝업)이 덮었는가? 덮였으면 배너를 잠시 숨긴다(자리는 유지)
+  function covered() {
+    if (isShown("chatThread")) return true;
+    try {
+      for (var i = 0; i < ANDROID_BACK_OVERLAYS.length; i++) {
+        if (isOverlayOpen(ANDROID_BACK_OVERLAYS[i].id)) return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function apply() {
+    var place = hasPlace();
+    var h = place ? reserved : 0;
+    if (slot.style.height !== h + "px") slot.style.height = h + "px";
+    slot.classList.toggle("on", h > 0);
+
+    var info;
+    if (place && !covered()) {
+      var r = slot.getBoundingClientRect();
+      info = JSON.stringify({ show: true, top: Math.round(r.top), height: Math.round(r.height) });
+    } else {
+      info = JSON.stringify({ show: false, top: 0, height: h });
+    }
+    if (info === lastInfo) return;
+    lastInfo = info;
+    try {
+      if (window.AndroidBridge && AndroidBridge.syncAdSlot) AndroidBridge.syncAdSlot(info);
+    } catch (e) {}
+  }
+
+  // 앱(네이티브)이 배너 높이를 알려 준다. 0을 받으면 자리를 접는다.
+  window.__setAdSlotHeight = function (px) {
+    var h = Math.round(Number(px) || 0);
+    reserved = h > 0 ? h : 0;
+    apply();
+  };
+  window.__adSlotSync = apply;
+
+  /* 채팅 수신·팝업 열림같은 변화를 놓치지 않게 가볍게 계속 살핀다(값이 바뀔 때만 앱에 알림) */
+  setInterval(apply, 600);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply);
+  else apply();
+})();
 
 init();
 </script>
